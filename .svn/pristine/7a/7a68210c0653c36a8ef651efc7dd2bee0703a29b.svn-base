@@ -1,0 +1,711 @@
+<template>
+  <div id="activity-part1">
+    <div class="part-top" :style="topBanner" v-show="theShareHrefEnd">
+      <div class="top-top">
+        <div class="top-imgs">
+          <img class="top-title" :src="imgGroups.title" alt="">
+          <img class="top-share" :src="imgGroups.share" alt="" v-if="isShowBtn" @click="ShareHref">
+        </div>
+        <p>Cheapest flights</p>
+      </div>
+      <ul class="top-center">
+        <li>
+          <div class="center-div1">
+            <img :src="imgGroups.select" alt=""><span class="rs">Rs</span><span>{{orderinfo.orderAmount}}</span>
+          </div>
+          <div class="center-div2 flex space-between">
+            <div></div>
+            <p>Hey, I just booked {{orderinfo.depart}}-{{orderinfo.arrive}} flight ticket for just <span class="rs">Rs</span><span>{{orderinfo.orderAmount}}</span></p>
+          </div>
+        </li>
+        <li>
+          <div class="center-div1">
+            <img :src="imgGroups.select" alt=""><span>{{diwaliProcess.totalNum}} Helps</span>
+          </div>
+          <div class="center-div2 flex space-between">
+            <div></div>
+            <p>Help me save more by lending a hand. If I get {{diwaliProcess.totalNum}} friends helps</p>
+          </div>
+        </li>
+        <li>
+          <div class="center-div1">
+            <img :src="imgGroups.select" alt="">
+            <span class="rs">Rs</span><span>{{diwaliProcess.totalAmount}}</span>
+            <div class="center-div11">
+              <p style="font-size: 9px;text-decoration:line-through;"><span class="rs" style="font-size: 9px;">Rs</span>{{orderinfo.orderAmount}}</p>
+              <p style="font-size: 14px;"><span class="rs" style="font-size: 14px;">Rs</span>{{orderinfo.disOrderAmount}}</p>
+            </div>
+          </div>
+          <div class="center-div2 flex space-between">
+            <div style="opacity:0;"></div>
+            <p>I’ll get <span class="rs">Rs</span>{{diwaliProcess.totalAmount}} cashback. </p>
+          </div>
+        </li>
+      </ul>
+      <div class="top-bottom1">{{diwaliProcess.time}}</div>
+      <div class="top-bottom2">
+        <button v-if="isShowBtn" @click="registerAccount">Lend a hand</button>
+        <button v-else @click="ShareHref">Share</button>
+      </div>
+      <div class="top-bottom3 flex space-between">
+        <p><span class="rs">Rs</span>{{diwaliProcess.obtainAmount}} Return</p>
+        <p>{{diwaliProcess.obtainNum}}/{{diwaliProcess.totalNum}} Helps</p>
+      </div>
+    </div>
+    <div class="part-top" :style="topBannerEnd" v-show="theShareHrefEnd2">
+      <div class="top-top">
+        <div class="top-imgs">
+          <img class="top-title" :src="imgGroups.title" alt="">
+        </div>
+        <p>Cheapest flights</p>
+      </div>
+      <div class="top-info flex">
+        <div class="info-left">
+          <p>Save <span class="rs">Rs</span><span>{{diwaliProcess.obtainAmount}}</span> with</p>
+          <p><span>{{diwaliProcess.obtainNum}}</span> friends Helps</p>
+          <div>
+            {{orderinfo.depart}}
+            <img :src="imgGroups.plane" alt="">
+            {{orderinfo.arrive}}
+          </div>
+        </div>
+        <div class="info-right">
+          <img :src="imgGroups.plane" alt="">
+          <p><span class="rs">Rs</span>{{realAmount}}</p>
+          <p><span class="rs">Rs</span>{{orderinfo.orderAmount}}</p>
+        </div>
+      </div>
+    </div>
+    <div class="register-cover" v-show="showRegister"></div>
+    <div class="register-box" v-show="showRegister" >
+      <div class="box-top" :style="registerBg1">
+        <img :src="imgGroups.cancel" alt="" @click="closeRegisterAccount">
+        Lend your Friend a Hand
+      </div>
+      <ul class="box-form">
+        <li>
+          <div class="phoneNumber flex space-between">
+            <div class="select-group">
+              <span>
+                {{'+' + mobile.code}}
+              </span>
+            </div>
+            <input class="phone" type="number" placeholder="Mobile Number" v-model="mobile.phoneNo">
+            <button id="Mobile" type="button" :class="{otpActive:mobile.active}" :disabled="mobile.active" @click="sendOTPEvent">{{mobile.time}}{{mobile.second}}</button>
+          </div>
+        </li>
+        <li>
+          <input type="text" v-model="mobile.otpCode" placeholder="Verification Code">
+        </li>
+        <li>
+          <input type="text" v-model="mobile.name" maxlength="50" placeholder="Leave your name (optional)">
+        </li>
+        <li class="li-checkbox flex align-items-center">
+          <input type="checkbox" v-model="mobile.checked" name="agreement" >
+          <label for="agreement">You agree to HappyEasyGo's <a href="java:;" @click="$router.push('/agreement')">T&amp;C</a> </label>
+        </li>
+        <li>
+          <button @click="finishRegister" :class="{canRegister:mobile.canClick}" :disabled="mobile.canClick">Lend a hand</button>
+        </li>
+      </ul>
+    </div>
+    <div class="register-cover" v-show="showSuccRegister"></div>
+    <div class="register-box" v-show="showSuccRegister">
+      <div class="box-top" :style="registerBg2">
+        <img :src="imgGroups.cancel" alt="" @click="closeFinishRegister">
+        <p class="succ-p1" v-show="register.reward != 0">You just helped your friend save <span class="rs">Rs</span><span>{{register.reward}}</span> on the flight booking.</p>
+        <p class="succ-p1" v-show="register.reward == 0">You just helped your friend save money on the flight booking.</p>
+      </div>
+      <div class="box-content">
+        <p>HappyEasyGo reward you with</p>
+        <p>“<span>Rs.{{register.coupon}} Coupon</span>”</p>
+      </div>
+      <div class="box-btn">
+        <a href="https://app.adjust.com/for04bk?campaign=checking&adgroup=Download&creative=Online" 
+        target="_blank" @click="succRegister">Check Reward</a>
+      </div>
+    </div>
+    
+  </div>
+</template>
+<script>
+import { Reg } from '../../../models/utils'
+import { Toast, Indicator } from 'mint-ui'
+import { Activity } from '../../../models/activity';
+import { User } from "../../../models/user";
+import { DomainManager } from '../../../config/DomainManager';
+export default {
+  props:["theShareHrefEnd","theShareHrefEnd2","orderinfo","diwaliProcess","orderId","isShowBtn"],
+  data(){
+    return {
+      register:{
+        reward:'',
+        coupon:'',
+      },
+      mobile:{
+        type:1,
+        name:'',
+				code:'91',
+				phoneNo:'',
+        otpCode:'',
+        timer:null,
+				time:'OTP',
+        second:'',
+        checked:true,
+				active:false,
+				canClick:true,
+      },
+      showRegister:false,
+      showSuccRegister:false,
+      topBanner:{
+        "background-color":"#fff",
+        "background-image":'url('+require('../../../assets/images/grabcashback/grab_share_top1.png')+')',
+        "background-size":"100% 100%",
+        "background-repeat":"no-repeat",
+        "background-position":"center top"
+      },
+      topBannerEnd:{
+        "background-color":"#fff",
+        "background-image":'url('+require('../../../assets/images/grabcashback/grab_share_top2_outdate.png')+')',
+        "background-size":"100% 100%",
+        "background-repeat":"no-repeat",
+        "background-position":"center top"
+      },
+      registerBg1:{
+        "background-image":'url('+require('../../../assets/images/grabcashback/grab_share_register1.png')+')',
+        "background-size":"100% auto",
+        "background-position":"center top"
+      },
+      registerBg2:{
+        "background-image":'url('+require('../../../assets/images/grabcashback/grab_share_register2.png')+')',
+        "background-size":"100% auto",
+        "background-position":"center top"
+      },
+      imgGroups:{
+        title:require('../../../assets/images/home/home-logo.png'),
+        cancel:require('../../../assets/images/grabcashback/grab_share_icon_cancel.png'),
+        select:require('../../../assets/images/grabcashback/grab_share_icon_gou.png'),
+        share:require('../../../assets/images/grabcashback/grab_icon_share.png'),
+        plane:require('../../../assets/images/grabcashback/grab_share_plane.png'),
+        plane2:require('../../../assets/images/grabcashback/grab_icon_plane.png'),
+      }
+    }
+  },
+  watch:{
+    mobile:{
+      handler:function(val,oldV){
+        if(this.mobile.otpCode != '' && this.mobile.phoneNo !=''){
+					this.mobile.canClick = false;
+				}else{
+					this.mobile.canClick = true;
+        }
+        if(!this.mobile.active){
+          this.mobile.time = 'OTP';
+          clearTimeout(this.mobile.timer);
+        }
+      },
+      deep:true
+    },
+  },
+  computed:{
+    realAmount(){
+      let money = this.diwaliProcess.obtainAmount == 0?
+      this.orderinfo.orderAmount:(this.orderinfo.orderAmount - this.diwaliProcess.obtainAmount);
+      return money;
+    }
+  },
+  methods:{
+    ShareHref(){
+      try {
+        window.heg.trackEvent("AC_Grab_landing_Invite");
+      } catch (error) {
+        if(window.WebViewJavascriptBridge){
+          this.$bridge.callhandler("trackEvent","AC_Grab_landing_Invite");
+        }
+      }
+      this.$emit('showShareDialog');
+    },
+    closeRegisterAccount(){
+      Object.assign(this.$data, this.$options.data(this.mobile));
+      this.showRegister = false;
+    },
+    closeFinishRegister(){
+      Object.assign(this.$data, this.$options.data(this.mobile));
+      this.showSuccRegister = false;
+    },
+    registerAccount(){
+      if(this.theShareHrefEnd){
+        this.showRegister = true;
+      }else{
+        Toast({
+          message:'The activity has ended.Please refresh the page.',
+          duration:1500
+        })
+      }
+    },
+    finishRegister(){
+      if(!Reg.onlyNumber1.test(this.mobile.phoneNo)){
+        Toast({
+          message:'Please enter a valid phone number.',
+          duration:1500
+        });
+        return false;
+      }else{
+        if(this.mobile.code == '91' && String(this.mobile.phoneNo).length != 10){
+          Toast({
+            message:"Please enter a valid mobile number",
+            duration:1500
+          });
+          return false;
+        }
+        if( this.mobile.code == '86' && String(this.mobile.phoneNo).length != 11){
+          Toast({
+            message:"Please enter a valid mobile number",
+            duration:1500
+          });
+          return false;
+        }
+        if(this.mobile.name != '' && !Reg.name.test(this.mobile.name)){
+          Toast({
+            message:"Please enter a valid name",
+            duration:1500
+          });
+          return false;
+        }
+      }
+      Indicator.open({
+        spinnerType:'fading-circle'
+      });
+      let data = {
+        referer:this.orderId,
+        cellphone:this.mobile.code+' '+this.mobile.phoneNo,
+        otp:this.mobile.otpCode,
+        realName:this.mobile.name,
+      };
+      Activity.grabInviteRegisterByPhone(this,data).then(res => {
+        Indicator.close();
+        if(res.success){
+          this.showRegister = false;
+          this.showSuccRegister = true;
+          this.register.reward = res.data.reward;
+          this.register.coupon = Math.abs(res.data.coupon);
+          this.$emit('succRegister');
+          Toast({
+            message:'Success',
+            duration:1000
+          });
+        }else{
+          Toast({
+            message:res.msg,
+            duration:1000
+          });
+        }
+      }).catch(err =>{
+        Indicator.close();
+        Toast({
+          message:" The network is busy. Please try again later !",
+          duration:1500
+        });
+      })
+    },
+    succRegister(){
+      this.showSuccRegister = false;
+    },
+    sendOTPEvent(){
+      let self = this;
+      if(!Reg.onlyNumber1.test(this.mobile.phoneNo)){
+        Toast({
+          message:'Please enter a valid phone number.',
+          duration:1500
+        });
+        return;
+      }else{
+        if(this.mobile.code == '91' && String(this.mobile.phoneNo).length != 10){
+          Toast({
+            message:"Please enter a valid mobile number",
+            duration:1500
+          });
+          return false;
+        }else if( this.mobile.code == '86' && String(this.mobile.phoneNo).length != 11){
+          Toast({
+            message:"Please enter a valid mobile number",
+            duration:1500
+          });
+          return false;
+        }else {
+          Indicator.open({
+            text:'Sending . . .',
+            spinnerType:'fading-circle',
+          });
+          let param = 'phone='+this.mobile.code+' '+this.mobile.phoneNo;
+          User.sendRegisterOTP(self,param).then(res =>{
+            Indicator.close();
+            if(res.success){
+              Toast({
+                message:'Success',
+                duration:1500
+              });
+              this.mobile.active = true;
+              this.mobile.otpCode = '';
+              this.mobile.time = res.lastSendTime;
+              this.mobile.second = 's';
+              this.mobile.timer = setInterval(()=>{
+                this.mobile.time --;
+                if(this.mobile.time <= 0){
+                  this.mobile.time = 'OTP';
+                  this.mobile.second = '';
+                  this.mobile.active = false;
+                  clearInterval(this.mobile.timer);
+                }
+              },1000);
+            }else{
+              Toast(res.msg);
+            }
+          }).catch(err=>{
+            Indicator.close();
+            Toast(err.msg);
+          })
+        }
+      }
+    },
+  },
+}
+</script>
+<style lang="less" scoped>
+#activity-part1{
+  .part-top{
+    width:100%;
+    height:19.5rem;
+    padding-top: 1rem;
+    .top-top{
+      p{
+        font-size: 0.512rem;
+        color: #FFFFFF;
+      }
+      .top-imgs{
+        position: relative;
+        margin-bottom: 0.15rem;
+        .top-share{
+          position: absolute;
+          width: 0.8rem;
+          height:0.769rem;
+          right: 0.641rem;
+        }
+        .top-title{
+          width: 6rem;
+          height:0.68rem;
+        }
+      }
+    }
+    .top-center{
+      text-align: left;
+      margin:2.564rem 0.427rem 1.5rem 6.4rem;
+      img{
+        width:0.641rem;
+        height:0.641rem;
+        vertical-align:middle;
+      }
+      .center-div1{
+        font-weight: bold;
+        position: relative;
+        span{
+          color:#FDE742;
+          font-size: 0.89rem;
+        }
+        img{margin-right: 0.641rem;}
+        div{
+          color:#FDE742;
+          position: absolute;
+          top: -0.2rem;
+          left: 4.2rem;
+        }
+      }
+      .center-div11{
+        p,span{font-weight: normal;}
+      }
+      .center-div2{
+        margin:0.22rem 0;
+        color:#fff;
+        div{
+          width:2px;
+          height:2.56rem;
+          background:#FDE742;
+          margin-left:0.25rem;
+        }
+        p{
+          width:7.69rem;
+          font-size:0.512rem;
+          line-height:0.706rem;
+        }
+      }
+      li:last-child .center-div2 div{
+        height:auto;
+      }
+      li:last-child .center-div2 p{
+        height:auto;
+      }
+    } 
+    .top-bottom1{
+      font-size: 0.512rem;
+      color:#fff;
+      font-family: "SFCompactText-Light";
+    }
+    .top-bottom1::before{
+      display:inline-block;
+      content:"";
+      width:1.282rem;
+      opacity: 0.6;
+      vertical-align: middle;
+      margin-right: 0.427rem;
+      margin-top:-0.1rem;
+      border-top: 1px solid #FFFFFF;
+    }
+    .top-bottom1::after{
+      display:inline-block;
+      content:"";
+      width:1.282rem;
+      opacity: 0.6;
+      vertical-align: middle;
+      margin-left: 0.427rem;
+      margin-top:-0.1rem;
+      border-top: 1px solid #FFFFFF;
+    }
+    .top-bottom2{
+      button{
+        padding:0 0;
+        width:11.96rem;
+        height:1.455rem;
+        line-height: 1.455rem;
+        font-size: 0.726rem;
+        color: #25B8C4;
+        background:#fff;
+        border-radius: 4px;
+        font-weight: bold;
+        margin: 0.427rem 0 0.3rem;
+        font-family: "SFCompactText-Semibold";
+      }
+    }
+    .top-bottom3{
+      width:11.96rem;
+      color: #FFFFFF;
+      font-size: 0.598rem;
+      margin:0 auto;
+      font-family: "SFCompactText-Medium";
+    }
+
+    .top-info{
+      margin: 2.35rem auto 0;
+      width:12.7rem;
+      height:5.3rem;
+      color:#fff;
+      border-radius:4px;
+      .info-left{
+        width: 78%;
+        height: 100%;
+        font-size: 0.68rem;
+        background:#06419B;
+        border-radius:4px;
+        p:first-child{margin:1.3rem 0 0.3rem;}
+        div{margin-top:0.5rem;}
+        span{
+          font-size:0.8rem;
+          color:#FDE742;
+          font-weight: bold;
+        }
+        img{
+          width:2.5rem;
+          margin: 0 0.2rem;
+        }
+      }
+      .info-right{
+        width: 21%;
+        height: 100%;
+        font-size: 0.8rem;
+        background: #fff;
+        border-radius:4px;
+        text-align: right;
+        padding-right:1%;
+        img{
+          width:0.789rem;
+          height: 0.789rem;
+          margin:0.5rem 0 1.8rem;
+        }
+        span{font-weight: bold;}
+        p:nth-of-type(1){
+          color:#DF5342;
+          font-weight: bold;
+          margin-bottom:0.2rem;
+        }
+        p:last-child{
+          font-size:0.56rem;
+          color:#999;
+          font-weight: bold;
+          text-decoration: line-through;
+        }
+      }
+    }
+  }
+
+  .register-cover{
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index:10;
+    background:rgba(0,0,0,0.5);
+  }
+  .register-box{
+    position: fixed;
+    width:13.39rem;
+    top:25%;
+    left: 0;
+    right: 0;
+    margin:auto;
+    padding-bottom: 0.641rem;
+    z-index:11;
+    background: #fff;
+    border-radius:4px;
+    .box-top{
+      // width:100%;
+      height:4.7rem;
+      line-height: 4.7rem;
+      color:#fff;
+      font-size:0.726rem;
+      font-weight: bold;
+      margin-bottom: 0.641rem;
+      border-radius:4px;
+      padding-left:0.854rem;
+      overflow: hidden;
+      img{
+        width:0.854rem;
+        cursor: pointer;
+        float: right;
+        display: inline-block;
+        margin: 0.5rem 0.3rem 0 0;
+      }
+      .succ-p1{
+        width:8.42rem;
+        text-align: left;
+        font-size:0.68rem;
+        line-height: 1rem;
+        margin-top: 0.854rem;
+        font-weight: normal;
+        span{
+          color: #FDE742;
+          font-size:0.7rem;
+          font-weight: bold;
+        }
+      }
+      // background:linear-gradient(#0970E4, #0CC1C8);
+    }
+    .box-form{
+      text-align: left;
+      background: #fff;
+      input{
+        width:10.2rem;
+        height:1.282rem;
+        padding:0 0 0 0.5rem;
+      }
+      input::placeholder{color:#999;}
+      li{
+        width:12.11rem;
+        line-height: 1.282rem;
+        border-radius: 3px;
+        border:1px solid #eee;
+        margin:0.427rem auto 0;
+      }
+      .li-checkbox{
+        border:0;
+        font-size: 0.470rem;
+        color: #666666;
+        a{color:#0C9D79;}
+        overflow: hidden;
+        input{
+          width:0.598rem;
+          height:0.598rem;
+          border: 1px solid #CDCDCD;
+          border-radius: 2px;
+        }
+      }
+      li:last-child{
+        border:0;
+        line-height: 0;
+        button{
+          width:12.11rem;
+          height:1.282rem;
+          margin:auto;
+          font-size: 0.598rem;
+          color: #FFFFFF;
+          padding: 0;
+          background:#ED8649;
+        }
+        .canRegister{
+          background:#eee;
+        }
+      }
+    }
+
+    .box-content{
+      padding: 0 0.64rem 0.64rem;
+      font-size: 0.598rem;
+      color: #333333;
+      text-align: center;
+      line-height: 0.85rem;
+      font-family: "SFCompactText-Regular";
+      span{color:#000;font-weight: bold;}
+    }
+    .box-btn{
+      a{
+        width:11.11rem;
+        height:1.282rem;
+        line-height:1.282rem;
+        margin:auto;
+        font-size: 0.598rem;
+        color: #FFFFFF;
+        background:#ED8649;
+        border-radius: 2px;
+      }
+    }
+  }
+
+  .phoneNumber {
+    .select-group {
+      position: relative;
+      box-sizing: border-box;
+      border-top-left-radius: 3px;
+      border-bottom-left-radius: 3px;
+      width: 30%;
+      height:1.282rem;
+      span {
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        text-align: center;
+        height:1.282rem;
+        line-height: 1.282rem;
+        font-size: 0.6rem;
+        font-weight: normal;
+      }
+    }
+    .phone {
+      width: 70%;
+      padding:0 0;
+    }
+    button {
+      width: 30%;
+      height:1.282rem;
+      background-size: 0.769rem;
+      background: #ED8649;
+      font-size: 0.6rem;
+      color: #fff;
+      border-top-right-radius: 3px;
+      border-bottom-right-radius: 3px;
+    }
+    .otpActive{
+      background: #ddd;
+    }
+  }
+}
+</style>

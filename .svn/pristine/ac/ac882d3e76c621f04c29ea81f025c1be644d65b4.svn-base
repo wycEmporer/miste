@@ -1,0 +1,146 @@
+<template>
+  <div class="wrapper">
+    <head-top class="header">
+      <i slot="left" class="prev iconfont icon-back"></i>
+      <div slot="title" class="title">Spring Break Sale</div>
+      <i slot="right" class="sp iconfont icon-back"></i>
+    </head-top>
+    <div class="container">
+      <div class="top" :class="{marTop: contentMargin}">
+        <img :src="mUrl" alt="">
+      </div>
+      <div class="content">
+        <div class="text-group">
+          <h2>Terms & Conditions</h2>
+          <div class="line"></div>
+          <p>• These coupon codes can be applied with Instant Discount,Cashback and Happy Sliver extended by HappyEasyGo.
+          </p>
+          <p>• In case of any cancellation/refund (by airline or provider) happens out of the validity of this campaign, your
+            coupon will be voided.
+          </p>
+          <p>
+            • HappyEasyGo Travel Pvt. Ltd. ("HappyEasyGo") reserves the right to add, alter, modify all or any of Spring Break Sale promotion,
+            or replace wholly or in part, this offer by any other offer, whether similar to this offer or not, without prior
+            notice.
+          </p>
+          <p>• All other standard terms and conditions available at HappyEasyGo.com shall apply.
+          </p>
+          <p>
+            • Any disputes arising out of this offer shall be subject to the exclusive jurisdiction of competent courts in Gurgaon, Haryana,
+            India.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import headTop from "../../../components/head/head.vue";
+import { User } from "../../../models/user";
+
+export default {
+  components: {
+    headTop
+  },
+  data() {
+    return {
+      mUrl: "",
+      model: 0,
+      contentMargin: true
+    };
+  },
+  methods: {
+    getTopImage() {
+      let parmTop = "type=13&device=" + this.model + "&addr=springsale";
+
+      User.advList(this, parmTop)
+        .then(res => {
+          if (res.success) {
+            this.mUrl = res.list[0].landingPageUrl;
+          }
+        })
+        .catch(err => {
+          console.log(err.msg);
+        });
+    },
+    checkType() {
+       try {
+          let typeA = typeof window.heg.getNativeSource() === "string"
+            ? JSON.parse(window.heg.getNativeSource())
+            : window.heg.getNativeSource();
+          this.model = Number(typeA.deviceType) + 1;
+        } catch (e) {
+          this.model = 0;
+        }
+      this.getTopImage();
+    }
+  },
+  created() {
+    try {
+      let deviceObj =
+        typeof window.heg.getNativeSource() === "string"
+          ? JSON.parse(window.heg.getNativeSource())
+          : window.heg.getNativeSource();
+      this.contentMargin =
+        Number(deviceObj.deviceType) == 1 && !deviceObj.deviceNative;
+    } catch (e) {}
+    this.checkType();
+  }
+};
+</script>
+<style lang="less" scoped>
+.header {
+  background: #0b9d78;
+  .title {
+    font-size: 0.768rem;
+    color: #fff;
+  }
+  .sp {
+    opacity: 0;
+  }
+}
+
+.color-yellow {
+  color: #ffaa39;
+  text-decoration: underline;
+}
+
+.color-purple {
+  color: #ba0a76;
+}
+
+.container {
+  .marTop {
+    margin-top: 2rem;
+  }
+  .top {
+    height: 9.8rem;
+    background-size: 100% 9.8rem;
+    img {
+      display: block;
+      width: 100%;
+    }
+  }
+  .content {
+    padding: 0.85rem 0.64rem;
+    .text-group {
+      font-size: 0.85rem;
+      h2 {
+        text-align: center;
+        font-weight: 300;
+      }
+      .line {
+        background: #2ca5ea;
+        height: 1px;
+        width: 2.98rem;
+        margin: 0.21rem auto;
+      }
+      p {
+        font-size: 0.512rem;
+        text-align: left;
+        padding-bottom: 0.64rem;
+      }
+    }
+  }
+}
+</style>

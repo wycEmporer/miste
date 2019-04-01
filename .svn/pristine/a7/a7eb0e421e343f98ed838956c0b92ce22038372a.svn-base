@@ -1,0 +1,727 @@
+<template>
+  <div id="anniversary">
+    <head-top class="header">
+      <i slot="left" class="top_icon iconfont icon-back"></i>
+      <img slot="title" class="flight_logo" :src="require('../../assets/images/home/home-logo.png')" alt="Online Travel Agency" title="Lowest Airfares in India">
+    </head-top>
+    <div class="content" >
+      <section class="section0" :class="{marTop: contentMargin}"></section>
+      <section class="section1" :style="bgStyle" :class="{msiteHeight: contentMargin}">
+        <ul class="game" :class="{IOStop1:IOS4S,IOStop2:IOStop2,huawei:isHuaWei}">
+          <li class="gameImg gameImg1">
+            <img :src="imgGroup[0]" alt="">
+            <img class="gameImg2" v-if="!isStart" :src="imgGroup[1]" alt="">
+            <img class="gameImg22" v-else :src="actived[1]" alt="">
+            <div class="row" :class="{row1:index == 0?true:false,row2:index == 1?true:false,row3:index == 2?true:false}" ref='slots' v-for="(slot,index) in slots" :key="index">
+              <div class='slot__wrap'>
+                <div class='slot__item' v-for='(opt,index2) in slot.items' :key="index2"><img :src="opt"></div>
+                <div class='slot__item slot__item--copy'><img  :src="slot.items[0]"></div>
+              </div>
+            </div>
+          </li>
+          <li class="gameUser">
+            <p v-if="!ifLogin" @click="signIn" :class="{iosP:IOS4S}" style="text-decoration:underline;cursor:pointer;">Sign In</p>
+            <p v-else :class="{iosP:IOS4S}"><span>{{userInfo.userName}}</span> : {{userInfo.chances}} chances</p>
+            <p @click="HowToGetChances" :class="{iosP:IOS4S}">How to earn more chances?</p>
+          </li>
+          <li class="gameImg gameImg3" :class="{IOSbtn:IOS4S}">
+            <button v-if="!isStart" :disabled="canClick" @click.stop.prevent="startBtn($event)"><img :src="imgGroup[2]" alt="" ></button>
+            <button v-else :disabled="canClick" @click.stop.prevent="startBtn($event)"><img :src="actived[2]" alt=""></button>
+          </li>
+          <li class="gameImg gameImg4 flex space-between" :class="{IOSli:IOS4S}">
+            <span @click="goDetails">T&amp;C</span>
+            <span @click="goPrize">My Prizes</span>
+          </li>
+        </ul>
+      </section>
+    </div>
+    <div class="dialog" v-show="showDialog">
+      <div class="icon0" @click="closeDialog"><img :src="imgGroup[3]" alt=""></div>
+      <ul class="alertPrize alertPrize0" :class="{wideScreen:androidPh,wideScreen1:androidPh1,wideScreen2:androidPh2,IOS5s:IOS4S}" v-if="whichDialog==0">
+        <li>Sorry,you didn't win the prize.</li>
+        <li><img :src='require("../../assets/images/anniversary/ani-cry.png")' alt=""></li>
+        <li>Maybe next time.So,keep playing!</li>
+        <li><button @click="Confirm">Confirm</button></li>
+      </ul>
+      <ul class="alertPrize alertPrize1" :class="{wideScreen:androidPh,wideScreen1:androidPh1,wideScreen2:androidPh2,IOS5s:IOS4S}" v-else-if="whichDialog==1">
+        <li>Congratulation</li>
+        <li><img :src='userInfo.winImg' alt=""></li>
+        <li>You’ve won <span>{{userInfo.prizeName}}</span></li>
+        <li><button @click="Confirm">Confirm</button></li>
+      </ul>
+      <div class="alertPrize2" v-else-if="whichDialog==2 && !endsDialog" :class="{wideScreen:androidPh,wideScreen1:androidPh1,wideScreen2:androidPh2,IOS5s:IOS4S}">
+        <p class="p2-title" style="display:none;">How to earn more chances？</p>
+        <ul class="chances" style="display:none;">
+          <li><span>·</span>Login daily  +1</li>
+          <li><span>·</span>Sign up during the event+1</li>
+          <li><span>·</span>First synchronising your contacts +1</li>
+          <li><span>·</span>Your friend registers with your referral code +1</li>
+          <li><span>·</span>Successful pay your flight order  +1</li>
+          <li><span>·</span>When your referral register books a flight +1</li>
+        </ul>
+        <p class="line2"></p>
+        <div class="confirm"><button @click="Confirm">OK</button></div>
+      </div>
+      <div class="alertPrize2" v-else-if="whichDialog==2 && endsDialog" :class="{endsDialog:endsDialog,endIOS5s:IOS4S}">
+        <ul class="chances-end">
+          <li>1st Anniversary Sale has ended.Please redeem the prizes as soon as possible within 30 days.You can use the accumulated lottery chances in Autumn Shake page.</li>
+        </ul>
+        <p class="line2"></p>
+        <div class="confirm"><button @click="goToShake">Go to Shake</button></div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import headTop from '../../components/head/head.vue';
+import {Toast,Indicator} from 'mint-ui';
+import { CookieUtil } from 'models/utils';
+import { DomainManager } from "../../config/DomainManager.js";
+import {Anniv_start, emitCustomEvent} from 'models/utils/adGAEvent';
+
+const next = window.requestAnimationFrame ||
+	window.webkitRequestAnimationFrame ||
+	window.mozRequestAnimationFrame ||
+	window.msRequestAnimationFrame ||
+	window.oRequestAnimationFrame || 
+  function(cb) { window.setTimeout(cb, 1000/60) };
+export default {
+  components:{
+    headTop,
+  },
+  data(){
+    return{
+      endsDialog:true,
+      isHuaWei:false,
+      androidPh:false,
+      androidPh1:false,
+      androidPh2:false,
+      IOS4S:false,
+      IOStop2:false,
+      model: 0,
+      isStart:false,
+      showDialog:false,
+      canClick:false,
+      whichDialog:0,
+      dialogType:0,
+      contentMargin:true,
+      userInfo:{
+        chances:0,userName:'',isWin:null,prize:null,msg:'',winImg:'',prizeName:''
+      },
+      bgStyle:{
+        background:'url('+require("../../assets/images/anniversary/ani-bg-img.png")+') repeat',
+        backgroundSize:'100% 100%',
+      },
+      imgGroup:[
+        require("../../assets/images/anniversary/ani-space.png"),
+        require("../../assets/images/anniversary/ani-start-btn-up.png"),
+        require("../../assets/images/anniversary/ani-start.png"),
+        require("../../assets/images/anniversary/ani-cancel.png"),
+      ],
+      actived:[
+        require("../../assets/images/anniversary/ani-space.png"),
+        require("../../assets/images/anniversary/ani-start-btn-down.png"),
+        require("../../assets/images/anniversary/ani-start-actived.png"),
+      ],
+      slots: [
+        {title: "yesterday",items: [
+          require("../../assets/images/anniversary/prize0.png"),
+          require("../../assets/images/anniversary/prize1.png"),
+          require("../../assets/images/anniversary/prize2.png"),
+          require("../../assets/images/anniversary/prize3.png"),
+          require("../../assets/images/anniversary/prize4.png"),
+          require("../../assets/images/anniversary/prize5.png"),
+          require("../../assets/images/anniversary/prize6.png"),
+          require("../../assets/images/anniversary/prize7.png"),
+        ]},
+        {title: "today",items: [
+          require("../../assets/images/anniversary/prize0.png"),
+          require("../../assets/images/anniversary/prize1.png"),
+          require("../../assets/images/anniversary/prize2.png"),
+          require("../../assets/images/anniversary/prize3.png"),
+          require("../../assets/images/anniversary/prize4.png"),
+          require("../../assets/images/anniversary/prize5.png"),
+          require("../../assets/images/anniversary/prize6.png"),
+          require("../../assets/images/anniversary/prize7.png"),
+        ]}, 
+        {title: "tomorrow",items: [
+          require("../../assets/images/anniversary/prize0.png"),
+          require("../../assets/images/anniversary/prize1.png"),
+          require("../../assets/images/anniversary/prize2.png"),
+          require("../../assets/images/anniversary/prize3.png"),
+          require("../../assets/images/anniversary/prize4.png"),
+          require("../../assets/images/anniversary/prize5.png"),
+          require("../../assets/images/anniversary/prize6.png"),
+          require("../../assets/images/anniversary/prize7.png"),
+        ]}
+      ],
+      opts: null,
+      startedAt: null,
+      ifLogin: CookieUtil.hasItem("uuid"),
+      appLogin:false,
+      appUserName:'',
+      isiOS:false,
+      isAndroid:false,
+    }
+  },
+  created () {
+    var u = navigator.userAgent;
+    this.isHuaWei = u.indexOf('HUAWEI') > -1 || u.indexOf('OPPO') > -1 || u.indexOf('Motorola') > -1 || u.indexOf('MOTOROLA') > -1 || u.indexOf('MOT-') > -1;
+    this.isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1; //android终端
+    this.isiOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
+    var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+    var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+    if(width <= 320){
+      if(height <=500){
+        this.IOS4S = true;
+        this.androidPh1 = true;
+      }else{
+        this.IOS4S = true;
+        this.IOStop2 = true;
+      }
+    }else if(width >= 360 && height >= 1000){
+      this.androidPh = true;
+    }
+    if(this.isAndroid && height < 640 ){
+      this.androidPh2 = true;
+    }
+    try {
+      let deviceObj =
+        typeof window.heg.getNativeSource() === "string"
+          ? JSON.parse(window.heg.getNativeSource())
+          : window.heg.getNativeSource();
+      this.contentMargin =
+        Number(deviceObj.deviceType) == 1 && !deviceObj.deviceNative;
+
+      let uuid = window.heg.getNativeUuid();
+      if(uuid){
+        CookieUtil.setItem('uuid', uuid);
+        this.appLogin = true;
+      }else{
+        CookieUtil.removeItem('uuid');
+      }
+      window.onReceviedUuid = this.onReceviedUuid;
+      if(CookieUtil.hasItem("uuid")) {//登陆后
+        this.ifLogin = true;
+        Indicator.open({
+          spinnerType: 'fading-circle'
+        });
+        this.getRemainder();
+      }else{
+        this.ifLogin = false;
+      }
+    } catch (e) {
+      if(CookieUtil.hasItem("uuid")) {//登陆后
+        this.ifLogin = true;
+        Indicator.open({
+          spinnerType: 'fading-circle'
+        });
+        this.getRemainder();
+      }else{
+        this.ifLogin = false;
+      }
+    }
+  },
+  methods:{
+    signIn(){
+      if(!this.ifLogin){
+        try {
+          window.heg.nativeSignIn();
+        } catch (error) {
+          this.$router.push("/login");
+        }
+      }
+    },
+    getRemainder(){
+      try {
+        let appUserInfo = typeof window.heg.getNativeUserName() === "string"
+        ? JSON.parse(window.heg.getNativeUserName())
+        : window.heg.getNativeUserName();
+        this.appUserName = appUserInfo.userName;
+        let appUserPhone = appUserInfo.phone;
+        CookieUtil.setItem("email",this.appUserName);
+        CookieUtil.setItem("phone",appUserPhone);
+      } catch (error) {
+        this.appUserName = CookieUtil.getItem('email')?(CookieUtil.getItem('email').indexOf('"') == -1? CookieUtil.getItem('email')
+        : CookieUtil.getItem('email').split('"')[1]):"";
+      }
+      
+      let str = this.appUserName.substr(0,3)+'****'+this.appUserName.substr(this.appUserName.lastIndexOf('@'));
+      if(this.appUserName.split("").length > 11){
+        this.userInfo.userName = str;
+      }else{
+        this.userInfo.userName = this.appUserName;
+      }
+      let url = DomainManager.getObtainRemainingLottery();
+      this.$axios.get(url).then(res =>{
+        this.userInfo.chances = res.data
+        Indicator.close();
+      }).catch(err => {
+        Indicator.close();
+        console.log(err);
+      })
+    },
+    startBtn: function() {
+      if(this.endsDialog){
+        this.whichDialog = 2;
+        this.showDialog = true;
+      }else{
+        emitCustomEvent(Anniv_start);
+        if(!this.ifLogin){
+          try {
+            window.heg.nativeSignIn();
+          } catch (error) {
+            this.$router.push("/login");
+          }
+        }else {
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_lottery_startbutton");
+          } catch (error) {}
+          if(this.userInfo.chances <= 0){
+            this.userInfo.chances = 0;
+            this.isStart = false;
+            this.canClick = false;
+            Toast({
+              message:"You have run out of chances!",
+              duration:2000
+            });
+            return
+          }else{
+            this.startGame();
+          }  
+        }
+      }
+  	},
+    animate: function(timestamp) {// timestamp当前的方法持续的毫秒数
+      if (this.startedAt == null) {
+          this.startedAt = timestamp// 动画初始时间
+      }
+      const timeDiff = timestamp - this.startedAt//动画持续的时间
+      this.opts.forEach( opt => {
+        if(opt.isFinished){
+          return
+        }
+        const timeRemaining = Math.max(opt.duration - timeDiff, 0);// 总的持续时间 - 动画持续时间 = 剩下的时间,0表示结束
+        const power = 2
+        const offset = ( Math.pow(timeRemaining, power) / Math.pow(opt.duration, power) ) * opt.startOffset
+        const pos = -1 * Math.floor((offset + opt.finalPos) % opt.height)
+        opt.el.style.transform = "translateY(" + pos + "px)"   
+        if ( timeDiff > opt.duration ) {
+          opt.isFinished = true
+        }
+      })  
+      if (this.opts.every( o => o.isFinished )) {
+        this.opts = null
+        this.startedAt = null
+        this.isStart = false;
+        this.canClick = false;
+        switch (this.dialogType) {
+          case 0:
+          this.whichDialog = 0;
+          break;
+          case 1:
+            this.whichDialog = 1;
+          break;
+          default:
+            this.whichDialog = 2;
+          break;
+        }
+        Indicator.open({
+          text:".....",
+          spinnerType:'fading-circle'
+        });
+        setTimeout(()=>{
+          Indicator.close();
+          this.showDialog = true;
+        },1000);
+      } else {
+        next( this.animate )
+      }
+    },
+    HowToGetChances(){
+      try {
+        window.heg.trackEvent("Ac_App_1stanniversary_lottery_howtoearn");
+      } catch (error) {}
+      this.whichDialog = 2;
+      this.showDialog = true;
+    },
+    Confirm(){
+      this.showDialog = false;
+    },
+    closeDialog(){
+      this.showDialog = false;
+    },
+    goDetails(){
+      try {
+        window.heg.trackEvent("Ac_App_1stanniversary_lottery_T&C");
+      } catch (error) {}
+      this.$router.push('/anniversaryIntroduce');
+    },
+    goPrize(){ 
+      if(!this.ifLogin){
+        try {
+          window.heg.nativeSignIn();
+        } catch (error) {
+          this.$router.push("/login");
+        }
+      }else {
+        try {
+          window.heg.trackEvent("Ac_App_1stanniversary_lottery_myprizes");
+        } catch (error) {}
+        this.$router.push('/anniversaryPrize')
+      }
+    },
+    startGame(){
+      let that = this;
+      let url = DomainManager.startLottery();
+      this.$axios.get(url).then(res =>{
+        if(res.succ){
+          that.isStart = true;
+          that.canClick = true;
+          if(res.data.remaining > 0){
+            that.userInfo.chances = res.data.remaining;
+          }else{
+            that.userInfo.chances = 0;
+          }
+          that.userInfo.prize = res.data.level;
+          that.userInfo.isWin = res.data.win;
+          that.userInfo.msg = res.data.msg;
+          that.userInfo.winImg = res.data.winImg;
+          that.userInfo.prizeName = res.data.name;
+          if (this.opts) {
+            return
+          }
+          let type = [],a = [1,2,3];
+          this.opts = this.slots.map( (data, i) => {
+            const slot = this.$refs.slots[i];// map(function(){})利用map便利slots的每一个选项组,最终得到return的返回值
+            // const choice = Math.floor( Math.random() * data.items.length );// 随机生成一个[0,data.items.length]的整数(floor向下取整)
+            if(this.userInfo.isWin){
+              this.dialogType = 1
+              var choice = this.userInfo.prize-1;
+              type.push(choice);
+            }else{
+              this.dialogType = 0
+              var choice = Math.floor( Math.random() * data.items.length );
+              type.push(choice);
+              if(type[0] == type[1] && type[0] == type[2] && type[1]  == type[2]){
+                choice += a[i];
+                type = [1,2,3];
+              }
+            }
+            const opts = {
+              el: slot.querySelector('.slot__wrap'),//指向奖项元素的父级;
+              finalPos: choice * 54,// 54为每一个奖品滚动标签的高度;
+              startOffset:540 + Math.random() * 500 + i * 500,
+              height: data.items.length * 54,
+              duration: 3000 + i * 700, 
+              isFinished: false,
+            }
+            return opts
+          })
+          next(this.animate);
+        }else{
+          console.log(res.msg)
+        }
+        
+      }).catch(err => {
+        console.log(err);
+      })
+    },
+    goToShake(){
+      this.$router.push('/shake');
+    },
+    onReceviedUuid(uuid) {
+      CookieUtil.removeItem("uuid");
+      CookieUtil.setItem("uuid", uuid);
+      this.ifLogin = true;
+      return "1";
+    },
+  }
+}
+</script>
+<style lang="less" scoped>
+#anniversary{
+  .header {
+    background: #0b9d78;
+    height:7.2%;
+    .flight_logo {
+      width: 6.4rem;
+      margin-left: -1rem;
+    }
+  }
+  .content{
+    height:100%;
+    .marTop{height:7.2%;}
+    .section1{
+      height:100%;
+      overflow: hidden;
+      .game{
+        padding-top:3rem;
+        height:100%;
+      }
+      .huawei{padding-top:1.5rem;}
+      .IOStop1{padding-top:0rem;};
+      .IOStop2{padding-top:2rem;};
+      .game::after{
+        display:block;
+        content:"";
+        clear: both;
+      }
+      img{
+        width: 100%;
+        height:auto;
+      }
+      .gameImg{
+        margin:auto;
+      }
+      .gameImg1{
+        width:328px;
+        position: relative;
+        margin:auto;
+        .row{
+          width:62px;
+          height:82px;
+          overflow: hidden;
+          position: absolute;
+          top: 145px;
+          left:40px;
+          .slot__wrap{font-size:0;}
+          .slot__item {
+            width:50px;
+            height:25px;
+            line-height: 25px;
+            margin:28px auto 29px;
+            padding:0 6px;
+            img{
+              width:50px;
+              height:24px;
+            }
+          }
+        }
+        .row2{
+          left:114px;
+        }
+        .row3{
+          left:191px;
+        }
+      }
+      .gameImg2{
+        width:37.5px;
+        position: absolute;
+        right:8px;
+        top:50px;
+        cursor: pointer;
+      }
+      .gameImg22{
+        width:37.5px;
+        position: absolute;
+        right:8px;
+        top:138px;
+        cursor: pointer;
+      }
+      .gameImg3{
+        width:257px;
+        height:45px;
+        button{
+          cursor: pointer;
+          img{
+            height: 100%;
+          }
+        }
+      }
+      .IOSbtn{
+        width:220px;
+      }
+      .gameUser{
+        p:nth-child(1){
+          color:#fff;
+          font-size:0.68rem;
+          line-height:0.962rem;
+          padding:0.6rem 0 0.25rem;
+          span{
+            font-size:0.512rem;
+          }
+        }
+        p:last-child{
+          color:#fff;
+          font-size:0.512rem;
+          line-height:0.705rem;
+          opacity: 0.5;
+          padding-bottom:0.5rem;
+          cursor: pointer;
+        }
+        p.iosP{padding:0;}
+      }
+      .gameImg4{
+        width:250px;
+        padding-top:0.5rem;
+        span{
+          color:#fff;
+          font-size:16px;
+          letter-spacing: 1.2px;
+          // line-height: 0.855rem;
+          cursor: pointer;
+        }
+      }
+      .IOSli{padding-top:0;}
+    }
+    .msiteHeight{height:92.8%;}
+  }
+  .dialog{
+    width: 100%;
+    height:100%;
+    position: absolute;
+    background: rgba(0,0,0,0.5);
+    top:0;
+    left: 0;
+    .icon0{
+      display: none;
+      width:0.98rem;
+      height:0.98rem;
+      position: absolute;
+      top:10%;
+      right:5%;
+      cursor: pointer;
+      img{
+        width: 100%;
+        height:100%;
+      }
+    }
+    .alertPrize{
+      padding:0 1.2rem;
+      position: absolute;
+      background: #FAFAFA;
+      border-radius: 7px;
+      width: 62%;
+      height:54%;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      margin:auto;
+      li{margin:1rem auto 0;}
+      li:nth-child(1){
+        color: #CC2232;
+        letter-spacing: 0;
+        font-size: 0.769rem;
+        font-weight: bolder;
+      }
+      li:nth-child(2){
+        width:5.9rem;
+        height:5.9rem;
+        padding:0.5rem 0.5rem;
+        border:1px solid #ccc;
+        border-radius:3px;
+        img{
+          width:100%;
+          height:100%;
+        }
+      }
+      li:nth-child(3){
+        font-size: 0.6rem;
+        color: #333333;
+        border-bottom:1px solid #ddd;
+        margin:0;
+        padding:0.5rem 0;
+      }
+      li:last-child{
+        width: 85%;
+        height:1.45rem;
+        line-height:1.45rem;
+        background: #CC2232;
+        border-radius: 3px;
+        button{
+          font-size:0.68rem;
+          color: #FFFFFF;
+          width: 100%;
+          height:100%;
+        }
+      }
+      
+    }
+    .alertPrize0{
+      li:nth-child(1){
+        color:#000;
+      }
+      li:nth-child(2){
+        border:none;
+      }
+    }
+    .alertPrize2{
+      padding:0 0.5rem;
+      position: absolute;
+      background: #FAFAFA;
+      border-radius: 7px;
+      text-align: left;
+      width: 71%;
+      height:50%;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      margin:auto;
+      .p2-title{
+        letter-spacing: 0;
+        font-size: 0.769rem;
+        font-weight: bolder;
+        padding:1rem 0 0.5rem;
+      }
+      .chances{
+        li{
+          font-size:0.534rem;
+          line-height: 1.2rem;
+          letter-spacing:-0.1px;
+        }
+      }
+      .line2{
+        width: 95%;
+        border-bottom:1px solid #ddd;
+        margin:0 auto;
+        padding:0.5rem 0;
+      }
+      .confirm{
+        width: 85%;
+        height:1.45rem;
+        line-height:1.45rem;
+        background: #CC2232;
+        border-radius: 3px;
+        margin:1rem auto 0;
+        text-align: center;
+        button{
+          font-size:0.68rem;
+          color: #FFFFFF;
+          width: 100%;
+          height:100%;
+        }
+      }
+    }
+    .chances-end{
+      margin: 1.5rem 0 0.5rem;
+      li{
+        font-size:0.534rem;
+        line-height: 1.2rem;
+        letter-spacing:-0.1px;
+      }
+    }
+    .IOS5s{
+      .chances li{letter-spacing:-0.5px;}
+    }
+    .wideScreen{
+      height:55%;
+      .chances li{letter-spacing:-0.5px;}
+    }
+    .wideScreen1{
+      height:60%;
+      .chances li{letter-spacing:-0.5px;}
+    }
+    .wideScreen2{
+      height:60%;
+      .chances li{letter-spacing:-0.5px;}
+    }
+    .endsDialog{height:40%;}
+    .endIOS5s{
+      height:50%;
+    }
+  }
+}
+</style>

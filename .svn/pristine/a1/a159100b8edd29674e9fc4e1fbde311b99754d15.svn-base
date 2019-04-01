@@ -1,0 +1,394 @@
+<template>
+  <div id="grab-share">
+    <div class="content" :class="{autoheight:goingList.length < 4 || pastList.length < 4}">
+      <div class="top-banner" :style="topBanner">
+        <div class="top-div1" @click="showTerms">T &amp; C</div>
+        <div class="top-div2">
+          <p>Grab Additional Cashback on your booking</p>
+          <p>Total earning</p>
+          <p class="flex"><span class="rs">Rs</span><number-scroll :time="1" :value="totalEarning"></number-scroll></p>
+          <p><span>{{isLogin?cash.heplers:0}}</span> Helps</p>
+        </div>
+      </div>
+      <div class="share-login" v-if="!isLogin">
+        <div class="login-box">
+          <button @click="SignIn">Sign In</button>
+          <p>Check Your Ongoing Cashbacks</p>
+        </div>
+      </div>
+      <div class="share-login" v-show="isLogin && noCashback">
+        <div class="login-box login-box1 flex align-items-center space-between">
+          <p >No cashback received</p>
+          <div class="login-wallet" @click="goWallet" >My Wallet 
+            <i class="iconfont icon-emptydown" id="jump-arrow"></i>
+          </div>
+        </div>
+      </div>
+      <div class="share-login" v-show="isLogin && !noCashback">
+        <div class="login-box login-box1 flex align-items-center space-between">
+          <p>Last received {{cash.time}} <span style="margin-left:0.2rem;">+</span> <span class="rs">Rs</span><span>{{cash.lastEarning}}</span></p>
+          <div class="login-wallet" @click="goWallet" >My Wallet 
+            <i class="iconfont icon-emptydown" id="jump-arrow"></i>
+          </div>
+        </div>
+      </div>
+      <share-part1 :isLogin="isLogin" :goingList="goingList" :pastList="pastList" :noRecord1="noRecord1" :noRecord2="noRecord2"></share-part1>
+    </div>
+  </div>
+</template>
+<script>
+import sharePart1 from './child/share-part1.vue';
+import numberScroll from "../../components/number-scroll/number-scroll.vue";
+import { CookieUtil } from "../../models/utils";
+import { User } from "../../models/user";
+import { DomainManager } from "../../config/DomainManager.js";
+import { Toast, Indicator } from 'mint-ui';
+import { AppBridge } from '../../models/appbridge/appbridge.js';
+import { Activity } from '../../models/activity';
+export default {
+  components:{
+    sharePart1,
+    numberScroll,
+  },
+  data(){
+    return {
+      model:0,
+      timer:null,
+      noRecord1:false,
+      noRecord2:false,
+      isShowBtn: false,
+      noCashback:false,
+      contentMargin:false,
+      isLogin:CookieUtil.hasItem('uuid'),
+      cash:{},
+      goingList:[],
+      pastList:[],
+      topBanner:{
+        "background-color":"#fff",
+        "background-image":'url('+require('../../assets/images/grabcashback/grab_activity_top.png')+')',
+        "background-size":"100% 100%",
+        "background-repeat":"no-repeat",
+        "background-position":"center top"
+      },
+      imgGroups:{
+        gold:require('../../assets/images/grabcashback/grab_share_gold.png'),
+      },
+      months: [
+        "Jan","Feb","Mar","Apr","May","Jun",
+        "Jul","Aug","Sep","Oct","Nov","Dec"
+      ]
+    }
+  },
+  computed: {
+    totalEarning(){
+      return this.isLogin?this.cash.totalEarning:'0.00';
+    }
+  },
+  methods:{
+    checkType() {
+      let type = AppBridge.device;
+      if(type == 1){
+        this.model = 2;
+      }else if(type == 2){
+        this.model = 3;
+      }else{
+        this.model = 0;
+      }
+    },
+    showTerms(){
+      try {
+        window.heg.trackEvent("AC_Grab_landing_T&C");
+      } catch (error) {
+        if(window.WebViewJavascriptBridge){
+          this.$bridge.callhandler("trackEvent","AC_Grab_landing_T&C");
+        }
+      }
+      this.$router.push('/grab-terms');
+    },
+    SignIn(){
+      AppBridge.nativeSignIn("in",this);
+    },
+    goWallet(){
+      try {
+        window.heg.trackEvent("AC_Grab_landing_Wallet");
+      } catch (error) {
+        if(window.WebViewJavascriptBridge){
+          this.$bridge.callhandler("trackEvent","AC_Grab_landing_Wallet");
+        }
+      }
+      if(!this.isLogin){
+        this.nativeSignIn();
+      }else{
+        AppBridge.goWalletPage(this);
+      }
+    },
+    getPageData(){
+      Indicator.open({
+        spinnerType: 'fading-circle'
+      });
+      Activity.grabShareListHeader(this).then(res => {
+        Indicator.close();
+        if(res.succ && res.code == 200){
+          let time = this.countDown(res.data, 'top',);
+          this.$set(res.data,'time',time);
+          this.cash = res.data;
+        }else{
+          Toast(res.msg)
+        }
+      }).catch(err => {
+        Indicator.close();
+        console.log(err);
+      })
+    },
+    getPageData2(){
+      Activity.grabShareList(this).then(res => {
+        Indicator.close();
+        if(res.succ){
+          if(res.data.past.length < 1){
+            this.noRecord2 = true;
+          }else{
+            this.noRecord2 = false;
+            res.data.past.forEach((e,i)=>{
+              let time = new Date(e.expirydate);
+              let y = time.getFullYear();
+              let m = (time.getMonth() + 1) > 9?time.getMonth() + 1:'0'+(time.getMonth() + 1);
+              let d = time.getDate() > 9?time.getDate():'0'+time.getDate();
+              let h = time.getHours()> 9?time.getHours():'0'+time.getHours();
+              let mm = time.getMinutes()> 9?time.getMinutes():'0'+time.getMinutes();
+              // let s = time.getSeconds();
+              let t = h +':'+mm+' '+d+' '+this.months[Number(m)-1]+', '+y;
+              this.$set(res.data.past[i],'time',t);
+            });
+            this.pastList = res.data.past;
+          }
+          if(res.data.ongoing.length < 1){
+            this.noRecord1 = true;
+          }else{
+            this.noRecord1 = false;
+            this.goingList = res.data.ongoing;
+            this.goingList.forEach((e,i)=>{
+              let rate = (e.obtainAmount / e.totalAmount) * 100;
+              if(e.obtainAmount >=  e.totalAmount || e.obtainNum >= e.totalNum){
+                rate = 100;
+              }
+              if(e.obtainNum >= e.totalNum){
+                this.clearInterval(this.timer);
+              }
+              this.$set(e,'rate',parseInt(rate));
+              this.datetime_to_unix(e,i);
+            });
+          }
+        }else{
+          this.noRecord1 = true;
+          this.noRecord2 = true;
+        }
+      }).catch(err => {
+        Indicator.close();
+        console.log(err);
+      })
+    },
+    countDown(cha_timestamp, who, i){
+      if(who == 'top'){
+        let time = new Date(cha_timestamp.lastEffectiveTime);
+        let y = time.getFullYear();
+        let m = (time.getMonth() + 1) > 9?time.getMonth() + 1:'0'+(time.getMonth() + 1);
+        let d = time.getDate() > 9?time.getDate():'0'+time.getDate();
+        let h = time.getHours()> 9?time.getHours():'0'+time.getHours();
+        let mm = time.getMinutes()> 9?time.getMinutes():'0'+time.getMinutes();
+        let t = h +':'+mm+' '+d+' '+this.months[Number(m)-1];
+        if(!cha_timestamp.lastEffectiveTime){
+          this.noCashback = true;
+          return 0;
+        }else{
+          return t;
+        }
+        return t;
+      }else if(who == 'bottom'){
+        if(cha_timestamp <= 0){
+          this.getPageData();
+          this.getPageData2();
+          this.cha_timestamp = 0;
+          this.$set(this.goingList[i],'time','00h 00m')
+          clearInterval(this.timer);
+        }else{
+          var sy_day = parseInt(cha_timestamp/(3600*24));
+          var sy_day2 = sy_day > 9?sy_day:'0' + sy_day;
+          var sy_hour = parseInt((cha_timestamp-sy_day*3600*24)/3600);
+          var sy2_hour = sy_hour > 9 ? sy_hour : '0' + sy_hour;
+          var sy_hours = parseInt((cha_timestamp)/3600) > 9?parseInt((cha_timestamp)/3600):'0'+parseInt((cha_timestamp)/3600);
+          var sy_min = parseInt((cha_timestamp-sy_hour*3600-sy_day*24*3600)/60);
+          var sy2_min = sy_min > 9 ? sy_min : '0' + sy_min;
+          var sy_miao = cha_timestamp-sy_day*3600*24-sy_hour*3600-sy_min*60;
+          var sy2_miao = sy_miao > 9 ? sy_miao : '0' + sy_miao;
+          this.$set(this.goingList[i], 'time', sy_hours+'h '+sy2_min+'m ');
+        }
+      }
+    },
+    getGMTtime(d){
+      let loaclTime = d.getTime();
+      let localOffset = d.getTimezoneOffset() * 60000;
+      let utc = loaclTime + localOffset;
+      let offset = 5.5;
+      let bombay = utc + (3600000*offset);
+      return parseInt(bombay/1000);
+    },
+    datetime_to_unix(who,i){
+      let d = new Date(who.currentDate);
+			let d2 = new Date(who.expirydate);
+			var timestamp_set = this.getGMTtime(d2);;
+      var timestamp = this.getGMTtime(d);
+      var cha_timestamp = timestamp_set-timestamp;
+      this.countDown(cha_timestamp,'bottom', i);
+
+      this.timer = setInterval(()=>{
+        cha_timestamp--;
+        this.countDown(cha_timestamp,'bottom', i);
+      },1000);
+    }
+  },
+  async created() {
+    this.isShowBtn = await AppBridge.getNativeSource(this);
+    this.contentMargin = this.isShowBtn;
+    let id = await AppBridge.getNativeUuid(this);
+    window.onReceviedUuid = this.onReceviedUuid;
+    if(id){
+      CookieUtil.removeItem("uuid");
+      CookieUtil.setItem("uuid",id);
+      this.isLogin = true;
+    }else{
+      if(CookieUtil.hasItem('uuid')){
+        this.isLogin = true;
+      }else{
+        CookieUtil.removeItem("uuid");
+        this.isLogin = false;
+      }
+    }
+    this.checkType();
+    User.findSms(this).then(res => {
+			res.list.forEach(item => {
+				this.phoneCode = res.list;
+			});
+    });
+    if(this.isLogin){
+      this.getPageData();
+      this.getPageData2();
+    }else{
+      this.noRecord1 = false;
+      this.noRecord2 = false;
+    }
+  },
+  beforeRouteLeave (to, from, next) {
+    clearInterval(this.timer);
+    next();
+  }
+}
+</script>
+<style lang="less" scoped>
+#grab-share{
+  .content{
+    background: #eee;
+    .top-banner{
+      height: 13.24rem;
+      overflow: hidden;
+      .top-div1{
+        width:3.2rem;
+        height:1.02rem;
+        line-height:1.02rem;
+        opacity: 0.9;
+        float: right;
+        color: #666666;
+        font-size:0.598rem ;
+        margin:1.135rem 0 0.641rem;
+        background: #FFFFFF;
+        cursor: pointer;
+        border-radius:0.51rem 0 0 0.51rem;
+      }
+      .top-div2{
+        width: 9.8rem;
+        padding: 2.82rem 0.769rem 0;
+        text-align: left;
+        color:#fff;
+        p:nth-child(1){
+          font-size:0.769rem;
+          line-height:0.894rem;
+        }
+        p:nth-child(2){
+          font-size:0.598rem;
+          line-height:0.706rem;
+          padding:0.641rem 0 0.2rem;
+        }
+        p:nth-child(3){
+          font-size:1.836rem;
+          line-height:1.856rem;
+          font-weight: bold;
+          padding-bottom:0.427rem;
+          span{font-weight: bold;}
+        }
+        p:last-child{
+          font-size:0.598rem;
+          line-height:0.706rem;
+          opacity: 0.6;
+        }
+      }
+    }
+    .share-login{
+      height:2rem;
+      position: relative;
+      z-index:10px;
+      .login-box{
+        width:14.7rem;
+        height:2.56rem;
+        position: absolute;
+        top:-1.5rem;
+        left: 0;
+        right: 0;
+        margin:auto;
+        background: #fff;
+        border-radius:4px;
+        box-shadow: 0 3px 4px 0 rgba(0,0,0,0.20);
+        button{
+          width:3.84rem;
+          height: 0.982rem;
+          font-size: 0.512rem;
+          background:#ED8649;
+          color:#fff;
+          margin:0.385rem auto 0.2rem;
+          border-radius: 3px;
+          cursor: pointer;
+        }
+        p{
+          font-size: 0.512rem;
+          color: #666666;
+          line-height: 0.62rem;
+        }
+      }
+
+      .login-box1{
+        width:14.1rem;
+        padding:0 0.3rem;
+        p{color: #333;}
+        span{
+          color: #0970E4;
+          font-size: 0.598rem;
+          font-weight: bold;
+        }
+        .login-wallet{
+          font-size: 0.598rem;
+          cursor: pointer;
+          .icon-emptydown{
+            display: inline-block;
+            font-size: 0.7rem;
+            color:#999;
+            transform: rotate(-90deg);
+            vertical-align: text-bottom;
+            margin-left: 0.25rem;
+          }
+        }
+      }
+    }
+  }
+  .autoheight{
+    height:100%;
+  }
+}
+</style>

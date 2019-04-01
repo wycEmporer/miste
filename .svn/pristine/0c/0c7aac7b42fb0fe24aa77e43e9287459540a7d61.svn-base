@@ -1,0 +1,42 @@
+<template>
+	<div class="goldb">
+		<div class="content">
+			<p>
+				&bull; In the event of a Booking Cancellation, Only Happy Gold utilized in the booking would be refunded.
+			</p>
+			<p>
+				&bull; If the payment is done using Happy Wallet and Cash, cancellation charges, if any, will be deducted from the total refund due on priority basis first from Cash and then from Happy Wallet.
+			</p>
+			<p>
+				&bull; Happy Wallet will be credited to the same account through which you are logged in while making the booking on HappyEasyGo.com.
+			</p>
+			<p>
+				&bull; In case of cancellation, the refund amount to be paid to the customer would be the amount after deducting the Happy Wallet value. For example, if Booking is done for an amount of Rs.1000 with 20% Happy Wallet. In case there is a cancellation with full refund, only Rs.800 will be returned to the bank while the Rs.200 will remain in Happy Wallet balance. This Rs.200 cannot be refunded to the bank.
+			</p>
+			<p>
+				&bull; In the event that the Customer opts for a refund in the form of Happy Wallet, the Customer MAY receive bonus Happy Wallet in accordance with the promotional offers available from time to time.
+			</p>
+			<p>
+				&bull; In addition to the above, refund is also subject to HappyEasyGo general Terms & Conditions.
+			</p>
+		</div>
+	</div>
+</template>
+<style lang='less' scoped>
+.goldb {
+	.content {
+		font-size: 0.52rem;
+		color: #666;
+		border-bottom: 1px solid #eee;
+		padding-top: 0.4rem;
+		p {
+			text-align: left;
+			margin: 0.4rem 0;
+			line-height: 0.769rem;
+		}
+		.gray {
+			color: #b0b0b0;
+		}
+	}
+}
+</style>

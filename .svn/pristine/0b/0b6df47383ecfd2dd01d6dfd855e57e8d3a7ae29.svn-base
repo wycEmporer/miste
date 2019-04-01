@@ -1,0 +1,237 @@
+<template>
+	<div class="o-wrapper">
+		<div class="offer">
+			<head-top class="header">
+				<i slot="left" class="iconfont icon-back"></i>
+				<span slot="title" class="title">{{heads.title}}</span>
+				<i slot="right" class="sp iconfont icon-back"></i>
+			</head-top>
+			<div class="polyfill"></div>
+			<div class="offer-cont" v-for="(item,index) in offers" v-show="item.use == 1" :key="index">
+				<div class="offer-list">
+					<div class="offer-img">
+						<img @click="jumpDetail(item)" :src="item.url" alt="">
+					</div>
+					<div class="offer-info flex">
+						<div class="left">
+							<h2>
+								<span class="title">
+									{{item.title}}
+								</span>
+							</h2>
+						</div>
+						<div class="right" v-show="false">
+							<div class="log">
+								<span></span>
+								<span></span>
+							</div>
+						</div>
+					</div>
+					<div class="offer-more ">
+						<div class="rows flex space-between align-items-center">
+							<span v-if="item.endDate != ''">
+								{{getDate(item.startDate)}} to {{getDate(item.endDate)}}
+							</span>
+							<span v-else>
+								{{getDate(item.startDate)}}
+							</span>
+							<a @click="jumpDetail(item)">View Detail</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</template>
+<script>
+import headTop from "../../components/head/head.vue";
+import { User } from "../../models/user";
+import { Indicator } from "mint-ui";
+
+export default {
+  components: {
+    headTop
+  },
+  data() {
+    return {
+      heads: {
+        img: require("../../assets/images/prevs.png"),
+        title: "Offers"
+      },
+      offerCont: [
+        {
+          img: require("../../assets/images/offer/Offers_07.png"),
+          tit1: "Invite your Friends By our Eeferral Program",
+          tit2: "Earn UP to RS. 9000",
+          timer: "2017.06.30-2017.7.31",
+          href: "/wallet"
+        }
+      ],
+      offers: [],
+      startTime: "",
+      endTime: "",
+      imgUrl: "",
+      model: 0
+    };
+  },
+  methods: {
+    jumpDetail(item){
+      this.$router.push(item.href);
+      this.$router.options.routes.forEach((e,i)=>{
+        if(item.href == e.path){
+          // console.log(e);
+        }
+      });
+    },
+    getDate(nd) {
+      var date = new Date(nd).toString();
+      var d = nd.split("-")[2];
+      var m = date.split(" ")[1];
+      var y = nd.split("-")[0];
+      return d + " " + m + " " + y;
+    },
+    checkType() {
+       try {
+        let typeA = typeof window.heg.getNativeSource() === "string"
+          ? JSON.parse(window.heg.getNativeSource())
+          : window.heg.getNativeSource();
+        this.model = Number(typeA.deviceType) + 1;
+      } catch (e) {
+        this.model = 0;
+      }
+      this.getADVlist();
+    },
+    getADVlist() {
+      var parm = "type=13&device=" + this.model+"&businessType=1";
+
+      User.advList(this, parm).then(res => {
+        if (res.success) {
+          res.list.sort((a, b) => {
+            return a.sort > b.sort;
+          });
+          this.offers = res.list;
+          Indicator.close();
+        }
+      });
+    }
+  },
+  mounted() {
+    Indicator.open({
+      spinnerType: "fading-circle"
+    });
+    this.checkType();
+  }
+};
+</script>
+<style lang="less" scoped>
+.noOffer {
+  text-align: center;
+  padding: 0 0.64rem;
+  p {
+    font-size: 0.64rem;
+  }
+}
+
+.offer {
+  // background-color: #efeff4;
+  margin-top:0.2rem;
+  height: 100%;
+  .header {
+    background-color: #0b9d78;
+    .title {
+      color: #fff;
+      font-size: 0.769rem;
+    }
+    .sp {
+      opacity: 0;
+    }
+  }
+  .polyfill {
+    width: 100%;
+    height: 2.68rem;
+  }
+
+  .offer-cont {
+    padding: 0 0.64rem 0.64rem 0.64rem; // background: #efeff4;
+    .offer-list {
+      background-color: #fff; // border-radius: 0.4rem;
+      border: 1px solid #dddddd;
+    }
+    .offer-img {
+      padding: 0.64rem 0.64rem 0 0.64rem;
+      img {
+        width: 100%;
+      }
+    }
+    .offer-info {
+      padding-top: 0.2rem;
+      padding-bottom: 0.4rem;
+      justify-content: space-between;
+      .left {
+        text-align: left;
+        padding-left: 0.64rem;
+        h2 {
+          font-size: 0.6rem;
+          color: #333;
+          text-align: left;
+          line-height: 0.8rem;
+        }
+        h3 {
+          font-size: 0.56rem;
+          color: #666;
+          font-weight: normal;
+          line-height: 0.8rem;
+          text-align: left;
+        }
+        span {
+          font-size: 0.5rem;
+          color: #999;
+          line-height: 0.68rem;
+          display: block;
+        }
+        .title {
+          font-size: 0.64rem;
+          color: #333;
+        }
+      }
+      .right {
+        .log {
+          padding-right: 0.4rem;
+          span {
+            width: 0.72rem;
+            height: 0.72rem;
+          }
+          span:nth-of-type(1) {
+            background: url("../../assets/images/offer/ic-f.png") center
+              no-repeat;
+            background-size: 0.72rem;
+          }
+          span:nth-of-type(2) {
+            background: url("../../assets/images/offer/ic-t.png") center
+              no-repeat;
+            background-size: 0.72rem;
+          }
+        }
+      }
+    }
+    .offer-more {
+      padding: 0 0.64rem 0.64rem 0.64rem;
+      text-align: left;
+      span {
+        font-size: 0.6rem;
+        color: #999;
+      }
+      a {
+        color: #fff;
+        font-size: 0.5rem; // width: 5.34rem; // hei
+        padding: 0.3rem 0.5rem; // border-radius: 4px;
+        background-color: #ffad3d;
+        display: block;
+      }
+      .lapse {
+        background: #ccc;
+      }
+    }
+  }
+}
+</style>

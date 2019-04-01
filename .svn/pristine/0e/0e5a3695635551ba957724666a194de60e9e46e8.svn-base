@@ -1,0 +1,1247 @@
+<template>
+	<div class="wrapper">
+		<searchCity @getDepartAirport="getDepartAirport" @getArriveAirport="getArriveAirport" @closeS="closeS" :showDepart="showDepart" :showSearch="showSearch">
+		</searchCity>
+
+		<div class="home-wrapper" v-show="!showSearch" @touchstart="touchstart" @touchmove="touchend">
+			<div class="home-content">
+				<transition enter-active-class="slideInLeft" leave-active-class="slideOutLeft">
+					<home-menu @closeMenu="closeMenu" @isLogin="isLogin" class="animated menu" v-if="showMenu" :isQQ="isQQ"></home-menu>
+				</transition>
+				<transition enter-active-class="fadeIn" leave-active-class="fadeOut">
+					<login class="animated" v-if="showLogin" @hideLog="hideLog"></login>
+				</transition>
+				<transition enter-active-class="fadeIn" leave-active-class="fadeOut">
+					<div class="mark" v-show="showmark"></div>
+				</transition>
+				<transition enter-active-class="fadeInUp" leave-active-class="fadeOutDown">
+					<calendar :limit='limit' class="animated" v-if="showCalendar" @getVal="getVal"></calendar>
+				</transition>
+
+				<head-top class="header" :operate="showM">
+					<i slot="left" class="top_icon iconfont icon-menu"></i>
+					<img slot="title" class="flight_logo" :src="require('../../../assets/images/home/home-logo.png')">
+					<img slot="right" class="text" src="../../../assets/images/home/offer.png" @click="$router.push('/offer')">
+				</head-top>
+        <div class="tab flex space-around align-items-center" style="height:60px">
+          <div class="tab-item" v-for="tab in tabs" :class="{active: currentTab === tab}" @click="currentTab = tab; emitCustomEvent(tab, 'FlightAndHotel')" :key="tab">
+            <div class="img" :class="tab"></div>
+            <div class="type fontSz12">{{tab}}</div>
+          </div>
+        </div>
+        <keep-alive>
+          <div v-if="currentTab === 'Flights'">
+            <div class="trip-control">
+              <div class="trip-control-btn flex">
+                <div class="btn-wrap flex align-items-center" @click="showOne" :class="{active:isOne}">
+                  <i class="radio"></i> <span class="fontSz12 trip-type">One Way</span>
+                </div>
+                <div class="btn-wrap flex align-items-center" @click="showRound" :class="{active:isRound}">
+                  <i class="radio"></i> <span class="fontSz12 trip-type">Round Trip</span>
+                </div>
+              </div>
+            </div>
+            <div class="content">
+              <div class="content-main">
+                <div class="searchCity flex space-between align-items-end">
+                    <div class="depart main-p-left" @click="openDepart">
+                      <span>{{departAirport&&departAirport.cityName}}</span>
+                      <span>{{departAirport&&departAirport.iataCode}}</span>
+                    </div>
+                  <div class="exchange" @click="exchangeCity">
+                    <img :src="require('../../../assets/images/home/exchange.png')" alt="">
+                  </div>
+                  <div class="arrive main-p-right" @click="openArrive">
+                      <span>{{arriveAirport&&arriveAirport.cityName}}</span>
+                      <span>{{arriveAirport&&arriveAirport.iataCode}}</span>
+                    </div>
+                  </div>
+                  <div class="calendar flex space-between align-items-end">
+                  <div class="depart main-p-left">
+                    <span>Depart</span>
+                    <span v-html="departTime" @click="openPickerFrom"></span>
+                    </div>
+                  <div class="line"></div>
+                  <div class="arrive main-p-right" v-show="isRound">
+                    <span>Return</span>
+                    <span v-html="returnTime" @click="openPickerTo"></span>
+                    </div>
+                  </div>
+                <div class="passenger flex align-items-end">
+                  <div class="traveller-info">
+                    <span class="title main-p-left">Travellers</span>
+                    <div class="ageTips flex space-between">
+                      <span></span>
+                      <span>2-11y</span>
+                      <span>below 2y</span>
+                  </div>
+                    <div class="traveller-cont flex space-between">
+                      <div class="select-wrap spl">
+                        <span class="main-p-left">
+                          Adults {{passengersNum.adults}}
+                        </span>
+                        <select name="adults" id="adults-num" v-model="passengersNum.adults">
+                          <option :value="n" v-for="n in 9" :key="n.id">
+                            {{n}}
+                          </option>
+                        </select>
+                      </div>
+                      <div class="select-wrap">
+                        <span>
+                          Children {{passengersNum.children}}
+                        </span>
+                        <select name="children" id="children-num" v-model="passengersNum.children">
+                          <option :value="n" v-for="n in childrenLimit" :key="n.id">
+                            {{n}}
+                          </option>
+                        </select>
+                      </div>
+                      <div class="select-wrap spr">
+                        <span class="main-p-right">
+                          Infants {{passengersNum.infants}}
+                        </span>
+                        <select name="infants" id="infants-num" v-model="passengersNum.infants">
+                          <option :value="n" v-for="n in infantsLimit" :key="n.id">
+                            {{n}}
+                          </option>
+                        </select>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+                <div class="cabinClass flex space-between align-items-end">
+                  <div class="cabinClass-info">
+                    <div class="cabin-cont main-p-left">
+                      <span>Class</span>
+                      <div class="select-wrap">
+                        <span>{{this.defaultCabinClass}}</span>
+                        <select v-model="defaultCabinClass">
+                          <option v-for="clazz in cabinClasses" :key="clazz.id">{{CabinClassUtil.getClassString(clazz)}}</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="searchFlight flex content-center">
+                  <a href="javascript:;" @click.stop="searchFlight">Search flights</a>
+                </div>
+                <div class="offer-content">
+                  <p class="offer_guaranteed" @click="$router.push('/guaranteed')">
+                      Best Price. Guaranteed on flight you book
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </keep-alive>
+        <keep-alive>
+          <HotelSearch  v-if="currentTab === 'Hotels'"/>
+        </keep-alive>
+			</div>
+
+			<div class="footer-wrapper">
+				<div class="foot-bottom">
+					<p>
+						<span @click="$router.push('/agreement')">T&amp;C</span>
+						<span @click="$router.push('/h5FAQS')">FAQs</span>
+						<!-- <pdf :src='require("../../../assets/termsfile/Happyeasygo-Inland.pdf")'>T &amp; C</pdf> -->
+						<span @click="$router.push('/privacy')">Privacy</span>
+						<span @click="$router.push('/referral')">Refer&amp;Earn</span>
+						<span @click="$router.push('/wallet')">Wallet</span>
+					</p>
+					<p>2016-2018© Happyeasygo Group. All rights reserved.</p>
+				</div>
+			</div>
+			<div class="advBanner">
+				<div class="banner" v-if="showBanner" :class="{'banner':newBottom,'down':oldBottom}">
+					<!-- <img src="../../../assets/images/home/Home-Page_02.png" alt="banner"> -->
+					<span v-if="showBanner" class="close" @click="closeBanner()">x</span>
+					<img :src="mUrl" v-if="mUrl">
+					<a class="downloadApp" @click="goRecharge()"></a>
+				</div>
+				<div class="bottom-banner" v-if="showBottomBanner">
+					<span v-if="showBottomBanner" @click="closeBottomBanner()" class="closeBottomBanner">x</span>
+					<img :src="anUrl" v-if="anUrl">
+					<a class="downloadAndApp" target="_blank" href="https://app.adjust.com/n0xgk1" @click="downloadApp"></a>
+				</div>
+			</div>
+		</div>
+		<div class="mask" style="z-index:16;" v-if="showTips"></div>
+		<div class="tips" style="z-index:16;" v-if="showTips">
+			<div class="tips-group">
+				<p>Dear {{user.firstName}} {{user.lastName}}.</p>
+				<p>Please register your mobile number now to enjoy our sevices.</p>
+			</div>
+			<div class="tips-btn" @click="jumpInfo">
+				OK
+			</div>
+		</div>
+	</div>
+</template>
+<script>
+import headTop from '../../../components/head/head.vue'
+import searchCity from './base/searchcity.vue'
+import { Toast, Indicator } from 'mint-ui';
+import { bus } from '../../../main.js'
+// import localAirportJson from './cityback.json'
+import { User } from '../../../models/user'
+import { loginUserInfo } from '../../../vuex/models/user/XUser.js'
+import { DomainManager } from '../../../config/DomainManager.js'
+import { Silver, Gold } from '../../../models/discount'
+import * as types from '../../../vuex/types/types.js'
+import * as XUser from '../../../vuex/models/user/XUser.js'
+import { FlightOrder, OnewayOrder, RoundTripOrder } from '../../../models/flightorder'
+import { Airport } from '../../../models/airport'
+import { First, PremiumEconomy, Business, Economy, CabinClass } from '../../../models/cabinclass'
+import { CabinClassUtil, AirportSearcher, CookieUtil, SHA2Util, GetFlightOrderUtil } from '../../../models/utils'
+import { Passenger, Adult, Child, Infant, PassengerManager, ContactInfo } from '../../../models/passenger'
+import * as OrderMutaionNames from '../../../vuex/models/flightorder/MutationName.js'
+import * as XFlight from '../../../vuex/models/flight/XFlight.js'
+import { Reg } from '../../../models/utils/Reg'
+import {Pop_in1, Pop_in2, emitCustomEvent} from 'models/utils/adGAEvent';
+
+// function loadLocalStoragedAirorts() {
+// 	let res = [];
+// 	for (let a of localAirportJson) {
+// 		res.push(Airport.getInstanceFromJson(a))
+// 	}
+// 	return res;
+// }
+var ua = navigator.userAgent.toLowerCase();
+function getAirpotByAitaCode(code) {
+	let des;
+	for (let a of _airports) {
+		if (a.iataCode == code) {
+			des = a;
+		}
+	}
+	return des
+}
+// let _airports = loadLocalStoragedAirorts()
+
+export default {
+	components: {
+		headTop,
+		homeMenu: () => import('../../home/child/menu.vue'),
+		login: () => import('../../login/login.vue'),
+    calendar: () => import('../../../components/calendar/calendar.vue'),
+    'HotelSearch': () => import ('./HotelSearch.vue'),
+		searchCity
+	},
+	data() {
+		return {
+      emitCustomEvent,
+      currentTab: 'Flights',
+      tabs:['Flights', 'Hotels'],
+			isQQ:false,
+			showTips: false,
+			showBanner: true,
+			showBottomBanner: true,
+			newBottom: true,
+			oldBottom: false,
+			newBottom: true,
+			oldBottom: false,
+			isOne: true,
+			isRound: false,
+			showHome: false,
+			showMenu: false,
+			showLogin: false,
+			showmark: false,
+			showCalendar: false,
+			showSearch: false,
+			showDepart: true,
+			startY: 0,
+			endY: 0,
+			limit: {
+				minYear: new Date().getFullYear(),
+				minMonth: new Date().getMonth() + 1,
+				minDay: new Date().getDate(),
+				maxYear: new Date().getFullYear() + 1
+			},
+			departDate: new Date(),
+			// returnDate: new Date(new Date().getTime() + 86400000),
+			returnDate: new Date(),
+
+			currentTarget: 'DEPART',
+			perssengers: {
+				adults: [new Adult()],
+				children: [],
+				infants: []
+			},
+			passengersNum: {
+				adults: 1,
+				children: 0,
+				infants: 0
+			},
+			passengersNumArr: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+			adultsNum: 1,
+			CabinClassUtil,
+
+			cabinClasses: [
+				new Economy(),
+				new Business(),
+				new First(),
+				new PremiumEconomy()
+			],
+			defaultCabinClass: "Economy",
+			departAirport: Airport.getInstanceFromJson({airport: "Chhatrapati Shivaji Int'l Airport", city: 'Mumbai', cn: 'India', iata: 'BOM'}),
+			arriveAirport: Airport.getInstanceFromJson({airport: 'Delhi Airport', city: 'Delhi', cn: 'India', iata: 'DEL'}),
+			departCityName: 'Delhi',
+			departIataCode: 'DEL',
+			arriveCityName: 'Mumbai',
+			arriveIataCode: 'BOM',
+			mUrl: '',
+			anUrl: '',
+			user: '',
+			// pdf:require("../../../assets/termsfile/Happyeasygo Inland.pdf"),
+		}
+	},
+	created() {
+		this.loadSearchInfo();
+		let parm2 = 'type=15&device=0&businessType=1';
+		User.advList(this, parm2).then(res => {
+			if (res.success) {
+				this.mHref = res.list[0].href;
+				this.mUrl = res.list[0].url;
+				this.anUrl = res.list[1].url;
+			}
+		}).catch(err => {
+			console.log(err.msg)
+		})
+	},
+	computed: {
+		childrenLimit() {
+			if (this.passengersNum.adults + this.passengersNum.children > 9) {
+				this.passengersNum.children = 0;
+			}
+			return this.passengersNumArr.slice(0, 10 - this.passengersNum.adults);
+		},
+		infantsLimit() {
+			if (this.passengersNum.infants > this.passengersNum.adults) {
+				this.passengersNum.infants = 0;
+			}
+			return this.passengersNumArr.slice(0, this.passengersNum.adults + 1);
+		},
+		departTime: {
+			get() {
+				let arr = this.departDate.toString().split(" ");
+				let arr2 = new Date(this.departDate);
+				arr = arr.slice(0, 1).join() + ", " + arr.slice(2, 3).join() + " " + arr.slice(1, 2).join() + ", " + arr.slice(3, 4).join();
+				arr2 = arr2.getFullYear() + "-" + arr2.getMonth() + 1 + "-" + arr2.getDate();
+				return arr;
+			},
+			set(arr) {
+				this.departDate = arr;
+			}
+		},
+		returnTime: {
+			get() {
+				let now = this.returnDate
+				let arr = now.toString().split(" ");
+				let arr2 = new Date(this.returnDate);
+				arr = arr.slice(0, 1).join() + ", " + arr.slice(2, 3).join() + " " + arr.slice(1, 2).join() + ", " + arr.slice(3, 4).join();
+				arr2 = arr2.getFullYear() + "-" + arr2.getMonth() + 1 + "-" + arr2.getDate();
+				return arr;
+			},
+			set(arr) {
+				this.returnDate = arr;
+			}
+		},
+		mSelectedCabinClass() {
+			return CabinClassUtil.getClassObj(this.defaultCabinClass);
+		}
+	},
+	updated () {
+		// console.log(ua);
+		if(ua.indexOf("mqqbrowser")> -1 && ua.indexOf(" qq") < 0){
+			this.isQQ = true;
+		}
+	},
+	methods: {
+		jumpInfo(){
+			this.showTips = false;
+			this.$router.push('/profile');
+		},
+		downloadApp(e){
+			emitCustomEvent(Pop_in2);
+		},
+		goRecharge() {
+			emitCustomEvent(Pop_in1);
+			if(this.mHref == "/top-up/"){
+				if (CookieUtil.hasItem('uuid')) {
+					this.$router.push(this.mHref);
+				} else {
+					this.$router.push('/login')
+				}
+			}else{
+				this.$router.push(this.mHref);
+			}
+		},
+		closeBanner() {
+			this.showBanner = false;
+		},
+		closeBottomBanner() {
+			this.showBottomBanner = false;
+		},
+		goWallet() {
+			let self = this;
+			Promise.all([
+				Silver.getSilverPrice(this),
+				Gold.getGoldPrice(this),
+				Silver.getSilverRunningNew(this),
+				Gold.getGoldRunningNew(this),
+				User.searchCashBack(this)
+			]).then((res) => {
+				let silverState = {
+					happySilverBalance: res[0].balance,
+					happySilverRunning: res[2]
+				};
+				let goldState = {
+					happyGoldBalance: res[1].happyGoldBalance,
+					happyGoldRunning: res[3]
+				};
+				let cashbackState = {
+					total: res[4].data.amount,
+					list: res[4].data.record
+				}
+				self.$store.commit(types.GET_SILVER, silverState);
+				self.$store.commit(types.GET_GOLD, goldState);
+				sessionStorage.setItem("silver", JSON.stringify(silverState));
+				sessionStorage.setItem("gold", JSON.stringify(goldState));
+				sessionStorage.setItem('cashback', JSON.stringify(cashbackState))
+			}).catch(err => {
+				console.log(err)
+			})
+		},
+		touchstart(e) {
+			let touch = e.targetTouches[0];
+			this.startY = touch.pageY;
+		},
+		touchend(e) {
+			let touch = e.targetTouches[0];
+			this.endY = touch.pageY;
+			let abs = Math.abs(this.endY - this.startY);
+			if (this.endY < this.startY && abs > 200) {
+				this.$emit('showOffers');
+			}
+		},
+		showOne() {
+			this.isOne = true;
+			this.isRound = false;
+		},
+		showRound() {
+			this.isOne = false;
+			this.isRound = true;
+			if(this.departDate > this.returnDate || this.departDate < this.returnDate){
+				this.returnDate = this.departDate
+			}
+		},
+		closeMenu(closeMenu) {
+			this.showMenu = closeMenu;
+			this.showmark = closeMenu;
+		},
+		showM() {
+			this.showMenu = true;
+			this.showmark = true;
+		},
+		isLogin() {
+			this.showMenu = false;
+			this.showLogin = true;
+		},
+		isLoginOffer() {
+			if (CookieUtil.hasItem('uuid')) {
+				this.$router.push('/offer')
+			} else {
+				this.$router.push('/login')
+			}
+		},
+		hideLog(hideLogin) {
+			this.showLogin = hideLogin;
+			this.showmark = hideLogin;
+		},
+		showLog() {
+			if (CookieUtil.hasItem('uuid')) {
+				this.$router.push('/account')
+			} else {
+				this.showLogin = true;
+				this.showmark = true;
+			}
+		},
+		closeS() {
+			this.showSearch = false;;
+			this.showDepart = true;
+			this.$emit('showOffer')
+		},
+		openDepart() {
+			this.$emit('hideOffer')
+			this.showSearch = true;
+			this.showDepart = true;
+		},
+		openArrive() {
+			this.$emit('hideOffer')
+			this.showSearch = true;
+			this.showDepart = false;
+		},
+		getDepartAirport(airport, closeSearch) {
+			this.$emit("showOffer");
+			this.showSearch = closeSearch;
+			this.departAirport = airport;
+			this.departCityName = airport.cityName;
+			this.departIataCode = airport.iataCode;
+		},
+		getArriveAirport(airport, closeSearch) {
+			this.$emit("showOffer");
+			this.showSearch = closeSearch;
+			this.arriveAirport = airport;
+			this.arriveCityName = airport.cityName;
+			this.arriveIataCode = airport.iataCode;
+		},
+		exchangeCity() {
+			let airports = this.departAirport;
+			this.departAirport = this.arriveAirport;
+			this.arriveAirport = airports;
+		},
+		openPickerFrom(event) {
+			this.limit = {
+				minYear: new Date().getFullYear(),
+				minMonth: new Date().getMonth() + 1,
+				minDay: new Date().getDate(),
+				maxYear: new Date().getFullYear() + 1
+			};
+			this.showCalendar = true;
+			this.showmark = true;
+			this.currentTarget = 'DEPART';
+		},
+		openPickerTo(event) {
+
+			this.limit = {
+        minYear: this.departDate.getFullYear(),
+				minMonth: this.departDate.getMonth() + 1,
+				minDay: this.departDate.getDate(),
+				maxYear: this.departDate.getFullYear() + 1
+      }
+			this.showCalendar = true;
+			this.showmark = true;
+			this.currentTarget = 'RETURN'
+		},
+		getVal(dateVal, showCalendar) {
+			this.showCalendar = showCalendar;
+			this.showmark = showCalendar;
+			switch (this.currentTarget) {
+				case 'DEPART':
+					this.departDate = dateVal;
+					// this.returnDate = dateVal;
+					break;
+				case 'RETURN':
+				// this.departDate = dateVal;
+					this.returnDate = dateVal;
+			}
+		},
+		passengerRangeMap() {
+			let res = {
+				adults: this.getIntArr(1, 9),
+				children: this.getIntArr(0, (9 - this.passengers.adults)),
+				infants: this.getIntArr(0, this.passengers.adults)
+			}
+			return res
+		},
+		getIntArr: function(start, end) {
+			let res = []
+			if (end < start) {
+				console.error("Wrong range");
+			}
+			for (let i = start; i <= end; i++) {
+				res.push(i)
+			}
+			return res
+		},
+		getPassengers() {
+			this.perssengers.adults = [];
+			this.perssengers.children = [];
+			this.perssengers.infants = [];
+
+			for (let i = 0; i < this.passengersNum.adults; i++) {
+				this.perssengers.adults.push(new Adult());
+			}
+			for (let i = 0; i < this.passengersNum.children; i++) {
+				this.perssengers.children.push(new Child());
+			}
+			for (let i = 0; i < this.passengersNum.infants; i++) {
+				this.perssengers.infants.push(new Infant());
+			}
+		},
+		searchFlight() {
+			sessionStorage.removeItem("order")
+			sessionStorage.removeItem("flightType")
+      emitCustomEvent('hotelSearch', 'FlightAndHotel');
+			this.saveSearchInfo();
+			let order = null;
+			let reindexPath = '';
+			if (this.isOne) {
+
+				reindexPath = 'oneway';
+				order = new OnewayOrder();
+			} else {
+				order = new RoundTripOrder();
+				order.returnDate = this.returnDate;
+
+				if (this.departAirport.countryName == "India" && this.arriveAirport.countryName == "India") {
+			    sessionStorage.setItem('isIN', false);
+					reindexPath = 'roundtrip';
+				} else {
+				  sessionStorage.setItem('isIN', true);
+					reindexPath = 'international';
+				}
+			}
+			this.getPassengers();
+			order.departAirport = this.departAirport
+			order.destinationAirport = this.arriveAirport
+
+			order.departDate = this.departDate
+
+			order.adults = this.perssengers.adults
+			order.children = this.perssengers.children
+			order.infants = this.perssengers.infants
+
+			order.cabinClass = this.mSelectedCabinClass
+			order.contactInfo = new ContactInfo()
+			var flight_startdate = this.departDate.getFullYear() + '-' + (this.departDate.getMonth() + 1) + '-' + this.departDate.getDate();
+			order.departAirport.departTime = flight_startdate
+			if (order.destinationAirpor) {
+				var flight_enddate = this.returnDate.getFullYear() + '-' + (this.returnDate.getMonth() + 1) + '-' + this.returnDate.getDate();
+				order.destinationAirpor.returnTime = flight_enddate
+			} else {
+				var flight_enddate = null
+			}
+			this.$store.commit(OrderMutaionNames.setupOrder, order);
+			GetFlightOrderUtil.setOrderIntoSession(order, sessionStorage)
+
+			this.$router.push(reindexPath);
+
+			try {
+				window.dataLayer.push({
+					'google_tag_params': {
+						'flight_originid': order.departAirport.iataCode,//航班始发地三字代码
+						'flight_destid': order.destinationAirport.iataCode,//航班目的地三字代码
+						'flight_startdate': flight_startdate,//航班去程日期
+						'flight_enddate': flight_enddate || null,//航班回程日期
+						'page_type': 'SearchResult',//页面类型
+						'flight_totalvalue': '',//航班价格
+					}
+				})
+			} catch (error) {}
+		},
+		saveSearchInfo() {
+			let sInfo = {
+				departAirport: this.departAirport,
+				arriveAirport: this.arriveAirport,
+				departDate: this.departDate,
+				returnDate: this.returnDate,
+				passengersNum: {
+					adults: this.passengersNum.adults,
+					children: this.passengersNum.children,
+					infants: this.passengersNum.infants
+				},
+				defaultCabinClass: this.defaultCabinClass
+			}
+			let searchInfo = JSON.stringify(sInfo)
+			sessionStorage.setItem('searchInfo', searchInfo)
+		},
+		loadSearchInfo() {
+			if (sessionStorage.searchInfo) {
+				let info = JSON.parse(sessionStorage.searchInfo);
+				let {name, cityName, countryName, iataCode} = info.departAirport;
+				this.departAirport = new Airport(name, cityName, countryName, undefined, iataCode, undefined);
+				let {name: name2, cityName: cityName2, countryName:countryName2, iataCode: iataCode2} = info.arriveAirport;
+
+				this.arriveAirport = new Airport(name2, cityName2, countryName2, undefined, iataCode2, undefined);
+
+				this.departDate = new Date() > new Date(info.departDate) ? new Date() : new Date(info.departDate);
+				this.returnDate = new Date() > new Date(info.returnDate) ? new Date() : new Date(info.departDate);
+				this.passengersNum.adults = info.passengersNum.adults;
+				this.passengersNum.children = info.passengersNum.children;
+				this.passengersNum.infants = info.passengersNum.infants;
+				this.defaultCabinClass = info.defaultCabinClass;
+			}
+		}
+	},
+	directives: {
+		focus: {
+			inserted: function(el) {
+				el.focus()
+			}
+		}
+	},
+	watch: {
+		'$route'(to, from) {
+			if (CookieUtil.hasItem("uuid")) {
+				User.loadUser(this).then(user => {
+					this.$nextTick(() => {
+						this.$store.commit(loginUserInfo, user)
+						sessionStorage.setItem("user", JSON.stringify(user));
+						this.user = JSON.parse(sessionStorage.getItem("user"));
+						if (from.path == '/login') {
+							if (this.user && (this.user.cellphone == null || this.user.cellphone.indexOf(' ') == -1)) {
+								this.showTips = true;
+							}else{
+								this.showTips = false;
+							}
+						}
+					})
+				}).catch(err => { reject(err) })
+				this.goWallet()
+			}
+		},
+		departDate:function(val,oldV){
+			if(val > this.returnDate){
+				this.returnDate = val;
+			}
+		},
+		returnDate:function(val,oldV){
+			if(val < this.departDate){
+				val = this.departDate;
+			}
+		},
+	},
+	mounted() {
+		sessionStorage.removeItem("couponCode");
+		if (CookieUtil.hasItem("uuid")) {
+			User.loadUser(this).then(user => {
+				this.$nextTick(() => {
+					this.user = user;
+					this.$store.commit(loginUserInfo, user)
+					sessionStorage.setItem("user", JSON.stringify(user));
+				})
+			}).catch(err => { reject(err) })
+			this.goWallet()
+		}
+	},
+}
+</script>
+<style lang="less" scoped>
+.menu {
+	-webkit-animation-duration: .5s;
+	animation-duration: .5s;
+	-webkit-animation-fill-mode: both;
+	animation-fill-mode: both;
+}
+
+
+.header {
+	// position: static!important;
+	background: #0b9d78;
+	i {
+		// display: block;
+		padding: 0 0.64rem;
+	}
+}
+
+.wrapper {
+	overflow: auto;
+	position: relative;
+}
+
+.home-wrapper {
+	height: 100%;
+	.home-content {
+		box-sizing: border-box;
+		background-size: cover;
+		position: relative;
+	}
+	.text {
+		font-size: 0.7rem;
+		color: #fff;
+		display: block;
+		padding: 0 0.54rem;
+	}
+	.top_icon {
+		color: #fff;
+		font-size: 0.9rem;
+	}
+}
+
+.mask {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 100%;
+	width: 100%;
+	background: #000;
+	opacity: 0.7;
+}
+
+.tips {
+	width: 10rem;
+	height: 7rem;
+	background: #fff;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin-top: -3.5rem;
+	margin-left: -5rem;
+	.tips-group {
+		padding: 0.64rem;
+		text-align: left;
+		p {
+			font-size: 0.64rem;
+			line-height: 1.3;
+		}
+	}
+	.tips-btn {
+		// width: 100%;
+		height: 1rem;
+		line-height: 1rem;
+		font-size: 0.64rem;
+		margin: 0.64rem;
+		box-sizing: border-box;
+		background: #ffad3d;
+		color: #fff;
+	}
+}
+
+.content {
+	padding: 0 0.64rem;
+}
+
+.content-text {
+	width: 100%;
+	box-sizing: border-box;
+	position: absolute;
+	bottom: 0;
+	padding: 0.28rem 0.64rem;
+	.text {
+		padding: 0.2rem 0.64rem;
+		background-color: rgba(255, 255, 255, .3);
+	}
+	h2 {
+		font-size: 0.7rem;
+		text-align: left;
+		line-height: 1rem;
+		color: #2f2e42;
+	}
+	h3 {
+		font-family: 'Hp simplified';
+		font-size: 0.38rem;
+		color: #2f2e42;
+		text-align: left;
+		line-height: 0.8rem;
+		font-weight: normal;
+	}
+}
+
+.footer-wrapper {
+	width: 100%;
+	height: 8%;
+	display: table;
+	position: fixed;
+	bottom: 0;
+	background-color: #0b9d78;
+	z-index:10;
+	.foot-bottom {
+		display: table-cell;
+		vertical-align: middle;
+		p {
+			font-size: 0.5rem;
+			color: #fff;
+			margin: 0.2rem 0;
+			span,pdf {
+				border-right: 1px solid #fff;
+				display: inline-block;
+				padding: 0 0.2rem;
+			}
+			span:last-child{
+				border-right: none;
+			}
+		}
+	}
+}
+
+.advBanner{
+	width: 100%;
+	position: absolute;
+	left: 0;
+	bottom: 8%;
+	img {
+		width: 100%;
+		background-size: 100% 100%;
+		vertical-align: top;
+	}
+	.bottom-banner {
+		height:100%;
+		position: relative;
+		.downloadAndApp {
+			display: block;
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			bottom: 0;
+			right: 0;
+			z-index: 15;
+		}
+		.closeBottomBanner {
+			width: 0.4rem;
+			// height: 0.4rem;
+			position: absolute;
+			// top: 0;
+			right: 0;
+			padding:0 0.4rem;
+			z-index: 16;
+			color:#fff;
+			font-size: 0.8rem;
+		}
+	}
+	.banner {
+		height:100%;
+		position: relative;
+		.downloadApp {
+			display: block;
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			bottom: 0;
+			right: 0;
+			z-index: 15;
+		}
+		.close {
+			width: 0.64rem;
+			position: absolute;
+			// top: 0;
+			right: 0;
+			padding:0 0.3rem;
+			z-index: 16;
+			color:#fff;
+			font-size: 0.8rem;
+		}
+	}
+}
+
+.down {
+	width: 100%;
+	position: absolute;
+	left: 0;
+	bottom: 2rem;
+}
+
+.home-wrapper:before {
+	content: '';
+	display: table;
+}
+
+.flight_logo {
+	width: 6.4rem;
+}
+.tab{
+  margin-top: 2.04rem;
+  .type{
+    color: #999;
+  }
+  .img{
+    margin: 0 auto 4px;
+
+    width: 30px;
+    height: 24px;
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+  }
+  .img.Flights{
+    background-image: url(../../../assets/images/home/flights-uncheck.png);
+  }
+  .img.Hotels{
+    background-image: url(../../../assets/images/home/hotels-uncheck.png);
+  }
+  .tab-item{
+    box-sizing: border-box;
+    padding-top: 12px;
+    width: 50%;
+    height: 60px;
+    background-color: #eee;
+  }
+  .active{
+    background-color:#e6f5f1;
+    .img.Flights{
+    background-image: url(../../../assets/images/home/flights-check.png);
+    }
+    .img.Hotels{
+      background-image: url(../../../assets/images/home/hotels-check.png);
+    }
+    .type{
+      color: #333;
+    }
+  }
+}
+.trip-control {
+	padding: 0 0.64rem;
+	.trip-control-btn {
+		width: 100%;
+		height: 1.706rem;
+		.btn-wrap {
+      margin-right: 15px;
+			box-sizing: border-box;
+    }
+    .trip-type{
+      color: #999;
+    }
+    i.radio{
+      display: inline-block;
+      width:6px;
+      height: 6px;
+      margin-right: 10px;
+      border: 3px solid #999;
+      border-radius: 12px;
+
+    }
+		.active {
+      i.radio{
+        border-color: #0b9d78;
+      }
+      .trip-type{
+        color: #333;
+      }
+		}
+	}
+}
+
+.content-main {
+	background-color: #fff;
+	// padding: 0 0.64rem;
+	.searchCity {
+    border: 1px solid #eee;
+    border-radius: 2px;
+    margin-bottom: 10px;
+		// @media screen and (-webkit-min-device-pixel-ratio: 2) {
+		// 	border-bottom: 0.5px solid #ddd;
+		// }
+		// @media screen and (-webkit-min-device-pixel-ratio: 3) {
+		// 	border-bottom: 0.333px solid #ddd;
+		// }
+		height: 2.6rem;
+		.depart,
+		.arrive {
+			padding-bottom: 0.55rem;
+			width: 30%;
+			span:nth-of-type(1) {
+				display: block;
+				font-size: 0.6rem;
+				color: #999;
+				padding-bottom: 0.1rem;
+			}
+			span:nth-of-type(2) {
+				display: block;
+				font-size: 0.769rem;
+				color: #000;
+				padding-top: 0.1rem;
+			}
+		}
+		.exchange {
+			padding-bottom: 0.55rem;
+			width: 20%;
+			img {
+				display: block;
+				margin: 0 auto;
+				width: 1.15rem;
+			}
+		}
+		.depart {
+			text-align: left;
+		}
+		.arrive {
+			text-align: right;
+		}
+	}
+	.calendar {
+    border: 1px solid #eee;
+    border-radius: 2px;
+    margin-bottom: 10px;
+		height: 2.6rem;
+		.depart,
+		.arrive {
+			margin-bottom: 0.55rem;
+			flex: 1;
+			width: 50%;
+			box-sizing: border-box;
+			span:nth-of-type(1) {
+				display: block;
+				font-size: 0.6rem;
+				color: #999;
+				padding-bottom: 0.2rem;
+			}
+			span:nth-of-type(2) {
+				display: block;
+				font-size: 0.68rem;
+				color: #000;
+				padding-top: 0.1rem;
+		}
+		}
+		.depart {
+			text-align: left;
+		}
+		.arrive {
+			text-align: right;
+			border-left: 1px solid #ddd;
+		}
+	}
+
+	.passenger {
+		border: 1px solid #eee;
+    border-radius: 2px;
+    margin-bottom: 10px;
+		height: 2.6rem;
+		.traveller-info {
+			box-sizing: border-box;
+			width: 100%;
+			height: 2.3rem;
+		}
+		.title {
+			display: block;
+			font-size: 0.6rem;
+			color: #999;
+			padding-bottom: 0.1rem;
+			text-align: left;
+		}
+		.ageTips {
+			span {
+				display: block;
+				font-size: 0.4rem;
+				text-align: center;
+				flex: 1;
+			}
+		}
+		.traveller-cont {
+			text-align: left;
+			padding-bottom: 0.55rem;
+			.select-wrap {
+				position: relative;
+
+				select {
+					width: 100%;
+					height: 100%;
+					position: absolute;
+					top: 0;
+					left: 0;
+					opacity: 0;
+				}
+			}
+			.spl {
+				text-align: left;
+			}
+			.spr {
+				text-align: right;
+			}
+			div {
+				flex: 1;
+				text-align: center;
+			}
+			span {
+				font-size: 0.68rem;
+				color: #000;
+				text-align: center;
+			}
+		}
+		.cabin-cont {
+			width: 100%;
+			span {
+				padding-top: 0.1rem;
+				text-align: right;
+			}
+			.select-wrap {
+				text-align: center;
+				position: relative;
+				span {
+					color: #000;
+					font-size: 0.68rem;
+					padding-bottom: 0;
+				}
+				select {
+					font-size: 0.58rem;
+					text-align: right;
+					position: absolute;
+					left: 0px;
+					top: 0px;
+					width: 100%;
+					height: 3em;
+					opacity: 0;
+				}
+			}
+		}
+	}
+
+	.cabinClass {
+		border: 1px solid #eee;
+    border-radius: 2px;
+    margin-bottom: 10px;
+		height: 2.65rem;
+		.cabinClass-info {
+			padding-bottom: 0.55rem;
+			box-sizing: border-box;
+			width: 50%;
+			span:nth-of-type(1) {
+				display: block;
+				font-size: 0.6rem;
+				color: #999;
+				padding-bottom: 0.1rem;
+			}
+			span:nth-of-type(2),
+			select {
+				display: block;
+				width: 100%;
+				font-size: 0.68rem;
+				color: #000;
+				padding-top: 0.1rem;
+			}
+		}
+		.cabin-cont {
+			width: 100%;
+			text-align: left;
+			span {
+				padding-top: 0.1rem;
+			}
+			.select-wrap {
+				position: relative;
+				span {
+					color: #000;
+					font-size: 0.68rem;
+					padding-bottom: 0;
+				}
+				select {
+					font-size: 0.58rem;
+					text-align: right;
+					position: absolute;
+					left: 0px;
+					top: 0px;
+					width: 100%;
+					height: 3em;
+					opacity: 0;
+				}
+			}
+		}
+	}
+	.searchFlight {
+		padding: 0 0 0.42rem 0;
+		a {
+			width: 100%;
+			font-size: 0.769rem;
+			color: #fff;
+			height: 2.224rem;
+			line-height: 2.224rem;
+			background-color: #ffad3d;
+			border-radius: 2px;
+			display: block;
+		}
+	}
+	.offer-content {
+		.offer_guaranteed {
+			font-size: .6rem;
+			color: rgb(83, 83, 83);
+			margin-top: .3rem;
+}
+		img {
+			display: block;
+			width: 13.5rem;
+		}
+	}
+}
+</style>

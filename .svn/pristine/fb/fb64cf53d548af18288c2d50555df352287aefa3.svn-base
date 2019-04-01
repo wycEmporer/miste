@@ -1,0 +1,45 @@
+<template>
+    <div class="wallet">
+        <div class="content">
+            <p>
+                &bull; Happy Wallet can be used for any booking on HappyEasyGo's pc site, mobile site and App.
+            </p>
+            <p>
+                &bull; Each time you earn or redeem your Happy Wallet, you will send the notification to you by email or SMS.
+            </p>
+            <p>
+                &bull; HappyEasyGo shall not be liable for any hacking or unauthorized use of your account and you have the sole responsibility to ensure privacy and confidentiality of your account details.
+            </p>
+            <p>
+                &bull; HappyEasyGo holds the right to cancel all or partial Happy Walletamount granted to the user by HappyEasyGo at any point in time without any prior notice.
+            </p>
+            <p>
+                &bull; In case of any disputes, HappyEasyGo's decision will be final.
+            </p>
+        </div>
+    </div>
+</template>
+<style lang='less' scoped>
+.wallet {
+    .content {
+        font-size: 0.52rem;
+        color: #666;
+        border-bottom: 1px solid #eee;
+        padding-top: 0.4rem;
+        h2 {
+            font-size: 0.64rem;
+            color: #0b9d78;
+            text-align: left;
+            line-height: 1.2rem;
+        }
+        p {
+            text-align: left;
+            margin: 0.4rem 0;
+            line-height: 0.769rem;
+        }
+        .gray {
+            color: #b0b0b0;
+        }
+    }
+}
+</style>

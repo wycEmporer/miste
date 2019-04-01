@@ -1,0 +1,95 @@
+@import "../../assets/less/theme.less";
+#my_profile {
+  .header {
+    background: #0b9d78;
+    .title {
+      font-size: 0.768rem;
+      color: #fff;
+    }
+    .sp {
+      opacity: 0;
+    }
+  }
+  .mp_container {
+    // padding: 0 1.28rem;
+    // height: 10rem;
+    // background: url("../../assets/images/profile/user-bg2.png") 0 0 no-repeat;
+    background-size: cover;
+    .mp_info {
+      padding-top: 2.04rem;
+      background-color: @primary-color;
+      .mp_avatar {
+        padding-top: 0.6rem;
+        padding-bottom: 0.34rem;
+        .avatar {
+          width: 4rem;
+          height: 4rem;
+          border-radius: 50%;
+          img {
+            width: 100%;
+          }
+        }
+      }
+      .info_text {
+        padding: 0.8rem 0;
+        span {
+          display: block;
+          line-height: 1.5;
+          height: 1rem;
+          color: #ffffff;
+          font-size: 0.64rem;
+        }
+        .tel {
+          font-size: 0.512rem;
+        }
+      }
+      .change_info {
+        a {
+          display: inline-block;
+          padding: 0 0.2rem;
+          img {
+            display: inline-block;
+            width: 0.7rem;
+            height: 0.7rem;
+          }
+        }
+      }
+    }
+    .wave-img {
+      width: 100%;
+      height: 1rem;
+    }
+    .pro_info {
+      // padding-top:1.5rem;
+      .title {
+        text-align: left;
+        font-size: 0.64rem;
+        height: 1.7rem;
+        line-height: 1.7rem;
+        border-bottom: 1px solid @gray-light;
+        padding: 0 0.64rem;
+        .edit {
+          display: block;
+        }
+      }
+      .pro_list {
+        padding: 0 0.64rem;
+        text-align: left;
+        .mint-cell {
+          min-height: 1.7rem;
+          font-size: 16px;
+        }
+        .sexBox {
+          display: flex;
+          justify-content: flex-start;
+        }
+        // .mint-cell-wrapper{
+        //   font-size: 14px;
+        // }
+      }
+    }
+  }
+}
+/*::-webkit-input-placeholder{*/
+/*font-size: 0.512rem;*/
+/*}*/

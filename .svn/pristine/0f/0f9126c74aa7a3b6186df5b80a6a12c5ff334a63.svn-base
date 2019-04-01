@@ -1,0 +1,907 @@
+<template>
+	<div class="wrapper">
+		<head-top class="header">
+			<i slot="left" class="prev iconfont icon-back"></i>
+			<div slot="title" class="title">Referral Program</div>
+			<i slot="right" alt="" class="sp iconfont icon-back"></i>
+		</head-top>
+		<div class="container">
+			<div class="top" :class="{marTop: contentMargin}">
+				<img :src="mUrl" :alt="mAlt" :title="mTitle">
+			</div>
+      <div style="margin-bottom:0.21rem;background:#fff;padding:0.5rem 0;">
+        <a id="link_jump" href="javascript:;" @click="$router.push('/referralactivity')">Go to win the free tickets & mobile phones, now >>></a>
+      </div>
+      <div class="link_phone" v-if="isShowBtn">
+        <button class="h2_copy copyShare" @click="copyShareText">{{copyText}}<img v-show="ifLogin" :src="require('../../assets/images/autumn/icon_copy.png')" alt=""></button>
+        <div class="link_share_parents flex space-between">
+          <div class="link_share" @click="isCanClick">
+            <div v-if="!ifLogin?true:false">
+              <img :src='require("../../assets/images/referral/share-whatsapp.png")' alt="">
+            </div>
+            <a v-else target="_blank" :href="shareHref" data-action="share/whatsapp/share">
+              <img :src='require("../../assets/images/referral/share-whatsapp.png")' alt="">
+            </a>
+          </div>
+          <div class="link_share link_share2" @click="isCanClick">
+            <div v-if="!ifLogin?true:false">
+              <img :src='require("../../assets/images/referral/facebook.png")' alt="">
+            </div>
+            <a v-else target="_blank" @click="copyShareText" class="copyShare" :href="shareHref2">
+              <img :src='require("../../assets/images/referral/facebook.png")' alt="">
+            </a>
+          </div>
+        </div>
+        <h2 class="link_title">Send app link to your friend's phone</h2>
+        <div class="form-group flex space-between">
+						<input type="text" id="email" placeholder="Mobile Number" v-model="phone">
+						<a href="javascript:" @click="sendPhone()">SUBMIT</a>
+				</div>
+      </div>
+			<div class="section1">
+        <div class="download">
+          <span>Download our APP</span>
+          <a target="_blank" class="android_load" href="https://app.adjust.com/vbzvaj?campaign=M&adgroup=Download&creative=Online">
+            <img :src='require("../../assets/images/referral/android_load.png")' alt="" name="">
+          </a>
+          <a target="_blank" class="apple_load" href="https://app.adjust.com/vbzvaj?campaign=M&adgroup=Download&creative=Online">
+            <img :src='require("../../assets/images/referral/apple_load.png")' alt="" name="">
+          </a>
+        </div>
+        <div class="s1-text1">
+          <p>Get ready to grab a host of benefits and rewards with HappyEasyGo’s Refer and Earn programme. Refer your friends and book a flight ticket for FREE.</p>
+          <p style="margin:0.427rem 0;">With HappyEasyGo’s Refer and Earn programme, you not only earn when the people referred by you sign up with HappyEasyGo, but also when someone referred by them registers. Therefore, you win a lot more!</p>
+          <p>Ask your friends to download the HappyEasyGo app and sign up using your referral code, and earn the amazing benefits and rewards.</p>
+        </div>
+			</div>
+      <div class="section2">
+        <p class="t2-p1">Take a look :</p>
+        <div class="s2-div1">
+          <img :src='referralImg' alt="">
+        </div>
+        <div class="s2-div2">
+          <div >
+            <p class="s3-tip1"><span>Tier 1:</span></p><p>Your friends and family; the people you referred to sign up on HappyEasyGo.</p>
+          </div>
+          <div >
+            <p class="s3-tip1"><span>Tier 2:</span></p><p>People referred by your friends and family to sign up on HappyEasyGo.</p>
+          </div>
+        </div>
+      </div>
+      <div class="section3">
+        <p class="t2-p1">Rewards :</p>
+        <div class="s3-div">
+          <p class="t2-p3"><span class="t2-p2">Rewards by Registrations :</span> You win Happy Gold whenever a Tier 1 or Tier 2 contact registers on the HappyEasyGo app.</p>
+          <p class="s3-tip1"><span>Tier 1 :</span> These rewards are won when a friend or family member (Tier 1 individual) registers on the HappyEasyGo app using your referral code. Your account gets credited with <router-link to="/wallet">{{referType == '1' ?gold1+'Happy Silver':gold1+'Happy Gold'}}</router-link> when this happens.</p>
+          <p class="s3-tip1"><span>Tier 2 :</span> These rewards are won when someone referred by your friend or family (Tier 2 individual) registers on the HappyEasyGo app within 7 days using their referral code. Here, you get <router-link to="/wallet">{{oneLevelReferType == '1' ?gold2+'Happy Silver':gold2+'Happy Gold'}}</router-link> with every sign up.</p>
+        </div>
+        <div class="s3-div s3-divs">
+          <p class="t2-p3"><span class="t2-p2">Rewards by Booking :</span> You win Happy Gold whenever a Tier 1 or Tier 2 contact books a flight ticket with HappyEasyGo.</p>
+          <p class="s3-tip1"><span>Tier 1 :</span> After registering with HappyEasyGo using your referral code, if any of your friends or family books a flight ticket with HappyEasyGo within the next one year, you win a reward of <router-link to="/wallet">{{gold3}} Happy Gold</router-link>.</p>
+          <p class="s3-tip1"><span>Tier 2 :</span> If someone recommended by your friend or family books flight tickets with HappyEasyGo within the next three months, you earn <router-link to="/wallet">{{gold4}} Happy Gold</router-link>. </p>
+        </div>
+        <div class="s3-note">
+          <span>Note :</span> You can make the most of HappyEasyGo’s Refer & Earn programme using any registered Indian mobile numbers starting with +91. Mobile numbers from other regions are not eligible for this offer, and thus, users cannot earn referral rewards using these numbers.
+        </div>
+      </div>
+      <div class="section4"></div>
+      <div class="section5">
+        <div class="s5-text1">
+          <p>HappyEasyGo is also offering you a chance to take home a stylish <span>Samsung Galaxy S8, free flight ticket</span> and <span>discount vouchers for flight ticket bookings.</span></p>
+        </div>
+        <div class="detTable table1">
+          <p><span>Ranking</span><span>Top 1</span><span>Top 2</span><span>Top 3-10</span></p>
+          <p><span>Reward for Top Referred Register</span><span>Samsung Galaxy S8</span><span>1 free flight ticket </span><span>Voucher of Rs.500 discount on flights bookings</span></p>
+        </div>
+        <div class="detTable table2">
+          <p><span>Ranking</span><span>Top 1</span><span>Top 2</span><span>Top 3-10</span></p>
+          <p><span>Reward for Top Referred Order</span><span>Samsung Galaxy S8</span><span>1 free flight ticket </span><span>Voucher of Rs.500 discount on flights bookings</span></p>
+        </div>
+      </div>
+      <p class="install-p">To sum it all up:</p>
+      <div class="section6">
+        <div>
+          <p>01</p>
+          <span>Install HEG APP</span>
+        </div>
+        <div>
+          <p>02</p>
+          <span>Create a free account</span>
+        </div>
+        <div>
+          <p>03</p>
+          <span>Sync your contacts</span>
+        </div>
+        <div>
+          <p>04</p>
+          <span>Earn rewards</span>
+        </div>
+      </div>
+      <p style="font-size:0.598rem;line-height:0.7rem;background:#fff;text-align:left;padding:0.854rem 0.64rem 1.9rem;">So, do not wait. Start referring today!</p>
+		</div>
+		<div class="mask" v-show="showTips"></div>
+		<div class="tips" v-show="showTips">
+			<div class="close"></div>
+			<div class="title">
+				<h2>
+					{{title}}
+				</h2>
+			</div>
+			<div class="text">
+				<p class="sp">{{text}}</p>
+				<p v-show="ifSucc">
+					<i class="rs">Rs.</i>{{referType == '1' ?gold1+'Happy Silver':gold1+'Happy Gold'}}  will be credited into your account instantly once the recipient signs up on APP with your referral code.</p>
+			</div>
+			<div class="btn">
+				<a href="javascript:;" @click="toggleTips()">Close</a>
+			</div>
+		</div>
+	</div>
+</template>
+<script>
+import {AppBridge} from '../../models/appbridge/appbridge.js';
+import headTop from "../../components/head/head.vue";
+import { User } from "../../models/user";
+import { Toast, Indicator } from "mint-ui";
+import { CookieUtil } from "../../models/utils";
+import { Reg } from "../../models/utils/Reg";
+import Clipboard from 'clipboard';
+import { DomainManager } from '../../config/DomainManager.js'
+export default {
+  components: {
+    headTop
+  },
+  data() {
+    return {
+      flag:true,
+      email: "",
+      phone: "",
+      url: "",
+      mask: false,
+      title: "",
+      text: "",
+      showTips: false,
+      isShowBtn:true,
+      ifSucc: true,
+      ifLogin: CookieUtil.hasItem("uuid"),
+      mUrl: "",
+      mAlt: "",
+      mTitle: "",
+      model: 0,
+      golds:{},
+      shareHref:'',
+      contentMargin:false,
+      copyText:"",
+      shareText:"",
+      gold1:'',
+      gold2:'',
+      gold3:null,
+      gold4:null,
+      referralImg:'',
+      referType:'',
+      oneLevelReferType:'',
+      shareHref2:'https://www.facebook.com/sharer.php?u='+encodeURIComponent('https://goo.gl/jm7NfN')+'&t='+encodeURIComponent(document.title),
+    };
+  },
+  methods: {
+    isCanClick(){
+      if (!this.ifLogin) {
+        AppBridge.nativeSignIn("in",this);
+      }
+    },
+    copyShareText(){
+      let clipboard,that = this;
+      if(this.flag){
+        this.flag = false;
+        clipboard = new Clipboard('.copyShare',{
+          text: function() {
+            return that.shareText;
+          }
+        });
+        clipboard.on('success', function(e) {
+          Toast({
+            message:"Successfully copied to the Clipboard! ",
+            duration:1200
+          });
+          e.clearSelection();
+          clipboard.destroy();
+        });
+        clipboard.on('error', function(e) {
+          Toast({
+            message:"Copy failed, please input manually! ",
+            duration:1200
+          });
+          e.clearSelection();
+          clipboard.destroy();
+        });
+        setTimeout(function(){
+          that.flag = true;
+        },1200);
+      }
+    },
+    getShareInfo(){
+      if(CookieUtil.hasItem('uuid')){
+        let userId = CookieUtil.getItem('uid');
+        let url = DomainManager.referralShareInfoV3();
+        this.$axios({
+          method:"post",
+          url:url,
+          data:{userId:userId},
+          headers:{ "x-Device": "mobile" }
+        }).then(res=>{
+          this.referType = res.referType;
+          this.oneLevelReferType = res.oneLevelReferType;
+          this.gold1 = res.happysilverAmount;
+          this.gold2 = res.oneLevelSilverAmount;
+          this.gold3 = res.happygoldAmount;
+          this.gold4 = res.oneLevelGoldAmount;
+          this.shareHref = "whatsapp://send?text="+ encodeURIComponent(res.whatsappMsg);
+          if(this.ifLogin){
+            this.copyText = "Your Code ["+ res.inviteCode +"]";
+            this.shareText = res.messager;
+          }else{
+            this.copyText="Refer via social channels";
+          }
+        }).catch(err=>{
+          console.log(err);
+        })
+      }else{
+        let url = DomainManager.referralShareInfoV4();
+        this.$axios({
+          method:"post",
+          url:url,
+          // data:{userId:userId},
+          headers:{ "x-Device": "mobile" }
+        }).then(res=>{
+          this.referType = res.referType;
+          this.oneLevelReferType = res.oneLevelReferType;
+          this.gold1 = res.happysilverAmount;
+          this.gold2 = res.oneLevelSilverAmount;
+          this.gold3 = res.happygoldAmount;
+          this.gold4 = res.oneLevelGoldAmount;
+          this.copyText="Refer via social channels";
+        }).catch(err=>{
+          console.log(err);
+        })
+      }
+    },
+    goLogin() {
+      if (!this.ifLogin) {
+        this.$router.push("/login");
+      }
+    },
+    toggleTips() {
+      this.showTips = !this.showTips;
+    },
+    sendPhone() {
+      let host = window.location.hostname;
+      let path = window.location.pathname;
+      localStorage.setItem("phoneNum", this.phone);
+      sessionStorage.setItem("currentUrl", path);
+      if (!this.ifLogin) {
+        AppBridge.nativeSignIn("in",this);
+      } else {
+        if (!Reg.phoneNumber.test(this.phone)) {
+          Toast("please input correct phone number");
+          return false;
+        }
+
+        Indicator.open({
+          spinnerType: "fading-circle"
+        });
+        var parm = "phone=" + this.phone + "&acId=0";
+        User.shareBySMS(this, parm).then(res => {
+          if (res.success) {
+            Indicator.close();
+            this.title = "SMS Invitation";
+            this.text = "Your invitation has been sent to " + this.phone;
+            this.ifSucc = true;
+            this.toggleTips();
+          } else {
+            Indicator.close();
+            Toast(res.msg);
+            this.title = "Invitation Failed";
+            this.text =
+              "Your invitation hasn't been sent successfully. Please try again.";
+            this.ifSucc = false;
+          }
+        });
+      }
+    },
+    checkType() {
+      let type = AppBridge.device;
+      if(type == 1){
+        this.model = 2;
+      }else if(type == 2){
+        this.model = 3;
+      }else{
+        this.model = 0;
+      }
+      this.getImg();
+    },
+    getImg() {
+      let parmTop = "type=13&device=" + this.model + "&addr=referral&businessType=1";
+      User.advList(this, parmTop).then(res => {
+        if (res.success) {
+          if(res.list.length >= 1){
+            this.mUrl =
+              res.list[0].landingPageUrl == null
+                ? ""
+                : res.list[0].landingPageUrl;
+            this.mAlt =
+              res.list[0].landingPageAlt == null
+                ? ""
+                : res.list[0].landingPageAlt;
+            this.mTitle =
+              res.list[0].landingPageTitle == null
+                ? ""
+                : res.list[0].landingPageTitle;
+            }
+        }
+      }).catch(err => {
+        console.log(err);
+      });
+      let parmTop1 = "type=27&device=" + this.model+ "&addr=referral";
+      User.advList(this, parmTop1).then(res => {
+        if (res.success) {
+          if(res.list.length >= 1){
+            this.referralImg =
+              res.list[0].landingPageUrl == null
+                ? ""
+                : res.list[0].landingPageUrl;
+            }
+        }
+      }).catch(err => {
+        console.log(err);
+      });
+    }
+  },
+  async created() {
+    
+    this.isShowBtn = await AppBridge.getNativeSource(this);
+    this.contentMargin = this.isShowBtn;
+
+    this.getShareInfo();
+
+    if (this.ifLogin) {
+      var parm = "acId=0";
+      User.shareRegister(this, parm)
+        .then(res => {
+          if (res.success) {
+            this.url = res.url;
+            this.phone = localStorage.getItem("phoneNum");
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    }
+
+    this.checkType();
+  },
+  mounted() {}
+};
+</script>
+<style lang='less' scoped>
+.wrapper {
+  font-family: "PingFangSC";
+  background: #f4f4f4;
+}
+img{
+  width: 100%;
+}
+a{cursor: pointer;}
+.container {
+  position: relative;
+}
+
+.tips {
+  width: 12.16rem; // height: 8.4rem;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  margin-top: -4.2rem;
+  margin-left: -6.08rem;
+  z-index: 19;
+  background: #fff;
+  padding: 0 0.64rem;
+  box-sizing: border-box;
+  font-size: 0.512rem;
+  .title {
+    padding-top: 1.152rem;
+    text-align: center;
+    h2 {
+      font-weight: bold;
+    }
+  }
+  .text {
+    padding-top: 0.32rem;
+    text-align: left;
+    p {
+      line-height: 1.5;
+    }
+    .sp {
+      padding-bottom: 0.15rem;
+    }
+  }
+  .btn {
+    padding-top: 0.32rem;
+    a {
+      display: block;
+      width: 10.88rem;
+      height: 1.49rem;
+      line-height: 1.49rem;
+      background: #ffad3d;
+      color: #fff;
+      border-radius: 4px;
+      margin-bottom: 0.64rem;
+    }
+  }
+}
+
+.mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: #000;
+  opacity: 0.5;
+  z-index: 10;
+}
+
+.header {
+  // background: url('../../assets/images/referral/head_top.jpg') center no-repeat;
+  background: #0b9d78;
+  .title {
+    line-height: 2.04rem;
+    font-size: 0.768rem;
+    color: #fff;
+  }
+  .sp {
+    opacity: 0;
+  }
+}
+.marTop {
+  margin-top: 2rem;
+}
+.top {
+  font-size: 0;
+  img {
+    width: 100%;
+  }
+}
+
+#link_jump{
+    color:#F06745;
+    font-size: 0.6rem;
+    letter-spacing: -0.5px;
+  }
+.share,
+.link_phone {
+  background-color: #fff;
+  padding: 0 0.64rem 0.64rem 0.64rem;
+  h2,.h2_copy {
+    font-size: 0.597rem;
+    height: 1.2rem;
+    line-height: 1.2rem;
+    text-align: left;
+    margin-bottom: 0.2rem;
+    font-weight: normal;
+  }
+  .h2_copy{
+    display: block;
+    text-align: left;
+    cursor: pointer;
+    padding:0.2rem 0 0;
+    img{
+      width:0.962rem;
+      height:0.854rem;
+      cursor: pointer;
+      vertical-align:middle;
+      margin-left:0.3rem;
+    }
+  }
+  .form-group {
+    height: 1.7rem;
+    input {
+      width: 78%;
+      height: 1.7rem;
+      height: 100%;
+      font-size: 0.6rem;
+      box-sizing: border-box;
+      padding: 0.32rem;
+      border: 1px solid #ddd;
+      border-right: 0;
+      border-top-left-radius: 2px;
+      border-bottom-left-radius: 2px;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+    a {
+      display: inline-block;
+      width: 22%;
+      height: 1.7rem;
+      height: 100%;
+      line-height: 1.7rem;
+      font-size: 0.512rem;
+      color: #fff;
+      background-color: #E34438;
+      text-align: center;
+      border-top-right-radius: 2px;
+      border-bottom-right-radius: 2px;
+    }
+  }
+
+  .share-list {
+    text-align: left;
+    margin: 0.2rem 0;
+    h2 {
+      color: #999;
+      .fc {
+        color: #666;
+      }
+    }
+    div {
+      padding: 0.4rem 0;
+    }
+    .form-group {
+      height: 1.7rem;
+      input {
+        width: 78%;
+        height: 1.7rem;
+        height: 100%;
+        font-size: 0.6rem;
+        box-sizing: border-box;
+        padding: 0.32rem;
+        border: 1px solid #ddd;
+        border-right: 0;
+        border-top-left-radius: 2px;
+        border-bottom-left-radius: 2px;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+      a {
+        display: inline-block;
+        width: 22%;
+        height: 1.7rem;
+        height: 100%;
+        line-height: 1.7rem;
+        font-size: 0.512rem;
+        color: #fff;
+        background-color: #ffa033;
+        text-align: center;
+        border-top-right-radius: 2px;
+        border-bottom-right-radius: 2px;
+      }
+    }
+
+    #fac {
+      width: 1.36rem;
+      height: 1.36rem;
+      background: url("../../assets/images/referral/facebook-icon.png") center
+        no-repeat;
+      background-size: 7.2rem 1.36rem;
+      display: block;
+      margin-left: 0.4rem;
+    }
+  }
+  .link_share_parents{
+    padding:0.2rem 0 0.5rem;
+  }
+  .link_share{
+    width:48%;
+    height:1.7rem;
+    border-radius:3px;
+    font-size:0.597rem;
+    cursor: pointer;
+    div,a{
+      color:#56c864;
+    }
+    img{
+      width: 100%;
+      height:100%;
+      vertical-align: middle;
+    }
+  }
+}
+
+.media-share {
+  background-color: #fff;
+  margin-top: 0.21rem; // display: none;
+  h2 {
+    font-size: 0.597rem;
+    height: 1.2rem;
+    line-height: 1.2rem;
+  }
+  .line {
+    width: 12%;
+    margin: 0 auto;
+    border-bottom: 1px solid #0b9d78;
+  }
+  .share-list {
+    text-align: left;
+    padding: 1.7rem 0;
+    h2 {
+      color: #999;
+      .fc {
+        color: #666;
+      }
+    }
+    div {
+      padding: 0.4rem 0;
+    }
+    .form-group {
+      height: 1.7rem;
+      input {
+        width: 78%;
+        height: 100%;
+        line-height: 1.7rem;
+        font-size: 0.6rem;
+        box-sizing: border-box;
+        padding: 0.32rem;
+        border: 1px solid #ddd;
+        border-right: 0;
+        border-top-left-radius: 2px;
+        border-bottom-left-radius: 2px;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+      a {
+        display: inline-block;
+        width: 22%;
+        height: 100%;
+        line-height: 1.7rem;
+        font-size: 0.512rem;
+        color: #fff;
+        background-color: #ffa033;
+        text-align: center;
+        border-top-right-radius: 2px;
+        border-bottom-right-radius: 2px;
+      }
+    }
+
+    a {
+      width: 1.7rem;
+      height: 1.7rem;
+      color: #000;
+      background: lightblue;
+      text-align: center;
+      display: block;
+      border-radius: 4px;
+      margin: 0 1.06rem;
+      img {
+        display: block;
+        width: 1.7rem;
+        height: 1.7rem;
+      }
+    }
+  }
+}
+
+.section1 {
+  padding: 0.68rem 0.68rem;
+  background-color: #fff;
+  margin-top: 0.21rem;
+  text-align: left;
+  .download{
+    padding:0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    img{
+      width:3.8rem;
+      vertical-align: top;
+    }
+    span{
+      font-size:0.6rem;
+      letter-spacing: -1px;
+      font-weight: bold;
+    }
+    .android_load{margin-left: 1rem;}
+  }
+  .s1-text1{
+    font-size: 0.556rem;
+    color:#777;
+    line-height:0.8rem;
+    padding: 0.347rem 0 0;
+  }
+}
+.section2 .t2-p1,.section3 .t2-p1,.section4 .t2-p1,.section6 .t2-p1{
+  padding: 0 0.64rem;
+  font-size: 0.641rem;
+  color:#333;
+  font-weight: bold;
+  letter-spacing: -0.5px;
+  line-height:0.8rem;
+  padding-bottom: 0.3rem;
+}
+.s2-div1 + .s2-div1 img{
+    width: 100%;
+  }
+.section2{
+  text-align: left;
+  background: #fff;
+  .s2-div2{
+    padding: 0.5rem 0.64rem;
+    font-size: 0.427rem;
+    font-style: italic;
+    p{
+      color:#777;
+      line-height: 0.8rem;
+    }
+    .s3-tip1{
+      width:2rem;
+      float:left;
+      position: absolute;
+      span{color:#ec4b04;}
+    }
+    p:last-child{
+      margin-left:1.8rem;
+    }
+  }
+}
+.section3{
+  background-color: #fff;
+  margin-top: 0.21rem;
+  text-align: left;
+  line-height: 0.8rem;
+  padding: 0.3rem 0.64rem;
+  .t2-p1{font-size: 0.641rem;padding: 0;}
+  .s3-div{
+    padding:0.3rem 0 0;
+    p{
+      font-size: 0.556rem;
+      color:#777;
+      line-height: 0.8rem;
+      margin-bottom:0.641rem;
+    }
+    .t2-p3{
+      font-size: 0.6rem;
+      color:#666;
+      .t2-p2{
+        color:#333;
+        padding:0.2rem 0;
+        font-weight: bold;
+      }
+    }
+    a{
+      display: inline-block;
+      color:#0b9d78;
+      font-weight: bold;
+      border-bottom:1px solid #0b9d78;
+    }
+    .s3-tip1{
+      span{color:#000;}
+    }
+  }
+  .s3-divs{padding:0 0;}
+  .s3-note{
+    font-size: 0.527rem;
+    font-style: italic;
+    color:#777;
+    span{color:#ec4b04;}
+    padding-bottom:0.3rem;
+  }
+}
+.section4{
+  padding: 0.3rem 0 0;
+  background-color: #fff;
+  margin-top: 0.21rem;
+  text-align: left;
+}
+.section5{
+  padding: 0rem 0.64rem 0;
+  background-color: #fff;
+  text-align: left;
+  .s5-text1{
+    font-size: 0.556rem;
+    line-height: 0.8rem;
+    margin-bottom: 0.5rem;
+    p{
+      color:#777;
+      span{
+        color:#333;
+        display:inline;
+        font-weight: bold;
+      }
+    }
+  }
+  .detTable{
+    padding:0.3rem 0 0;
+    display: table;
+    p{
+      display: table-cell;
+      font-size: 0.56rem;
+      text-align: left;
+      span{
+        display:block;
+        padding:0.53rem 0.2rem;
+        background:#fbe7db;
+        border-bottom:1px solid #fff;
+        letter-spacing: -0.5px;
+      }
+      span:nth-child(1){
+        color:#000;
+        font-weight: bold;
+        background:#f4b692;
+      }
+    }
+    p:nth-child(1){
+      width:10%;
+      border-right:1px solid #fff;
+      text-align: center;
+    }
+    p:last-child{
+      width: 90%;
+    }
+  }
+  .table1{
+    padding-bottom:0.66rem;
+  }
+  .table2{
+    padding-top:0rem;
+    padding-bottom:0.88rem;
+  }
+}
+.install-p{
+  background: #fff;
+  font-size: 0.7rem;
+  color:#333;
+  padding:0 0.64rem 0.5rem;
+  text-align: left;
+  font-weight: bold;
+}
+.section6{
+  background: #fff;
+  padding:0 0.64rem;
+  display:flex;
+  justify-content: space-between;
+  div{
+    width: 24.5%;
+    height: 2.75rem;
+    background: #ebf7f4;
+    padding-top: 0.25rem;
+    p{
+      color:#ec4b04;
+      font-size: 1.282rem;
+      font-style: italic;
+    }
+    span{
+      color:#666;
+      font-size: 0.38rem;
+      vertical-align: middle;
+    }
+  }
+}
+
+.foot {
+  background-color: #fff;
+  padding: 1rem 0 2rem;
+  a {
+    width: 10.68rem;
+    height: 1.2rem;
+    line-height: 1.2rem;
+    border: 1px solid #ffa234;
+    font-size: 0.6rem;
+    color: #ffa234;
+    text-align: center;
+    border-radius: 0.2rem;
+  }
+}
+
+::-webkit-input-placeholder {
+  color: #adadad;
+  font-size: 0.6rem;
+}
+
+::-moz-placeholder {
+  color: #adadad;
+  font-size: 0.6rem;
+}
+
+:-moz-placeholder {
+  color: #adadad;
+  font-size: 0.6rem;
+}
+</style>

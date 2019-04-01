@@ -1,0 +1,287 @@
+<template>
+	<div class="wrapper" id="wrap" ref="wrapper">
+		<oldHome @hideOffer="hideOffer" @showOffer="showOffer" v-if="showOldHome"></oldHome>
+		<home @hideOffer="hideOffer" @showOffer="showOffer" v-else></home>
+		<div class="st1Cover" v-if="show1stCover">
+			<div class="st1Cancel" @click="close"><img  :src="img" alt="" ></div>
+			<div class="st1Content" @click="jump1st">
+				<img :src="mUrl" alt="mAlt" :title="mTitle">
+			</div>
+		</div>
+    <div class="share-cover" v-show="showAdver" ></div>
+    <couponMmodal @parentListen="closeAdv" :modalObj="modalObj" v-if="showAdver"/>
+	</div>
+</template>
+<script>
+// import home from "./child/main.vue";
+import home from "./child/new-main.vue";
+import oldHome from "./child/main.vue";
+import { User } from "../../models/user";
+import { CookieUtil } from '../../models/utils';
+import { loginUserInfo } from '../../vuex/models/user/XUser.js';
+import {HomeBanner, emitCustomEvent} from 'models/utils/adGAEvent';
+import couponMmodal from 'components/coupon-modal';
+import { DomainManager } from '../../config/DomainManager';
+
+export default {
+  components: {
+    home,
+    oldHome,
+    couponMmodal,
+  },
+  data() {
+    return {
+      showOldHome:false,
+      url:'',
+      user:'', 
+      mUrl:'',
+      mAlt:'',
+      mTitle:'',
+      timer: null,
+      showOff: true,
+      show1stCover: false,
+      img: require("../../assets/images/anniversarysale/cancel.png"),
+      modalObj:{
+        showFCoupon: true,
+        isIndexPage: true,
+        url:'',
+        coupon:'HEGFLY',
+        date:'',
+        startDate:'',
+        endDate: '',
+        isLogin: false,
+        email:'',
+        hotelObj:{
+          showHCoupon: true,
+          url:'',
+          coupon:'HEGHPS',
+        }
+      },
+      showAdver: false,
+    };
+  },
+  computed: {
+    scrollTop() {
+      return window.innerHeight;
+    }
+  },
+  created() {
+    this.getImg();
+    if(this.$route.path == "/home"){
+      this.getCouponInfo();
+    }
+    this.timer = setTimeout(()=>{
+      this.show1stCover = false;
+    },5000);
+  },
+  activated() {
+    if(this.$route.path == "/oldhome"){
+      this.showOldHome = true;
+    }else{
+      this.showOldHome = false;
+    }
+    this.getCouponInfo();
+    if(CookieUtil.hasItem("uuid")){
+      // this.checkCouponIsUse();
+    }
+  },
+  methods: {
+    checkCouponIsUse(){
+      let url = DomainManager.getCouponUse();
+      this.$axios.post(url).then(res => {
+        if(res.code == 200){
+          if(res.data instanceof Array && res.data.length == 1){
+            if(res.data[0].couponType == 1){
+              this.modalObj.showFCoupon = true;
+              this.modalObj.coupon = res.data[0].couponCode;
+              this.modalObj.hotelObj.showHCoupon = false;
+            }else if(res.data[0].couponType == 2){
+              this.modalObj.showFCoupon = false;
+              this.modalObj.hotelObj.showHCoupon = true;
+              this.modalObj.hotelObj.coupon = res.data[0].couponCode;
+            }
+            this.getCouponInfo();
+          }else if(res.data instanceof Array && res.data.length == 2){
+            res.data.forEach((e, i)=>{
+              if(e.couponType == 1){
+                this.modalObj.showFCoupon = true;
+                this.modalObj.coupon = e.couponCode;
+              }else if(e.couponType == 2){
+                this.modalObj.hotelObj.showHCoupon = true;
+                this.modalObj.hotelObj.coupon = e.couponCode;
+              }
+            })
+            this.getCouponInfo();
+          }
+        }else{
+          this.showAdver = false;
+          this.modalObj.showFCoupon = false;
+          this.modalObj.hotelObj.showHCoupon = false;
+        }
+      }).catch(err=>{
+        this.showAdver = false;
+        this.modalObj.showFCoupon = false;
+        this.modalObj.hotelObj.showHCoupon = false;
+        console.log(err)
+      })
+    },
+    hideOffer() {
+      this.showOff = false;
+    },
+    showOffer() {
+      this.showOff = true;
+    },
+    close() {
+      this.show1stCover = false;
+      clearTimeout(this.timer);
+    },
+    closeAdv(){
+      this.showAdver = false;
+    },
+    getCouponInfo(){
+      let url = DomainManager.newAdvertising()+'?id=280';
+      this.$axios.get(url).then(res => {
+        if(res.code == 200 && res.data){
+          this.showAdver = true;
+          this.modalObj.url = res.data.url;
+          this.modalObj.hotelObj.url = res.data.landingPageUrl;
+          this.modalObj.startDate= res.data.startDate;
+          this.modalObj.endDate= res.data.endDate;
+        }
+      }).catch(err=>{
+        this.showAdver = false;
+        console.log(err)
+      })
+    },
+    jump1st() {
+      emitCustomEvent(HomeBanner);
+      this.$router.push(this.url);
+      clearTimeout(this.timer);
+    },
+    getImg() {
+      let parmTop = "type=21&device=0&businessType=1";
+      User.advList(this, parmTop).then(res => {
+        if (res.success) {
+          if((res.list instanceof Array) && res.list.length >= 1){
+            this.show1stCover = true;
+            this.url = res.list[0].href;
+            this.mUrl =
+            res.list[0].landingPageUrl == null
+              ? ""
+              : res.list[0].landingPageUrl;
+          this.mAlt =
+            res.list[0].landingPageAlt == null
+              ? ""
+              : res.list[0].landingPageAlt;
+          this.mTitle =
+            res.list[0].landingPageTitle == null
+              ? ""
+              : res.list[0].landingPageTitle;
+          }else{
+            this.show1stCover = false;
+            clearTimeout(this.timer);
+          }
+        }else{
+          this.show1stCover = false;
+          clearTimeout(this.timer);
+        }
+      })
+      .catch(err => {
+        this.show1stCover = false;
+        console.log(err.msg);
+      });
+    },
+  }
+};
+</script>
+<style lang="less" scoped>
+.wrapper {
+  height: 100%;
+  overflow: auto;
+  position: relative;
+  .share-cover{
+    width: 100%;
+    height:100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index:19;
+    background: rgba(0,0,0,0.5);
+  }
+  .st1Cover {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: rgba(10,24,33,0.80);
+    top: 0;
+    left: 0;
+    z-index: 22;
+    .st1Cancel {
+      width: 2rem;
+      height:2rem;
+      position: absolute;
+      right: 1.5rem;
+      top: 8%;
+      z-index: 23;
+      img{
+        width: 1.2rem;
+      }
+    }
+    .st1Content {
+      width: 100%;
+      height:18.36rem;
+      position: absolute;
+      z-index: 22;
+      left: 0;
+      right: 0;
+			top: 0;
+			bottom:0;
+      margin: auto;
+      img {
+        width: 11rem;
+        height:18.36rem;
+      }
+    }
+  }
+  .mask {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 100%;
+	width: 100%;
+	background: #000;
+	opacity: 0.7;
+}
+
+.tips {
+	width: 10rem;
+	height: 7rem;
+	background: #fff;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin-top: -3.5rem;
+	margin-left: -5rem;
+	.tips-group {
+		padding: 0.64rem;
+		text-align: left;
+		p {
+			font-size: 0.64rem;
+			line-height: 1.3;
+		}
+	}
+	.tips-btn {
+		// width: 100%;
+		height: 1rem;
+		line-height: 1rem;
+		font-size: 0.64rem;
+		margin: 0.64rem;
+		box-sizing: border-box;
+		background: #ffad3d;
+		color: #fff;
+	}
+}
+}
+</style>

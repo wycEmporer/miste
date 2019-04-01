@@ -1,0 +1,32 @@
+<template>
+	<div class="wrapper">
+		<head-top>
+			<i slot="left" class="prev iconfont icon-back"></i>
+			<div slot="title" class="title">Payment</div>
+			<img slot="right" :src="require('../../assets/images/flight-prev.png')" class="placeholder">
+		</head-top>
+		<router-view></router-view>
+	</div>
+</template>
+<script>
+import {AppBridge} from '../../models/appbridge/appbridge.js';
+import headTop from "../../components/head/head.vue";
+import { CookieUtil } from "models/utils";
+export default {
+  components: {
+    headTop
+  },
+  data(){
+    return {
+    }
+  },
+};
+</script>
+<style lang="less" scoped>
+  @import "~assets/less/theme.less";
+  .header {
+    .placeholder {
+      opacity: 0;
+    }
+  }
+</style>

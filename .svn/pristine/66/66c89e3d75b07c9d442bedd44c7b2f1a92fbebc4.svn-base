@@ -1,0 +1,155 @@
+<template>
+  <div id="rank-detail">
+    <head-top class="header">
+      <i slot="left" class="top_icon iconfont icon-back" ></i>
+      <p slot="title" style="margin-left:-1.5rem;">Details</p>
+    </head-top>
+    <div class="detail-content">
+      <div class="detList">
+        <p class="det-paragraph">This campaign starts from June 25th to October 14th, 2018 which is subject to HappyEasygo referral program, aimed to award top participants with <span>Samsung Galaxy S8, free flight tickets</span> and <span>special discount vouchers</span> every week.</p>
+      </div>
+      <p class="link_line"></p>
+      <div class="detList">
+        <h5 class="det-title">How to participate:</h5>
+        <p class="det-paragraph" >Refer your friends and contacts to sign up HappyEasygo App and to book flight tickets via HappyEasygo app. </p>
+        <p class="det-paragraph" >The weekly winners will be announced on <span>every Tuesday at 10 AM</span>.</p>
+        <p class="det-paragraph" >Reward for top participants on Referral Program Activity.</p>
+      </div>
+      <div class="detTable table1">
+        <p><span>Ranking</span><span>Top 1</span><span>Top 2</span><span>Top 3-10</span></p>
+        <p><span>Reward for Top Referred Register</span><span>Samsung Galaxy S8</span><span>1 free flight ticket </span><span>Voucher of Rs.500 discount on flights bookings</span></p>
+      </div>
+      <div class="detTable table2">
+        <p><span>Ranking</span><span>Top 1</span><span>Top 2</span><span>Top 3-10</span></p>
+        <p><span>Reward for Top Referred Order</span><span>Samsung Galaxy S8</span><span>1 free flight ticket </span><span>Voucher of Rs.500 discount on flights bookings</span></p>
+      </div>
+      <p class="link_line"></p>
+      <div class="detList">
+        <h5 class="det-title">How to get your award?</h5>
+        <p class="det-paragraph" >Top 1 winner sends post address and contact info to <span style="color:#666;font-weight:bold;border-bottom:1px solid #000;">cs@happyeasygo.com</span>, and we’ll deliver it for you.Other winners will receive personalized coupon codes with 1-month validity via email to redeem their rewards on HappyEasygo app.</p>
+      </div>
+      <p class="link_line"></p>
+      <div class="detList detTerms">
+        <h5 class="det-title">Terms &amp; Conditions</h5>
+        <p class="det-paragraph" ><span>·</span>Only individuals you invited sign up HappyEasygo app with your referral code will be recorded as your Referred Register and Referred Order when they book tickets with us. </p>
+        <p class="det-paragraph" ><span>·</span>All top 10 participants will be able to gain rewards once they have completed to refer no less than 50 contacts to sign up HappyEasygo app successfully or make more than 25 orders from their referred registers within a week.</p>
+        <p class="det-paragraph" ><span>·</span>Regarding free flight ticket reward, convenience fee and tax cannot be deducted. Winner needs to pay convenience fee and tax and apply a customized coupon code to get it. And this free flight tickets coupon code is valid for flight tickets valued no more than Rs.5000 on HappyEasygo App only, from 1st September to 30th September. It can be used once for one winner.</p>
+        <p class="det-paragraph" ><span>·</span>The voucher of Rs.500 discount on flight booking is redeemed with personalized coupon codes with one-month validity, which can be used on HappyEasygo App once per person.</p>
+        <p class="det-paragraph" ><span>·</span>In case of any cancellation/refund (by airline or provider) happens out of the validity of this activity, your Referred Order will be reduced accordingly.</p>
+        <p class="det-paragraph" ><span>·</span>HappyEasyGo Travel Pvt. Ltd. ("HappyEasyGo") reserves the right to add, alter, modify all or any of Referral Program, or replace wholly or in part, this offer by any other offer, whether similar to this offer or not, without prior notice.</p>
+        <p class="det-paragraph" ><span>·</span>All other standard T&amp;C available at HappyEasyGo.com shall apply.</p>
+        <p class="det-paragraph" ><span>·</span>Any disputes arising out of this offer shall be subject to the exclusive jurisdiction of competent courts in Gurgaon, Haryana, India.</p>
+      </div>
+      <p class="link_line"></p>
+      <p class="link_line"></p>
+    </div>
+  </div>
+</template>
+<script>
+import headTop from '../../components/head/head.vue';
+import { Toast, Indicator } from 'mint-ui';
+import { DomainManager } from '../../config/DomainManager.js';
+import { CookieUtil } from "../../models/utils";
+export default {
+  components:{
+    headTop,
+  },
+  data () {
+    return {
+      
+    }
+  },
+  created(){
+    
+  },
+  methods: {
+    
+  }
+}
+</script>
+<style lang="less" scoped>
+#rank-detail{
+  height:auto;
+  .header {
+    position: static!important;
+    background: #0b9d78;
+    i {
+      padding: 0 0.64rem;
+    }
+  }
+  .link_line{
+      width:100%;
+      height:0.64rem;
+      background:#efefef;
+    }
+  .detail-content{
+    text-align:left;
+    .detList{padding:0.77rem 0.8rem 0.66rem;}
+    .det-title{
+      font-size: 13px;
+      color:#111;
+      line-height:0.88rem;
+      margin-bottom:0.44rem;
+    }
+    .det-paragraph{
+      font-size:0.56rem;
+      color:#666;
+      line-height: 0.8rem;
+      span{
+        color:#000;
+        font-weight: bold;
+        display:inline;
+      }
+    }
+    .detTable{
+      padding:0.3rem 0.8rem 0;
+      display: table;
+      p{
+        display: table-cell;
+        font-size: 0.56rem;
+        text-align: left;
+        span{
+          display:block;
+          padding:0.53rem 0.2rem;
+          background:#fbe7db;
+          border-bottom:1px solid #fff;
+          letter-spacing: -0.5px;
+        }
+        span:nth-child(1){
+          color:#000;
+          font-weight: bold;
+          background:#f4b692;
+        }
+      }
+      p:nth-child(1){
+        width:10%;
+        border-right:1px solid #fff;
+        text-align: center;
+      }
+      p:last-child{
+        width: 90%;
+      }
+    }
+    .table1{
+      padding-bottom:0.66rem;
+    }
+    .table2{
+      padding-top:0rem;
+      padding-bottom:0.88rem;
+    }
+    .detTerms{
+      p{
+        line-height:0.8rem;
+        position: relative;
+        padding:0 0 0 0.5rem;
+        margin-bottom:0.3rem;
+        span{
+          position: absolute;
+          top: 0;
+          left: 0;
+        }
+      }
+    }
+  }
+}
+</style>

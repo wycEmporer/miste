@@ -1,0 +1,12 @@
+export function skyscanerTrack(orderId){
+  let isPro = process.env.NODE_ENV === 'production';
+  if(!isPro) return;
+  let stoName = 'SAT_' + orderId;
+  let isPaySuccess = localStorage.getItem(stoName) === '1';
+  if(isPaySuccess){
+    (function(s, k, y, t, a, g){s['SkyscannerAnalyticsTag']=t;s[t]=s[t]||function(){ (s[t].buffer=s[t].buffer||[]).push(arguments);};s[t].u=y;var l=k.createElement('script'); l.src=y+'/tag.js';l.async=1;var h=k.getElementsByTagName('head')[0];h.appendChild(l); })(window, document, 'https://analytics.skyscanner.net', 'sat');
+
+    window.sat && window.sat('send', 'conversion', {bookingReference: orderId});
+    localStorage.removeItem(stoName);
+  }
+}

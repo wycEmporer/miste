@@ -1,0 +1,33 @@
+<template>
+  <div>
+    <head-top class="header">
+			<i slot="left" class="iconfont icon-back"></i>
+			<span slot="title" class="title">My Hotels</span>
+			<i slot="right" class="sp iconfont icon-back"></i>
+		</head-top>
+    <router-view></router-view>
+  </div>
+</template>
+<script>
+import headTop from "../../components/head/head.vue";
+import { CookieUtil } from "models/utils";
+
+export default {
+  components: {
+    headTop
+  },
+  created() {
+    if(!CookieUtil.hasItem("uuid")){
+      this.$router.push('/hotel/search');
+      return;
+    }
+  },
+}
+</script>
+<style lang="less" scoped>
+.header{
+    .sp {
+      opacity: 0;
+    }
+  }
+</style>

@@ -1,0 +1,409 @@
+<template>
+  <div class="summarys" :class="{hide: summaryLists.length==0}">
+    <div v-for="(summary, index) in summaryLists" :key="index">
+      <div class="summary" v-show="showIndex == index">
+        <div class="summary-top">
+          <div class="summary-top-text">
+            {{tipStatus[summary.bookStatus] || ''}}
+          </div>
+          <div class="summary-top-close" @click="close">
+            &times;
+          </div>
+        </div>
+        <div class="summary-wrap">
+          <div class="summary-title-num">
+            Trip ID : {{summary.id}} 
+            <i class="icon-copy" @click="copyId(summary.id)"></i>
+          </div>
+          <div class="summary-info">
+            <div class="summary-info-time">
+             <i class="icon-plane"></i> {{summary.fromDate}}
+            </div>
+            <div class="summary-info-flightNo">
+              <img :src="`/static/images/${summary.flightNo.slice(0,2)}.png`" width="14" alt=""> {{summary.flightNo}}
+            </div>
+          </div>
+          <div class="summary-city">
+            <div class="summary-city-from textR">
+              <div class="summary-city-from-code">
+                {{summary.fromCity}}
+              </div>
+              <div class="summary-city-from-time">
+                {{summary.fromTime}}
+              </div>
+            </div>
+            <div class="summary-city-sign">
+              <i class="icon-combined"></i>
+            </div>
+            <div class="summary-city-to">
+              <div class="summary-city-to-code">
+                {{summary.toCity}}
+              </div>
+              <div class="summary-city-to-time">
+                {{summary.toTime}}
+              </div>
+            </div>
+          </div>
+          <div class="summary-operations">
+            <button class="summary-operation-btn" :class="{active: summary.isChangeable}" :disabled="!summary.isChangeable" @click="searchOrderDetail(summary, 'cancel')">
+              Cancel
+            </button>
+            <button class="summary-operation-btn" :class="{active: summary.isChangeable}" :disabled="!summary.isChangeable" @click="searchOrderDetail(summary, 'change')">
+              Change
+            </button>
+            <button class="summary-operation-btn" :class="{active: summary.isTicketNo}" :disabled="!summary.isTicketNo" @click="getTicket(summary)">
+              Ticket
+            </button>
+            <button class="summary-operation-btn" :class="{active: summary.status == 4}" :disabled="summary.status != 4" @click="getInvoice(summary)">
+              Invoice
+            </button>
+          </div>
+          <div class="gotoDetail fontSz12 textC" @click="searchOrderDetail(summary)">
+            View Details
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-controler" v-if="summaryLists.length > 1">
+      <button class="summary-controler-btn" :disabled="showIndex <= 0" :class="{active:showIndex > 0}" @click="controler(-1)">
+        <!-- &#139; -->
+        &lsaquo;
+      </button>
+      <div>
+        {{showIndex +1}}/{{summaryLists.length}}
+      </div>
+      <button class="summary-controler-btn" :disabled="showIndex +1 >= summaryLists.length" :class="{active:showIndex +1 < summaryLists.length}" @click="controler(1)">
+        <!-- &#155; -->
+        &rsaquo;
+      </button>
+    </div>
+  </div>
+</template>
+
+<script>
+import {TimeFormatUtil, CookieUtil} from 'models/utils/index';
+import Clipboard from 'clipboard';
+import { Toast,Indicator } from 'mint-ui';
+import { DomainManager } from 'config/DomainManager';
+
+
+export default {
+  props:{
+    params: Object,
+  },
+  data(){
+    return {
+      summaryLists:[],
+      showIndex: 0,
+      tipStatus:{
+        Issued: 'Ticket Issued:Click to view details',
+        Canceled: 'Ticket Canceled',
+        Completed: 'Ticket Compeleted',
+        Paid: 'Payment Received: Ticket will be issued within 1 hour',
+        'To be paid': 'To be paid',
+      }
+    }
+  },
+  mounted(){
+    this.getOrderSummary();
+  },
+  activated(){
+    this.getOrderSummary();
+  },
+  methods:{
+    close(){
+      this.$emit('closeDetail');
+    },
+    getOrderSummary(){
+      const {phoneNo, orderId, code} = this.params;
+      const data = {
+        phone: `${code} ${phoneNo}`,
+        id: orderId,
+      };
+      this.$axios({
+        method: 'post',
+        url: '/heg_api/getOrderBySupport.do',
+        data: JSON.stringify(data),
+        headers:{
+          'content-type': 'application/json',
+        }
+      }).then(res => {
+        if(res.data){
+          const tmpArr = [];
+          res.data.forEach(value => {
+            
+            const fromInfoObj = value.voyageinfo[0];
+            const toInfoObj = value.voyageinfo[value.voyageinfo.length - 1];
+            const fromDateObj = new Date(fromInfoObj.dt);
+            const toDateObj = new Date(toInfoObj.at)
+            const isTicketNo = !!value.ticketsinfo[0][0].ticketno;
+            let isOperateable = false;
+            value.travellerinfo.forEach(function(val){
+              if(!!Number(val.status)){
+                isOperateable = true;
+              }
+            });
+            const tempObj = {
+              id: value.flightItineraryIdString,
+              fromCity: value.departCity,
+              toCity: value.arriveCity,
+              fromTime: TimeFormatUtil.getDisplayHourAndMinute(fromDateObj),
+              toTime: TimeFormatUtil.getDisplayHourAndMinute(toDateObj),
+              fromDate: TimeFormatUtil.getOrderDetailDate(fromDateObj, false),
+              toDate: TimeFormatUtil.getOrderDetailDate(toDateObj, false),
+              isChangeable: value.refundable && isOperateable && isTicketNo,
+              token: value.token,
+              flightNo: value.travellers,
+              isTicketNo,
+              status: value.status,
+              bookStatus: value.bookStatus,
+            }
+             
+            tmpArr.push(tempObj);
+          });
+          this.summaryLists = tmpArr;
+          this.$emit('loadSuccess');
+        }else{
+          this.$emit('closeDetail', 1,res.msg || 'No record found.Please check the information you entered.');
+        }
+      }).catch(err=>{
+        Toast(err);
+        this.$emit('closeDetail', 1,'');
+      })
+    },
+    getTicket(summary){
+      window.location.href=`/heg_api/itinerary/printItinerary.do?tripId=${summary.id}`
+    },
+    getInvoice(summary){
+      window.location.href= `/heg_api/itinerary/printInvoice.do?tripId=${summary.id}&mob=${this.params.code} ${this.params.phoneNo}`;
+    },
+    controler(val){
+      this.showIndex+= val;
+    },
+    copyId(val){
+      let clipboard = new Clipboard('.icon-copy',{
+        text: function() {
+          return val;
+        }
+      });
+      clipboard.on('success', function(e) {
+        Toast({
+          message:"Successfully copied to the Clipboard! ",
+          duration:1200
+        });
+        e.clearSelection();
+        clipboard.destroy();
+      });
+    },
+
+  // order 查询 写的太烂 需要重写；
+    searchOrderDetail(item, operationType) {
+      sessionStorage.setItem("tripId",item.id);
+      Indicator.open({
+        spinnerType: "fading-circle"
+      });
+      // let orderId = item.flightOrderIdString;
+      let url;
+      if (!CookieUtil.hasItem("uuid")) {
+        url = DomainManager.getOrderDetailNew()+'?tripId='+item.id+'&token='+item.token+'&emailOrPhone='+ `${this.params.code} ${this.params.phoneNo}`;
+      } else {
+        url = DomainManager.getOrderDetailNew()+'?tripId='+item.id;
+      }
+      
+      this.$axios.get(url).then(json => {
+        Indicator.close();
+        if(json.code === 0){
+          const orders = json.data.triplist;
+          const orderFee = json.data.order;
+          sessionStorage.removeItem("orders");
+          sessionStorage.removeItem("orderFee");
+          sessionStorage.removeItem("orderId");
+          sessionStorage.removeItem("orderInsurance");
+
+          sessionStorage.setItem("orders", JSON.stringify(orders));
+          sessionStorage.setItem("orderFee", JSON.stringify(orderFee));
+          sessionStorage.setItem("orderId", orderFee.orderid);
+          sessionStorage.setItem("orderInsurance",JSON.stringify(json.data.flightInsuranceDtos));
+          let status;
+          for (let obj in orders.ticketsinfo) {
+            status = orders[0].ticketsinfo[obj][0].status;
+          }
+          if(operationType == 'cancel'){
+            return this.$router.push("/order/cancel");
+          }
+          if(operationType == 'change'){
+            return this.$router.push("/order/change");
+          }
+
+          if (
+            status == 107 ||
+            orders[0].payStatus == 0 ||
+            orders[0].payStatus == 9 ||
+            orders[0].payStatus == 3 ||
+            orders[0].payStatus == 4
+          ) {
+            this.$router.push({path:"/order/nopay",query:{id:orderFee.orderid}});
+          } else if (status == 106) {
+            this.$router.push("/order/complete");
+          } else {
+            this.$router.push("/order/upcoming");
+          }
+        }else if(json.code == 5){
+          Toast({
+            message:res.message,
+            duration:1200
+          });
+        }
+      }).catch(err => {
+        console.log(err);
+        Indicator.close();
+      });
+    },
+
+  }
+}
+</script>
+
+<style lang="less" scoped>
+  .hide{
+    display: none;
+  }
+  .fontSz12{
+    font-size: 12px;
+  }
+  .textR{
+    text-align: right;
+  }
+  .textC{
+    text-align: center;
+  }
+  .icon-copy{
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-left: 10px;
+    background: url('./images/icon-copy.png') center/ 10px;
+  }
+  .icon-plane{
+    display: inline-block;
+    width: 13px;
+    height: 7px;
+    margin-right: 5px;
+    background: url('./images/icon-plane.png') center center / 13px;
+  }
+  .icon-combined{
+    display: inline-block;
+    width: 30px;
+    height: 3px;
+    background: url('./images/icon-combined.png') center center / 30px;
+  }
+  // .summarys{
+  //   // display: flex;
+  //   // flex-wrap: nowrap;
+  // }
+  .summary{
+    width: 345px;
+    margin: 10px auto;
+  }
+  .summary-top{
+    display:flex;
+    height: 34px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    background-color: #0B9D78;
+  }
+  .summary-top-text{
+    font-size: 11px;
+    font-weight: bold;
+    color: #fff;
+  }
+  .summary-top-close{
+    color: #fff;
+    font-size: 20px;
+  }
+
+  .summary-wrap{
+    padding: 15px 10px;
+    background-color: #fff;
+  }
+  .summary-title-num{
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+  .summary-info{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  .summary-city{
+    display:flex;
+    flex-direction: row;
+    justify-content: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #cdcdcd;
+  }
+  .summary-city-sign{
+    width: 65px;
+    text-align: center;
+  }
+  .summary-city-from, .summary-city-to{
+    width:120px;
+  }
+  .summary-city-from-code,.summary-city-to-code{
+    font-size:21px;
+    margin-bottom: 10px;
+  }
+  .summary-city-from-time, .summary-city-to-time{
+    font-size:12px;
+  }
+  .summary-operations{
+    display:flex;
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 15px 0;
+  }
+  .summary-operation-btn{
+    width: 70px;
+    height: 23px;
+    line-height: 23px;
+    font-size: 12px;
+    text-align: center;
+    background-color: #dcdcdc;
+    color:#fff;
+    padding: 0;
+
+    & + .summary-operation-btn{
+      margin-left: 15px;
+    }
+    &.active{
+      color: #0B9D78;
+      border: 1px solid #0B9D78;
+      background-color:#fff;
+    }
+    
+  }
+  .summary-controler{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    margin-bottom: 10px;
+    padding: 0 30px;
+  }
+  .summary-controler-btn{
+    font-size: 24px;
+    color: #ccc;
+    padding:0;
+    &.active{
+      color: #0B9D78;
+    }
+  }
+
+</style>
+
+

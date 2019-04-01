@@ -1,0 +1,47 @@
+<template>
+	<div class="wrapper">
+		<head-top>
+			<i slot="left" class="prev iconfont icon-back"></i>
+			<div slot="title" class="title">Payment</div>
+			<img slot="right" :src="require('../../assets/images/flight-prev.png')" class="placeholder">
+		</head-top>
+		<router-view></router-view>
+	</div>
+</template>
+<script>
+import headTop from "../../components/head/head.vue";
+import { CookieUtil } from "models/utils";
+export default {
+  components: {
+    headTop
+  },
+  data(){
+    return {
+    }
+  },
+  created(){
+    try{
+      let uuid = window.heg.getNativeUuid();
+      if(uuid){
+        CookieUtil.setItem('uuid', uuid);
+      }else{
+        CookieUtil.removeItem('uuid');
+      }
+      
+     }catch(e){}
+  },
+  methods:{
+    // returnBack(){
+    //   this.$router.go(-1);
+    // }
+  }
+};
+</script>
+<style lang="less" scoped>
+  @import "~assets/less/theme.less";
+  .header {
+    .placeholder {
+      opacity: 0;
+    }
+  }
+</style>

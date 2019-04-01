@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HappyEasyGo</title>
+</head>
+<body>
+
+<script type="text/javascript">
+(function() {
+	// debugger;
+	if(location.href.indexOf("?") == -1 || ( location.href.indexOf("?") && !location.href.split("?")[1])){
+		location.href = "/";
+		// q=DEL-BOM-20181231-20190103-F-1-0-0
+	}
+	var params = getUrlParams(window.location.href);
+	var order = this.handleOrderParams(params);
+	var searchInfo = {
+		arriveAirport: getSelectAirportInfo(params.from),
+		defaultCabinClass: params.cabinClass,
+		departAirport: getSelectAirportInfo(params.to),
+		departDate: new Date(params.departDate),
+		passengersNum: {adults: params.adults, children: params.childs, infants: params.baby},
+		returnDate: new Date(params.returnDate),
+	};
+	sessionStorage.setItem("searchInfo", JSON.stringify(searchInfo));
+	sessionStorage.setItem("order", JSON.stringify(order));
+	if(params.tripType === 1){
+		if(searchInfo.departAirport.cn != "India" || searchInfo.arriveAirport.cn != "India"){
+			window.location.href = '/international';
+		}else{
+			window.location.href = '/roundtrip';
+		}
+	}else{
+		window.location.href = '/oneway';
+	}
+})();
+
+function getUrlParams(url){
+    var str = url.split("?")[1].split("=")[1];
+    var arr = str.split("-");
+    var search = {
+        "from": !arr[0]?"DEL":arr[0],
+        "to": !arr[1]?"BOM":arr[1],
+        "departDate": arr[2],
+        "returnDate": arr[3],
+        "cabinClass": !arr[4]?"E":arr[4],
+        "adults": arr[5],
+        "childs": arr[6],
+        "baby": arr[7],
+        "tripType": !!arr[3]?1:0
+    };
+    var depDate = transDateFormat(search.departDate);
+    var retDate = transDateFormat(search.returnDate);
+    var cabin = selectCabinClass(search.cabinClass);
+    search.departDate = depDate;
+    search.returnDate = retDate;
+    search.cabinClass = cabin;
+
+    return search;
+}
+
+function handleOrderParams(data){
+    var order = {
+        adults: handlePassenger(data.adults),
+        baggageinfo: [],
+        cabinClass: data.cabinClass,
+        children: handlePassenger(data.childs),
+        contactInfo: {},
+        departAirport: getSelectAirportInfo(data.from),
+        departDate: new Date(data.departDate).getTime(),
+        destinationAirport: getSelectAirportInfo(data.to),
+        infants: handlePassenger(data.baby),
+        orderNumber: "",
+        orderType: data.tripType == 0?"one":"two",
+        serviceFee: 0,
+    };
+    if(data.tripType == 1){
+        order.returnDate = new Date(data.returnDate).getTime();
+    }
+    return order;
+}
+
+function handlePassenger(data){
+    var arr = [];
+    for(var i = 0; i < data;i++){
+        arr.push({
+            birthday:null
+        });
+    }
+    return arr;
+}
+
+function selectCabinClass(type){
+    var cabinClass = { "E": "Economy","B": "Business","F": "First","P": "Prenium Economy"};
+    var cabin;
+    for(const key in cabinClass){
+        if(key === type){
+            cabin = cabinClass[key];
+        }
+    }
+    return cabin;
+}
+
+function transDateFormat(date){
+    var newDate = date.split("");
+    var year ='' , month = '', day = '';
+    newDate.forEach(function(e, i){
+        if(i <= 3){
+            year += e
+        }else if(i>3 && i<6){
+            month += e;
+        }else{
+            day += e ;
+        }
+    })
+    return year+"-"+month+"-"+day
+}
+
+(function (w, d, s, l, i) {
+    w[l] = w[l] || [];
+    w[l].push({
+        'gtm.start': new Date().getTime(),
+        event: 'gtm.js'
+    });
+    var f = d.getElementsByTagName(s)[0],
+        j = d.createElement(s),
+        dl = l != 'dataLayer' ? '&l=' + l : '';
+    j.async = true;
+    j.src =
+        'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+    f.parentNode.insertBefore(j, f);
+})(window, document, 'script', 'dataLayer', 'GTM-TN5FZDK');
+function emitCustomEvent(label, category){
+    var event = {
+        'event': 'custom_event',
+        'gtm.category': category || 'Banner_ADs',
+        'gtm.action': 'click',
+        'gtm.label': label
+    };
+    try{
+        window.dataLayer && window.dataLayer.push(event);
+    }catch(e){}
+}
+
+function getSelectAirportInfo( city ){
+    var airport = [{"airport":"Agra Airport","city":"Agra","cn":"India","iata":"AGR"},{"airport":"Agartala Airport","city":"Agartala","cn":"India","iata":"IXA"},{"airport":"Sardar Vallabhbhai Patel Int'l Airport","city":"Ahmedabad","cn":"India","iata":"AMD"},{"airport":"Lengpui Airport","city":"Aizawl","cn":"India","iata":"AJL"},{"airport":"Akola Airport","city":"Akola","cn":"India","iata":"AKD"},{"airport":"Allahabad Airport","city":"Allahabad","cn":"India","iata":"IXD"},{"airport":"Along Airport","city":"Along","cn":"India","iata":"IXV"},{"airport":"Sri Guru Ram Dass Jee Int'l Airport","city":"Amritsar","cn":"India","iata":"ATQ"},{"airport":"Aurangabad Airport","city":"Aurangabad","cn":"India","iata":"IXU"},{"airport":"Kempegowda Int'l Airport","city":"Bangalore","cn":"India","iata":"BLR"},{"airport":"Bareilly Airport","city":"Bareilly","cn":"India","iata":"BEK"},{"airport":"Bathinda Airport","city":"Bathinda","cn":"India","iata":"BUP"},{"airport":"Belgaum Airport","city":"Belgaum","cn":"India","iata":"IXG"},{"airport":"Bellary Airport","city":"Bellary","cn":"India","iata":"BEP"},{"airport":"Bhavnagar Airport","city":"Bhavnagar","cn":"India","iata":"BHU"},{"airport":"Raja Bhoj Airport","city":"Bhopal","cn":"India","iata":"BHO"},{"airport":"Biju Patnaik Int'l Airport","city":"Bhubaneswar","cn":"India","iata":"BBI"},{"airport":"Bhuj Airport","city":"Bhuj","cn":"India","iata":"BHJ"},{"airport":"Nal Airport","city":"Bikaner","cn":"India","iata":"BKB"},{"airport":"Bilaspur Airport","city":"Bilaspur","cn":"India","iata":"PAB"},{"airport":"Chandigarh Airport","city":"Chandigarh","cn":"India","iata":"IXC"},{"airport":"Chennai Int'l Airport","city":"Chennai","cn":"India","iata":"MAA"},{"airport":"Coimbatore Int'l Airport","city":"Coimbatore","cn":"India","iata":"CJB"},{"airport":"Daman Airport","city":"Daman","cn":"India","iata":"NMB"},{"airport":"Jolly Grant Airport","city":"Dehradun","cn":"India","iata":"DED"},{"airport":"Delhi Airport ","cc":"INDIA","city":"Delhi","cn":"India","iata":"DEL","mixn":"AIRPORT"},{"airport":"Dhanbad Airport","city":"Dhanbad","cn":"India","iata":"DBD"},{"airport":"Gaggal Airport","city":"Dharmsala","cn":"India","iata":"DHM"},{"airport":"Dibrugarh Airport","city":"Dibrugarh","cn":"India","iata":"DIB"},{"airport":"Dimapur Airport","city":"Dimapur","cn":"India","iata":"DMU"},{"airport":"Diu Airport","city":"Diu","cn":"India","iata":"DIU"},{"airport":"Kazi Nazrul Islam Airport","city":"Durgapur","cn":"India","iata":"RDP"},{"airport":"Cochin Int'l Airport","city":"Ernakulam","cn":"India","iata":"COK"},{"airport":"Gaya Airport","city":"Gaya","cn":"India","iata":"GAY"},{"airport":"Dabolim Airport","city":"Goa","cn":"India","iata":"GOI"},{"airport":"Gorakhpur Airport","city":"Gorakhpur","cn":"India","iata":"GOP"},{"airport":"Lokpriya Gopinath Bordoloi Int'l Airport","city":"Guwahati","cn":"India","iata":"GAU"},{"airport":"Gwalior Airport","city":"Gwalior","cn":"India","iata":"GWL"},{"airport":"Hubli Airport","city":"Hubli","cn":"India","iata":"HBX"},{"airport":"Rajiv Gandhi Int'l Airport","city":"Hyderabad","cn":"India","iata":"HYD"},{"airport":"Imphal Airport","city":"Imphal","cn":"India","iata":"IMF"},{"airport":"Devi Ahilyabai Holkar Airport","city":"Indore","cn":"India","iata":"IDR"},{"airport":"Jabalpur Airport","city":"Jabalpur","cn":"India","iata":"JLR"},{"airport":"Jagdalpur Airport","city":"Jagdalpur","cn":"India","iata":"JGB"},{"airport":"Jaipur Int'l Airport","city":"Jaipur","cn":"India","iata":"JAI"},{"airport":"Jaisalmer Airport","city":"Jaisalmer","cn":"India","iata":"JSA"},{"airport":"Jammu Airport","city":"Jammu","cn":"India","iata":"IXJ"},{"airport":"Jamnagar Airport","city":"Jamnagar","cn":"India","iata":"JGA"},{"airport":"Sonari Airport","city":"Jamshedpur","cn":"India","iata":"IXW"},{"airport":"Jodhpur Airport","city":"Jodhpur","cn":"India","iata":"JDH"},{"airport":"Jorhat Airport","city":"Jorhat","cn":"India","iata":"JRH"},{"airport":"Cuddapah Airport","city":"Kadapa","cn":"India","iata":"CDP"},{"airport":"Kailashahar Airport","city":"Kailasahar","cn":"India","iata":"IXH"},{"airport":"Kamalpur Airport","city":"Kamalpur","cn":"India","iata":"IXQ"},{"airport":"Kandla Airport","city":"Kandla","cn":"India","iata":"IXY"},{"airport":"Kanpur Airport","city":"Kanpur","cn":"India","iata":"KNU"},{"airport":"Keshod Airport","city":"Keshod","cn":"India","iata":"IXK"},{"airport":"Khajuraho Airport","city":"Khajuraho","cn":"India","iata":"HJR"},{"airport":"Kolhapur Airport","city":"Kolhapur","cn":"India","iata":"KLH"},{"airport":"Nscbi Airport","city":"Kolkata","cn":"India","iata":"CCU"},{"airport":"Kota Airport","city":"Kota","cn":"India","iata":"KTU"},{"airport":"Calicut Int'l Airport","city":"Kozhikode","cn":"India","iata":"CCJ"},{"airport":"Bhuntur Airport","city":"Kullu","cn":"India","iata":"KUU"},{"airport":"Latur airport","city":"Latur","cn":"India","iata":"LTU"},{"airport":"Kushok Bakula Rimpochee Airport","city":"Leh","cn":"India","iata":"IXL"},{"airport":"Lilabari Airport","city":"Lilabari","cn":"India","iata":"IXI"},{"airport":"Chaudhary Charan Singh Int'l Airport","city":"Lucknow","cn":"India","iata":"LKO"},{"airport":"Sahnewal Airport","city":"Ludhiana","cn":"India","iata":"LUH"},{"airport":"Madurai Airport","city":"Madurai","cn":"India","iata":"IXM"},{"airport":"Malda Airport","city":"Maldah","cn":"India","iata":"LDA"},{"airport":"Mangalore Int'l Airport","city":"Mangalore","cn":"India","iata":"IXE"},{"airport":"Chhatrapati Shivaji Int'l Airport","city":"Mumbai","cn":"India","iata":"BOM"},{"airport":"Mysore Airport","city":"Mysore","cn":"India","iata":"MYQ"},{"airport":"Dr. Babasaheb Ambedkar Int'l Airport","city":"Nagpur","cn":"India","iata":"NAG"},{"airport":"Shri Guru Gobind Singh Ji Airport","city":"Nanded","cn":"India","iata":"NDC"},{"airport":"Gandhinagar Airport","city":"Nashik","cn":"India","iata":"ISK"},{"airport":"Neyveli Airport","city":"Neiveli","cn":"India","iata":"NVY"},{"airport":"Pantnagar Airport","city":"Pantnagar","cn":"India","iata":"PGH"},{"airport":"Pathankot Air Force Station","city":"Pathankot","cn":"India","iata":"IXP"},{"airport":"Lok Nayak Jayaprakash Airport","city":"Patna","cn":"India","iata":"PAT"},{"airport":"Pondicherry Airport","city":"Pondicherry","cn":"India","iata":"PNY"},{"airport":"Porbandar Airport","city":"Porbandar","cn":"India","iata":"PBD"},{"airport":"Pune Airport","city":"Pune","cn":"India","iata":"PNQ"},{"airport":"Puttaprathe Airport","city":"Puttaparthi","cn":"India","iata":"PUT"},{"airport":"Raipur Airport","city":"Raipur","cn":"India","iata":"RPR"},{"airport":"Rajahmundry Airport","city":"Rajahmundry","cn":"India","iata":"RJA"},{"airport":"Rajkot Airport","city":"Rajkot","cn":"India","iata":"RAJ"},{"airport":"Rajouri Airport","city":"Rajouri","cn":"India","iata":"RJI"},{"airport":"Birsa Munda Airport","city":"Ranchi","cn":"India","iata":"IXR"},{"airport":"Rourkela Airport","city":"Raurkela","cn":"India","iata":"RRK"},{"airport":"Rewa Airport","city":"Rewa","cn":"India","iata":"REW"},{"airport":"Rupsi India Airport","city":"Rupshi","cn":"India","iata":"RUP"},{"airport":"Salem Airport","city":"Salem","cn":"India","iata":"SXV"},{"airport":"Satna Airport","city":"Satna","cn":"India","iata":"TNI"},{"airport":"Shillong Airport","city":"Shillong","cn":"India","iata":"SHL"},{"airport":"Shimla Airport","city":"Shimla","cn":"India","iata":"SLV"},{"airport":"Silchar Airport","city":"Silchar","cn":"India","iata":"IXS"},{"airport":"Bagdogra Airport","city":"Siliguri","cn":"India","iata":"IXB"},{"airport":"Solapur Airport","city":"Solapur","cn":"India","iata":"SSE"},{"airport":"Srinagar Airport","city":"Srinagar","cn":"India","iata":"SXR"},{"airport":"Surat Airport","city":"Surat","cn":"India","iata":"STV"},{"airport":"Tezpur Airport","city":"Tezpur","cn":"India","iata":"TEZ"},{"airport":"Tezu Airport","city":"Tezu","cn":"India","iata":"TEI"},{"airport":"Trivandrum Int'l Airport","city":"Thiruvananthapuram","cn":"India","iata":"TRV"},{"airport":"Tuticorin Airports","city":"Thoothukkudi","cn":"India","iata":"TCR"},{"airport":"Tiruchirappalli Int'l Airport","city":"Tiruchirappalli","cn":"India","iata":"TRZ"},{"airport":"Tirupati Airport","city":"Tirupati","cn":"India","iata":"TIR"},{"airport":"Maharana Pratap Airport","city":"Udaipur","cn":"India","iata":"UDR"},{"airport":"Lal Bahadur Shastri Airport","city":"Varanasi","cn":"India","iata":"VNS"},{"airport":"Vadodara Airport","city":"Vadodara","cn":"India","iata":"BDQ"},{"airport":"Vijayawada Airport","city":"Vijayawada","cn":"India","iata":"VGA"},{"airport":"Visakhapatnam Airport","city":"Visakhapatnam","cn":"India","iata":"VTZ"},{"airport":"Warangal Airport","city":"Warrangal","cn":"India","iata":"WGC"},{"airport":"Changi Airport","city":"Singapore","cn":"Singapore","iata":"SIN"},{"airport":"Dubai International Airport","city":"Dubai","cn":"United Arab Emirates","iata":"DXB"},{"airport":"Hong Kong","city":"Hong Kong","cn":"China","iata":"HKG"},{"airport":"TH - Don Muang Airport","city":"Bangkok","cn":"Thailand","iata":"DMK"},{"airport":"TH - Trang","city":"Trang","cn":"Thailand","iata":"TST"},{"airport":"Kuala Lumpur International","city":"Kuala Lumpur","cn":"Malaysia","iata":"KUL"},{"airport":"Frankfurt am Main International Airport","city":"Frankfurt-am-Main","cn":"Germany","iata":"FRA"},{"airport":"Veer Savarkar International Airport","city":"Port Blair","cn":"India","iata":"IXZ"},{"airport":"Ngurah Rai International Airport","city":"Bali Denpasar","cn":"Indonesia","iata":"DPS"},{"airport":"Copenhagen Kastrup airport","city":"Copenhagen","cn":"Denmark","iata":"CPH"},{"airport":"Agatti Island Airport","city":"Agatti IsIand","cn":"India","iata":"AGX"},{"airport":"COH","city":"Cooch Behar","cn":"India","iata":"COH"},{"airport":"CBD","city":"Car Nicobar","cn":"India","iata":"CBD"},{"airport":"Skardu Airport","city":"Skardu","cn":"Pakistan","iata":"KDU"},{"airport":"Sheridan Airport","city":"Shirdi","cn":"India","iata":"SAG"},{"airport":"Sharjah International Airport","city":"Sharjah","cn":"United Arab Emirates","iata":"SHJ"},{"airport":"Bandaranaike International Colombo Airport","city":"Colombo","cn":"Sri Lanka","iata":"CMB"},{"airport":"Doha International Airport","city":"Doha","cn":"Qatar","iata":"DOH"},{"airport":"Tribhuvan International Airport","city":"Kathmandu","cn":"Nepal","iata":"KTM"},{"airport":"BKK","city":"BKK","cn":"India","iata":"BKK"},{"airport":"Thailand","cc":"Thailand","city":"Chiang Mai","cn":"Thailand","iata":"CNX","mixn":"Thailand"}];
+    var obj = {};
+    airport.forEach((e,i)=>{
+        if(city === e.iata){
+        obj = e;
+        obj.iataCode = e.iata;
+        obj.cityName = e.city;
+        obj.countryName = e.cn
+    }
+})
+    return obj;
+}
+</script>
+</body>
+</html>

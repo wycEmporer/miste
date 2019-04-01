@@ -1,0 +1,43 @@
+<template>
+	<div class="failure">
+		<div class="failure-cont flex">
+			<img :src="require('../../../assets/images/payment/success.png')" alt="">
+			<h2>Successful Payment !</h2>
+			<mt-button class="btn" @click="$router.push('/home')" type="danger">Back home page</mt-button>
+		</div>
+	</div>
+</template>
+<script>
+		export default{
+
+			props:["message"]
+		}
+
+
+
+</script>
+<style lang="less" scoped>
+	.failure{
+		width:100%;
+		height:100%;
+		background-color:#f8fefc;
+		.failure-cont{
+			height:100%;
+			flex-direction:column;
+			justify-content:center;
+			align-items:center;
+			img{
+				width:7.72rem;
+			}
+			h2{
+				font-size:0.68rem;
+				color:#0b9d78;
+			}
+			.btn{
+				width:10.68rem;
+				background-color:#ffad3d;
+				margin-top:2rem;
+			}
+		}
+	}
+</style>

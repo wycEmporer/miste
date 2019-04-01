@@ -1,0 +1,17 @@
+export const Reg = {
+  name: /^[A-Za-z\s\'\-\.]*[A-Za-z]+[A-Za-z\s\'\-\.]*$/,
+  number: /[\d\s]+/,
+  mobile:/^\d{7,13}$/,
+  phoneNumber:/^(([\d]+\s)?[\d]{6,20},)*(([\d]+\s)?[\d]{6,20})$/,
+  email: /^(([0-9a-zA-Z]+)|([0-9a-zA-Z]+[_.0-9a-zA-Z-]*[0-9a-zA-Z]+))@([a-zA-Z0-9-]+[.])+([a-zA-Z]{2}|net|NET|com|COM|gov|GOV|mil|MIL|org|ORG|edu|EDU|int|INT)$/,
+  onlyNumber: /^[0-9]{1,11}$/,
+  onlyNumber1: /^[0-9]{6,}$/,
+  gstNumber: /^[0-9a-zA-Z]{1,20}$/,
+  gstName: /^[A-Za-z\d\-\.\s]+$/,
+  gstPhone: /^[0-9]{10,20}$/,
+  bankCardReg: /^\d+$/,
+  passport:/^[a-zA-Z0-9]{5,17}$/,
+  UPI: /^[A-Za-z\d]+([-_.][A-Za-z\d]+)*@[A-Za-z\d]+/,
+  contactPhone:/^\d{5,}$/,
+  // password:/^[\S]{6,32}$/,
+};

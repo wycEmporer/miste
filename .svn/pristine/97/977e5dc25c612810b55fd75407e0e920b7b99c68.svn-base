@@ -1,0 +1,474 @@
+<template>
+	<div class="wrapper">
+		<head-top :operate="routeWhere" v-if="showheader">
+			<i slot="left" class="prev iconfont icon-back"></i>
+			<div slot="title" class="title">Payment</div>
+			<img slot="right" :src="require('assets/images/flight-prev.png')" class="placeholder">
+		</head-top>
+		<div class="container">
+			<div class="content">
+				<div v-if="rsp && success" class="box">
+					<div class="flex space-between marB30">
+						<img :src="require('assets/images/payment/succ.png')" alt="">
+						<div class="grayDark right">
+							<h3 class="fontSm">Congratulations</h3>
+							<p class="fontSm">{{mark}}</p>
+							<p class="fontSm">You can review your trip details by clicking on the Order ID: <a class="colorPri" @click="goNative">{{orderId}}</a></p>
+						</div>
+					</div>
+					<div class="flex space-between fontSm">
+						<p class="colorPri">NOTE:</p>
+						<p class="padL5">We have received your payment and will update you within 45 mins. In case no update received, please call us on 0124-286-6920</p>
+					</div>
+				</div>
+				<div v-if="rsp &&! success" class="box">
+					<div class="flex space-between marB30">
+						<img :src="require('assets/images/payment/fail.png')" alt="">
+						<div class="grayDark right">
+							<p class="fontSm">Dear customer, we’re together with you, 
+                waiting for updates on payment result on </p>
+							<p class="fontSm">Order ID: <a class="colorDan" @click="goNative">{{orderId}}</a></p>
+              <p class="fontSm" style="padding-top:10px">
+                Go to the order detail page and refresh this 
+                page to check your payment status.
+              </p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+    <div class="ani-cover" v-show="showAdver">
+      <div class="icon0" @click="closeAdv"><img :src="iconGroup[0]" alt=""></div>
+      <div class="iconGroup" @click="jumpAnniversary">
+        <div class="icon1"><img :src="iconGroup[1]" alt=""></div>
+        <div class="icon2"><img :src="iconGroup[2]" alt=""></div>
+        <div class="icon3">START</div>
+      </div>
+    </div>
+	</div>
+</template>
+<script>
+import headTop from "components/head/head.vue";
+import failure from "./child/failure.vue";
+import success from "./child/success.vue";
+import { DomainManager } from "config/DomainManager";
+import { Toast, Indicator } from "mint-ui";
+import { parseQueryStr } from "models/utils/parseQueryStr";
+
+export default {
+  components: {
+    headTop
+  },
+  data() {
+    return {
+      rsp: false,
+      success: false,
+      showAdver:false,
+      isClickAdv:null,
+      mark: "",
+      orderId: "",
+      phoneNo: "",
+      timer: null,
+      timers: 0,
+      timer2:null,
+      phoneNo: "",
+      status:null,
+      iconGroup:[
+        require("../../assets/images/anniversary/ani-cancel.png"),
+        require("../../assets/images/anniversary/ani-jump-title.png"),
+        require("../../assets/images/anniversary/ani-same.png"),
+      ],
+      orders: null,
+      orderFee: null,
+      isClickOrderNumber:false,
+      isClickClose:false,
+      payOK:false,
+      showheader:true,
+      device:{},
+    };
+  },
+  methods: {
+    datetime_to_unix(){
+      var date='2018-08-01 00:00:00';
+      date = new Date(Date.parse(date.replace(/-/g, '/')));
+      date = date.getTime();
+      var timestamp_set = parseInt(date/1000);
+      var timestamp = this.getGMTtime();
+      var cha_timestamp = timestamp_set-timestamp;
+      if(cha_timestamp <= 0){
+        clearTimeout(this.timer2);
+        return this.showAdver = false;
+      }else{
+        return this.showAdver = true;
+      }
+    },
+    getGMTtime(){
+      let d = new Date();
+      let loaclTime = d.getTime();
+      let localOffset = d.getTimezoneOffset() * 60000;
+      let utc = loaclTime + localOffset;
+      let offset = 5.5;
+      let bombay = utc + (3600000*offset);
+      return parseInt(bombay/1000);
+    },
+    closeAdv(){
+      this.showAdver = false;
+      this.isClickClose = true;
+      this.getPayStatus();
+      clearTimeout(this.timer2);
+    },
+    jumpAnniversary(){
+      this.showAdver = false;
+      this.$router.push('/anniversary');
+      clearTimeout(this.timer2);
+    },
+    routeWhere() {
+      try {
+        window.heg.nativeBack();
+      } catch (e) {
+        this.$router.push("/");
+      }
+    },
+    goNative() {
+      this.isClickOrderNumber = true;
+      let status1;
+      for (let obj in this.orders.ticketsinfo) {
+        status1 = this.orders[0].ticketsinfo[obj][0].status;
+      }
+      if (
+        status1 == 107 ||
+        this.orders[0].payStatus == 0 ||
+        this.orders[0].payStatus == 9 ||
+        this.orders[0].payStatus == 3 ||
+        this.orders[0].payStatus == 4
+      ) {
+        try {
+          window.heg.getNativeSource();
+        } catch (error) {
+          this.$router.push("/order/nopay");
+          this.getPayStatus();
+        }
+      } else if (status1 == 106) {
+        try {
+          window.heg.paySuccess();
+        } catch (error) {
+          this.$router.push("/order/complete");
+        }
+      } else {
+        try {
+          window.heg.paySuccess();
+        } catch (error) {
+          this.$router.push("/order/upcoming");
+        }
+      }
+    },
+    getPayStatus() {
+      let _this = this;
+      this.$axios({
+        url:
+          DomainManager.searchFlightOrderUrlString() +
+          "?orderId=" +
+          this.orderId +
+          "&phoneNo=" +
+            this.phoneNo,
+        method: "get"
+        }).then(res => {
+          this.rsp = true;
+          this.orders = res.data.triplist;
+          this.orderFee = res.data.order;
+          sessionStorage.removeItem("orders");
+          sessionStorage.removeItem("orderFee");
+          sessionStorage.removeItem("orderId");
+          sessionStorage.removeItem("orderInsurance");
+
+          sessionStorage.setItem("orders", JSON.stringify(this.orders));
+          sessionStorage.setItem("orderFee", JSON.stringify(this.orderFee));
+          sessionStorage.setItem("orderId", this.orderId);
+          sessionStorage.setItem("orderInsurance",JSON.stringify(res.data.flightInsuranceDtos));
+          
+          let status = res.data.triplist[0].payStatus;
+          switch (status) {
+          case 0:
+            if (this.timers > 12) {
+              try {
+                window.heg.trackEvent("Flight_payment_paypage_timeout");
+              } catch (error) {}
+              clearTimeout(this.timer);
+              return;
+            }
+            this.timer = setTimeout(function() {
+              _this.getPayStatus();
+            }, 15000);
+            this.timers++;
+            break;
+          case 1:
+            try {
+              window.heg.trackEvent("Flight_payment_paypage_fedsuccess");
+            } catch (error) {}
+            this.mark = "Your payment process is complete.";
+            this.success = true;
+            try {
+              window.heg.paySuccess();
+            } catch (e) {           
+              let tripList = res.data.triplist;
+              let segments = 0;
+              tripList.forEach(v => {
+                v.ticketsinfo.forEach(val => {
+                  segments += val.length;
+                });
+              });
+              res.data.order.platform == '3' && this.ixigo(res.data.order.orderid, res.data.order.fee.gt, segments);
+              clearTimeout(this.timer);
+              if(this.isClickClose || this.isClickOrderNumber){
+                this.showAdver = false;
+                this.timer2 = setTimeout(function(){
+                  let status1;
+                  for (let obj in _this.orders.ticketsinfo) {
+                    status1 = _this.orders[0].ticketsinfo[obj][0].status;
+                  }
+                  if (
+                    status1 == 107 ||
+                    _this.orders[0].payStatus == 0 ||
+                    _this.orders[0].payStatus == 9 ||
+                    _this.orders[0].payStatus == 3 ||
+                    _this.orders[0].payStatus == 4
+                  ) {
+                    _this.$router.push("/order/nopay");
+                  } else if (status1 == 106) {
+                    _this.$router.push("/order/complete");
+                  } else {
+                    _this.$router.push("/order/upcoming");
+                  }
+                  Indicator.close();
+                },0);
+              }else{
+                // this.showAdver = true;
+                this.datetime_to_unix();
+                this.timer2 = setTimeout(function(){
+                  let status1;
+                  for (let obj in _this.orders.ticketsinfo) {
+                    status1 = _this.orders[0].ticketsinfo[obj][0].status;
+                  }
+                  if (
+                    status1 == 107 ||
+                    _this.orders[0].payStatus == 0 ||
+                    _this.orders[0].payStatus == 9 ||
+                    _this.orders[0].payStatus == 3 ||
+                    _this.orders[0].payStatus == 4
+                  ) {
+                    _this.$router.push("/order/nopay");
+                  } else if (status1 == 106) {
+                    _this.$router.push("/order/complete");
+                  } else {
+                    _this.$router.push("/order/upcoming");
+                  }
+                  Indicator.close();
+                },10000);
+              }
+            }
+            break;
+          case 2:
+            clearTimeout(this.timer);
+            this.mark = "Payment in process.";
+            this.success = false;
+            break;
+          default:
+            try {
+              window.heg.trackEvent("Flight_payment_paypage_fedfail");
+            } catch (error) {}
+            clearTimeout(this.timer);
+            this.mark = "Unknowed error.";
+            this.success = false;
+            break;
+          }
+      });
+    },
+    ixigo(inputTransactionId, inputAmount, inputSegments) {
+      let baseUrl =
+        process.env.NODE_ENV === "production"
+          ? "https://www.ixigo.com"
+          : "https://build1.ixigo.com";
+      window.ixiTransactionTracker = function(tag) {
+        function updateRedirect(tag, t, p, v, s) {
+          var u = 
+            baseUrl +
+            "/ixi-api/tracker/updateConversion/" +
+            tag +
+            "?transactionId=" +
+            t +
+            "&pnr=" +
+            p +
+            "&saleValue=" +
+            v +
+            "&segmentNights=" +
+            s;
+          return (
+            "<img style='top:-999999px;left:-999999px;position:absolute' src='" +
+            u +
+            "' />"
+          );
+        }
+        var html = updateRedirect(
+          tag,
+          inputTransactionId,
+          '',
+          inputAmount,
+          inputSegments
+        );
+        var temp = document.createElement("div");
+        temp.innerHTML = html;
+        document.body.appendChild(temp);
+      };
+
+      let script = document.createElement("script");
+      script.src = baseUrl + "/ixi-api/tracker/track1021";
+      document.getElementsByTagName("head")[0].appendChild(script);
+    }
+  },
+  created() {
+    let orderNumber = parseQueryStr().orderid;
+    let phoneNo = parseQueryStr().phoneNo;
+    this.orderId = orderNumber;
+    this.phoneNo = phoneNo;
+    this.getPayStatus();
+  },
+  computed: {
+    searchOrder() {
+      return `/order?orderId=${this.orderId}&phoneNo=${this.phoneNo}`;
+    }
+  },
+  beforeDestroy() {
+    localStorage.removeItem("isIOS");
+  },
+}
+</script>
+<style lang="less" scoped >
+.wrapper{
+  position: relative;
+  .ani-cover{
+    width: 100%;
+    height:100%;
+    background: rgba(0,0,0,0.5);
+    position: absolute;
+    top:0;
+    left:0;
+    z-index:20;
+    .icon0{
+      width:0.98rem;
+      height:0.98rem;
+      position: absolute;
+      top:10%;
+      right:5%;
+      cursor: pointer;
+      img{
+        width: 100%;
+        height:100%;
+      }
+    }
+    .iconGroup{
+      width: 83%;
+      height:30%;
+      cursor: pointer;
+      position: absolute;
+      top:0;
+      right:0;
+      left:0;
+      bottom:0;
+      margin:auto;
+      img{
+        width: 100%;
+        height:100%;
+      }
+      .icon1{
+        margin-top:-15%;
+        margin-bottom: 10%;
+        height:1.06rem;
+      }
+      .icon3{
+        width: 70%;
+        height:1.45rem;
+        line-height:1.45rem;
+        color:#fff;
+        border-radius:3px;
+        font-size:0.7rem;
+        background:#CC2232;
+        margin:8% auto 0;
+      }
+    }
+  }
+}
+.header {
+  background: #17a27f;
+  .title {
+    line-height: 2.04rem;
+    font-size: 0.768rem;
+    color: #fff;
+  }
+  .placeholder {
+    opacity: 0;
+  }
+}
+.content {
+  padding-top: 2.04rem;
+}
+.marB30 {
+  margin-bottom: 2rem;
+}
+.fontSm {
+  font-size: 12px;
+  line-height: 0.9rem;
+}
+.fontB {
+  font-weight: 700;
+}
+.marB4 {
+  margin-bottom: 0.4rem;
+}
+.padL5 {
+  padding-left: 0.5rem;
+}
+.box {
+  padding: 2rem 1rem;
+  text-align: left;
+  img {
+    display: block;
+    width: 3rem;
+    height: 3rem;
+  }
+  .right {
+    width: 70%;
+  }
+}
+.grayDark {
+  color: #666;
+}
+.colorPri {
+  color: #0b9d78;
+}
+.colorDan {
+  color: #f65858;
+}
+.failure {
+  width: 100%;
+  height: 100%;
+  background-color: #f8fefc;
+  .failure-cont {
+    height: 100%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    img {
+      width: 7.72rem;
+    }
+    h2 {
+      font-size: 0.68rem;
+      color: #0b9d78;
+    }
+    .btn {
+      width: 10.68rem;
+      background-color: #ffad3d;
+      margin-top: 2rem;
+    }
+  }
+}
+</style>

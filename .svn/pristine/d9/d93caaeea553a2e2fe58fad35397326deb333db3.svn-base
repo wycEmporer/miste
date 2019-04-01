@@ -1,0 +1,165 @@
+var path = require("path");
+var webpack = require("webpack");
+var autoprefixer = require("autoprefixer");
+var precss = require("precss");
+var HtmlWebpackPlugin = require("html-webpack-plugin");
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+// const rimraf = require('rimraf');
+const CleanWebpackPlugin = require("clean-webpack-plugin");
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+
+// const PrerenderSpaPlugin = require("prerender-spa-plugin");
+
+const extractLess = new ExtractTextPlugin({
+  filename: "dist/[name].[contenthash].css",
+  disable: process.env.NODE_ENV === "development"
+});
+module.exports = {
+  entry: {
+    main: "./src/main.js",
+    vendor: ["babel-polyfill", 'vue', "vue-resource", "vuex", "underscore", "mint-ui", 'jsonp', "axios"]
+  },
+  output: {
+    path: path.resolve(__dirname, "./build/"),
+    publicPath: "/",
+    filename: "dist/js/[name].js",
+    chunkFilename: "dist/js/[name].js"
+  },
+  module: {
+    rules: [{
+        test: /\.vue$/,
+        loader: "vue-loader",
+        // options: {
+        //   extractCSS: true
+        // }
+        options: {
+          loaders: {
+            less: ExtractTextPlugin.extract({
+              loader: "css-loader!less-loader?indentSyntax",
+              fallback: "vue-style-loader" // <- this is a dep of vue-loader, so no need to explicitly install if using npm3
+            })
+          }
+        }
+      },
+      {
+        test: /\.js$/,
+        loader: "babel-loader",
+        exclude: /node_modules/
+      },
+      {
+        test: /\.(css|less)$/,
+        use: extractLess.extract({
+          use: [{
+              loader: "css-loader",
+              options: {
+                importLoaders: 1
+              }
+            },
+            {
+              loader: "postcss-loader"
+            },
+            {
+              loader: "less-loader",
+              options: {
+                importLoaders: 1
+              }
+            }
+          ],
+          fallback: "vue-style-loader"
+        })
+      },
+      {
+        test: /\.(eot|svg|ttf|woff|woff2)$/,
+        loader: "file-loader",
+        options: {
+          name: "dist/[hash].[ext]"
+        }
+      },
+      {
+        test: /\.(png|jpg|gif|svg)$/,
+        loader: "file-loader",
+        options: {
+          name: "dist/images/[hash].[ext]"
+        }
+      }
+    ]
+  },
+  resolve: {
+    extensions: ["css", ".js", ".vue", ".less"],
+    alias: {
+      vue$: "vue/dist/vue.esm.js",
+      assets: path.resolve(__dirname, "./src/assets"),
+      pages: path.resolve(__dirname, "./src/pages"),
+      models: path.resolve(__dirname, "./src/models"),
+      components: path.resolve(__dirname, "./src/components"),
+      $vuex: path.resolve(__dirname, "./src/vuex"),
+      config: path.resolve(__dirname, './src/config'),
+    }
+  },
+  devServer: {
+    contentBase: "./build/",
+    disableHostCheck: true,
+    historyApiFallback: true,
+    noInfo: true,
+    hot: true,
+    // inline: true,
+    host: 'app.happyeasygo.com',
+    // 192.168.1.160
+    port: 8088,
+    compress: true,
+    // watchContentBase: false,
+    proxy: {
+      "/heg_api": {
+        target: "http://192.168.1.23",
+        changeOrigin: true,
+        secure: false
+      },
+      "/heg_log": {
+        target: "http://192.168.1.23",
+        changeOrigin: true,
+        secure: false
+      },
+      '/api': {
+        target: 'http://web.staging.johnable.net', //http://27.115.108.230:9988
+        changeOrigin: true,
+        secure: false
+        //http://web.staging.johnable.net/api/web/pay/
+      },
+    },
+  },
+  performance: {
+    hints: false
+  },
+  devtool: "#eval-source-map",
+  plugins: [
+    new CopyWebpackPlugin([{
+      from: __dirname + '/static',
+      to: __dirname + '/build/static',
+      toType: 'dir'
+    }]),
+    extractLess,
+    new CleanWebpackPlugin(['build']),
+    new webpack.HotModuleReplacementPlugin(),
+
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'vendor',
+      // minChunks: Infinity,
+    }),
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'manifest',
+    }),
+    new HtmlWebpackPlugin({
+      title: "HappyEasyGo",
+      template: "./index.html",
+      filename: path.resolve(__dirname, "./build/index.html"),
+      // hash: true,
+      xhtml: true
+    }),
+    new webpack.DefinePlugin({
+      "process.env": {
+        NODE_ENV: '"development"'
+      }
+    }),
+
+  ]
+};

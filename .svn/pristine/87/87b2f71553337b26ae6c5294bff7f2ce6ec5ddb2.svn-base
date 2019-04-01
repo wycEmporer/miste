@@ -1,0 +1,59 @@
+<template>
+  <div class="upload_file">
+    <input type="file" ref="fileInput" @change="onChange" class="file_input">
+    
+    <slot></slot>
+    <div class="upload_btn">
+      {{btn_text}}
+    </div>
+  </div>
+</template>
+
+<script>
+import upload from 'mixins/upload';
+export default {
+  props: {
+    btn_text: {
+      type:String,
+      default: 'Browse'
+    },
+  },
+  mixins:[upload],
+  methods:{
+
+  }
+}
+</script>
+
+<style lang="less">
+  .upload_file{
+    position: relative;
+    width: 310px;
+    height: 35px;
+  }
+  .file_input{
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    opacity: 0;
+  }
+  .upload_btn{
+    position: absolute;
+    display: flex;
+    left: 0;
+    top: 0;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 16px;
+    background-color: #ffad3d;
+    color: #fff;
+    z-index: 9;
+    
+  }
+</style>
+

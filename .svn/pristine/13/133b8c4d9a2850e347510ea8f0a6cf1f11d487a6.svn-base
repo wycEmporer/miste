@@ -1,0 +1,83 @@
+<template>
+  <div id="order-share">
+    <a v-if="grabData != {}" href="javascript:;" @click="jumpActivity" :style="topBanner">
+      <div class="o-s-top">
+        <p>Grab Additional <span class="rs">Rs</span><span>{{grabData.amount}}</span> Cashback on your booking </p>
+        <p>By Inviting your <span>{{grabData.number}}</span> Friends</p>
+      </div>
+      <div class="o-s-bottom flex space-between">
+        <span>{{grabData.time}}</span>
+        <button @click.stop="shareOrder">Share</button>
+      </div>
+    </a>
+  </div>
+</template>
+<script>
+export default {
+  props:["grabData"],
+  data(){
+    return {
+      topBanner:{
+        "background-color":"#fff",
+        "background-image":'url('+require('../../../../assets/images/grabcashback/order-share-bg.png')+')',
+        "background-size":"100% 100%",
+        "background-repeat":"no-repeat",
+        "background-position":"center top"
+      },
+    }
+  },
+  methods:{
+    shareOrder(){
+      this.$emit('showShareBox');
+    },
+    jumpActivity(){
+      this.$router.push(this.grabData.href);
+    }
+  },
+}
+</script>
+<style lang="less" scoped>
+#order-share{
+  margin-top: 2.04rem;
+  padding:0 0;
+  a{
+    display: block;
+    width:100%;
+    padding:0.64rem 0;
+  }
+  p,span{
+    font-family: "SFCompactText-Medium";
+    text-align: left;
+  }
+  .o-s-top{
+    font-size: 0.598rem;
+    color: #FFFFFF;
+    padding: 0 0.68rem;
+    p{line-height: 0.9rem}
+    span{
+      color: #FDE742;
+      font-weight: bold;
+    }
+  }
+  .o-s-bottom{
+    padding: 0 0.68rem;
+    margin-top:0.5rem;
+    height:0.982rem;
+    span{
+      font-size: 0.47rem;
+      color: #F0F0F0;
+      line-height:0.982rem;
+    }
+    button{
+      width:4.487rem;
+      height:0.982rem;
+      color: #FFFFFF;
+      font-size: 0.686rem;
+      border-radius: 2px;
+      background: #ED8649;
+      cursor: pointer;
+      font-family: "SFCompactText-Semibold";
+    }
+  }
+}
+</style>

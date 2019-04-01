@@ -1,0 +1,85 @@
+import _ from "underscore";
+import {
+  Airline,
+  AirlineManager
+} from "../airline";
+import {
+  Flight,
+  FlightStop
+} from "./";
+
+export class FlightFactory {
+  constructor(flightJsonObjects, airlineList) {
+    this.jobjArr = flightJsonObjects;
+    this.airlineList = airlineList;
+    this.airlineManager = new AirlineManager(
+      AirlineManager.loadApiAirlines(airlineList)
+    );
+  }
+
+  build(onPreBuild = null) {
+    let self = this;
+    let products = [];
+    this.jobjArr.forEach(function (json) {
+      let departDate = new Date(json.dt);
+      let returnDate = new Date(json.at);
+      let stops = [];
+      let flightInfoBack = json;
+
+      for (let val of json.stopByFlightArray) {
+        stops.push(
+          FlightStop.getInstanceWithJsonObject(val, self.airlineList)
+        );
+      }
+
+      let airline = self.airlineManager.getAirlineByShortname(json.al);
+      let obfp = json.fee.obfp;
+      let bfp = json.fee.bfp;
+      let ogst = json.fee.ogst;
+      let gst = json.fee.gst;
+      let discount = json.fee.obfp + json.fee.ogst - json.fee.bfp - json.fee.gst;
+      let price = obfp + ogst;
+      let fees = json.fee.fees;
+      let minPriceObj = _.min(fees, (n) =>{
+        let t;
+        if(n.exFee){
+          t = n.exFee[0].bfp + n.exFee[0].gst
+        }else{
+          t = n.bfp + n.gst
+        }
+        return t;
+      })
+      flightInfoBack.fee.maxCba = _.max(fees, (n) => n.cba).cba;
+      airline = Object.is(airline, undefined) ? new Airline(json.al, json.co) : airline;
+
+      let product = new Flight(
+        departDate,
+        returnDate,
+        airline,
+        json.fn,
+        stops,
+        discount,
+        price,
+        json.fee.refundable,
+        json.ddts,
+        json.policyId,
+        json.da,
+        json.aa,
+        json.dt,
+        json.at,
+        obfp,
+        bfp,
+        gst,
+        ogst,
+        flightInfoBack,
+        minPriceObj
+      );
+      products.push(product);
+
+      if (!Object.is(onPreBuild, null)) {
+        onPreBuild(product, discount);
+      }
+    });
+    return products;
+  }
+}

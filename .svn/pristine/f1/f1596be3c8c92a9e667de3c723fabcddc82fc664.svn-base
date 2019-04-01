@@ -1,0 +1,645 @@
+<template>
+  <div>
+    <div id="my-careers" v-show="!isShowCategoryList && !isShowIssueList">
+      <head-top class="header">
+        <i slot="left" class="iconfont icon-back"></i>
+        <span slot="title" class="title">Write To Us</span>
+        <i slot="right" class="sp iconfont icon-back" style="opacity:0;"></i>
+      </head-top>
+      <div class="content">
+        <form enctype="multipart/form-data" @submit.prevent="onSubmit" id="fileForm" >
+          <div class="form">
+            <ul class="form-group">
+              <li class="info-name">
+                <input type="text" v-focus :class="{errli:form.nameErr}" name="name" placeholder="Name" v-model="applyInfo.name" >
+                <p class="errP" v-if="form.nameErr">{{form.nameMsg}}</p>
+              </li>
+              <li class="info-email">
+                <input type="text" :class="{errli:form.emailErr}" name="email" placeholder="Email Address" v-model="applyInfo.email" >
+                <p class="errP" v-if="form.emailErr">{{form.emailMsg}}</p>
+              </li>
+              <li class="info-mobile">
+                <input type="number" :class="{errli:form.mobileErr}" autocomplete="on" name="cellphone" placeholder="Mobile Number" v-model="applyInfo.mobile" >
+                <p class="errP" v-if="form.mobileErr">{{form.mobileMsg}}</p>
+              </li>
+              <li class="info-link" v-show="!isShowSecondTitle">
+                <div class="select flex space-between" @click="showCategoryList">
+                    <span>Select Issue </span>
+                    <div class="category-back-icon"></div>
+                </div>
+                 <p class="errP" v-if="form.categoryErr">{{form.categoryMsg}}</p>
+              </li>
+              <li class="info-link" v-show="isShowSecondTitle">
+                <div class="select flex space-between" @click="showCategoryList">
+                    <span class="grayDarker">{{secondTitle}}</span>
+                    <div class="category-back-icon"></div>
+                </div>
+              </li>
+              <li class="info-link" v-show="isShowThirdTitle">
+                <div class="select flex space-between" @click="showIssueList">
+                    <span :class="{grayDarker: !!ThirdTitle}">{{ThirdTitle || 'Select Issue'}}</span>
+                    <div class="category-back-icon"></div>
+                    <input type="hidden" name="issueId" v-model="issueId">
+                </div>
+                <p class="errP" v-if="form.issueErr">{{form.issueMsg}}</p>
+              </li>
+              <li class="info-order" v-if="isShowOrderInput">
+                <input type="text" :class="{errli:form.tripErr}" name="associatedDocument" placeholder="Trip ID / Order Id /PNR" v-model="applyInfo.order" >
+                <p class="errP" v-if="form.tripErr">{{form.tripInfo}}</p>
+              </li>
+              <li class="reason-li" :class="{errli:form.joinReasonErr}">
+                <textarea  name="issue" v-model="applyInfo.joinReason" rows="5" cols="20" placeholder="Decribe your issue" ></textarea>
+                <p>{{wordNumber}}</p>
+                <p class="errP" v-if="form.joinReasonErr">{{form.joinReasonMsg}}</p>
+              </li>
+              <!-- <li class="info-file" >
+                <span class="file-span" v-if="fileObj != null" v-show="isSelectFile">{{fileObj.name}}</span>
+                <p v-show="!isSelectFile">Attach IMG</p>
+                <p v-show="!isSelectFile">(Olny IMG file is allowed 500KB)</p>
+                <p v-if="isSelectFile"><input type="file" id="upfile" accept="image/jpeg,image/jpg,image/png,image/bmp," name="file" @change="selectFile" ><span>Upload file</span></p>
+                <p v-else><input type="file" id="upfile" accept="image/jpeg,image/jpg,image/png,image/bmp," @change="selectFile" ><span>Upload file</span></p>
+              </li> -->
+              <li class="info-btns flex space-between" >
+                <button @click="infoJustify" :class="{active:true}">Submit</button>
+              </li>
+            </ul>
+          </div>
+        </form>
+      </div>
+      <div class="career-cover" v-show="showDialog"></div>
+      <div class="career-dialog" v-show="showDialog">
+        <div class="d-top">Request with us successfully!</div>
+        <div class="d-center">We have received your request and our customer care is working on it.We will find a solution for you shortly!</div>
+        <div class="d-bottom">
+          <button @click="applySuccess">OK</button>
+        </div>
+      </div>
+    </div>
+    <CategoryList :lists="list" v-if="isShowCategoryList" @closeGategoryList="closeGategoryList" @gotoThird="getThirdDetail(arguments)"/>
+    <IssueList :data="list" :indexs="indexs" @closeThird="closeIssueList" @setIssue="setIssueInput" v-if="isShowIssueList"/>
+    <!-- <transition name="slide-fade"> -->
+  </div>
+  
+</template>
+<script>
+import { Toast, Indicator, Spinner } from 'mint-ui';
+import { Reg } from '../../models/utils';
+import headTop from "../../components/head/head.vue";
+import { DomainManager } from '../../config/DomainManager';
+import CategoryList from './CategoryList';
+import IssueList from './IssueList';
+
+const clickOutside = {
+  bind(el, binding, vnode) {
+    function documentHandler(e) {
+      if (el.contains(e.target)) {
+        return false;
+      }
+      if (binding.expression) {
+        binding.value(e);
+      }
+    }
+    el.__vueClickOutside__ = documentHandler;
+    document.addEventListener("click", documentHandler);
+  },
+  update() {},
+  unbind(el, binding) {
+    document.removeEventListener("click", el.__vueClickOutside__);
+    delete el.__vueClickOutside__;
+  }
+};
+export default {
+  components:{
+    headTop,
+    CategoryList,
+    IssueList,
+  },
+  data(){
+    return {
+      isShowCategoryList:false, // 显示 一级二级标题 组件
+      isShowIssueList: false, // 显示三级标题组件
+      isShowSecondTitle: false, // 二级标题信息
+      isShowThirdTitle: false, //三级标题信息
+      secondTitle:'', // 二级标题输入框内容
+      ThirdTitle:'', // 三级标题输入框内容
+      issueId: '',
+      indexs:[],
+      firstClass: '',
+
+      list:[],
+      childList:[],
+      showIssues:true,
+      showIssues2:true,
+      arr:[],
+      fileObj:null,
+      showDialog:false,
+      isSelectFile:false,
+      showOrderId:false,
+      dialogBg:require('../../assets/images/joinus/join-character.png'),
+      applyInfo:{
+        name:"",
+        email:"",
+        mobile:"",
+        order:"",
+        joinReason:"",
+        issues:"Select Category",
+        issues2:"Select Issue",
+      },
+      form:{
+        nameMsg:"Please enter a valid name",
+        nameErr:false,
+        emailMsg:"Please enter a valid Email Address",
+        emailErr:false,
+        mobileMsg:"Please enter a valid Mobile Number",
+        mobileErr:false,
+        tripInfo:"Pleae enter your Trip ID/Order Id/PNR.Or fill in 'none'.",
+        tripErr:false,
+        joinReasonMsg:"Please describe your issue",
+        joinReasonErr:false,
+        categoryMsg:"Please select a category",
+        categoryErr:false,
+        issueMsg:"Please select a issue",
+        issueErr:false,
+        fileMsg:"Microsoft Word or PDF file is allowed (<5MB)",
+        fileNull:"Please Upload your attach resume",
+        submitFail:"Something's wrong, Please try it again",
+        submitting:"Uploading...Please wait",
+      },
+    }
+  },
+  created() {
+    this.getlists();
+  },
+  computed:{
+    wordNumber(){
+      let number = this.applyInfo.joinReason.split("").length;
+      return (500 - number);
+    },
+    isShowOrderInput(){
+      return  this.isShowThirdTitle && (this.firstClass == 'Flights' || this.firstClass == 'Hotels');
+    }
+  },
+  methods:{
+    //获取三级组件data ，并设置 二级表单标题内容
+    getThirdDetail(){
+      this.isShowCategoryList = false;
+      this.isShowIssueList = true;
+      const firstIndex = arguments[0][0];
+      const secondeIndex = arguments[0][1];
+      this.indexs = [firstIndex, secondeIndex];
+      
+      // this.secondDetailData = this.list[firstIndex];
+      // this.thirdDetailData = this.list[firstIndex].node[secondeIndex];
+
+    },
+    //设置 二级表单标题内容
+    setSecondTitle(secondTitle){
+      this.secondTitle = secondTitle;
+      this.isShowSecondTitle = true;
+    },
+    // 选择完才有结果， 关闭三级标题组件 并设置二级，三级表格内容
+    setIssueInput(indexs){
+      const IssueData = this.list[indexs[0]].node[indexs[1]].node[indexs[2]];
+      this.ThirdTitle = IssueData.class;
+      this.issueId = IssueData.cid;
+      this.isShowThirdTitle = true;
+      this.isShowIssueList = false;
+      this.setSecondTitle(this.list[indexs[0]].node[indexs[1]].class);
+      this.firstClass = this.list[indexs[0]].class;
+    },
+    //显示一级二级标题组件
+    showCategoryList(){
+      this.isShowCategoryList = true;
+    },
+    // 显示 三件标题组件
+    showIssueList(){
+      this.isShowIssueList = true;
+    },
+    closeIssueList(){
+      this.isShowCategoryList = true;
+      this.isShowIssueList = false;
+      // this.isShowThirdTitle = true;
+    },
+    closeGategoryList(){
+      this.isShowCategoryList = false;
+    },
+
+    getlists() {
+      Indicator.open({
+				spinnerType: 'fading-circle'
+			});
+      let that = this;
+      let url = DomainManager.getFlightFAQS() + "?" + "cId=177";
+      this.$axios.get(url).then(res => {
+        Indicator.close();
+        if(res.success && res.list.length >=1) {
+          this.list = res.list[0].node;
+        } else {
+          Toast({
+            message: res.msg,
+            position: "center",
+            duration: 1500
+          });
+        }
+      }).catch(err => {
+        Indicator.close();
+        console.log(err);
+      });
+    },
+    selectFile(){
+      let size;
+      this.fileObj = document.getElementById("upfile").files[0];
+      if(this.fileObj){
+        this.isSelectFile = true;
+        size = (this.fileObj.size / 1024).toFixed(2);
+        let idx = this.fileObj.name.lastIndexOf(".");
+        if (idx != -1){   
+          let ext = this.fileObj.name.substr(idx+1).toUpperCase();   
+          ext = ext.toLowerCase( ); 
+          if (ext != "png" && ext != "jpg" && ext != "jpeg" && ext != "bmp" ){
+            Toast("You can upload .png, .jpg, .jpeg, .bmp images only.");
+            this.isSelectFile = false;
+          }else{
+            if(size >= 500){
+              Toast("Please select image within 500KB")
+              this.isSelectFile = false;
+            }else{
+              this.arr.push(this.fileObj);
+              // var hash = {}; // Array duplicate item
+              // this.arr = this.arr.reduce((item, next) =>{
+              //   hash[next.name] ? Toast("Please select different file or image.") 
+              //   : hash[next.name] = true && item.push(next);
+              //   return item;
+              // }, []);
+            }
+          }
+        }
+      }else{
+        if(this.arr.length >= 1){
+          this.fileObj = this.arr[0];
+        }else{
+          this.isSelectFile = false;
+        }
+      }
+    },
+    infoJustify(){
+      if(this.applyInfo.name == "" || !Reg.name.test(this.applyInfo.name)){
+        this.form.nameErr = true;
+      }else if(this.applyInfo.email == "" || !Reg.email.test(this.applyInfo.email)){
+        this.form.nameErr = false;
+        this.form.emailErr = true;
+      }else if(this.applyInfo.mobile == ""){
+        this.form.nameErr = false;
+        this.form.emailErr = false;
+        this.form.mobileErr = true;
+      }
+      else if(!this.isShowSecondTitle){
+        this.form.nameErr = false;
+        this.form.emailErr = false;
+        this.form.mobileErr = false;
+        this.form.categoryErr = true;
+      }
+      else if(!this.ThirdTitle){
+        this.form.nameErr = false;
+        this.form.emailErr = false;
+        this.form.mobileErr = false;
+        this.form.categoryErr = false;
+        this.form.issueErr = true;
+      }
+      else if(this.isShowOrderInput && this.applyInfo.order == ""){
+        this.form.nameErr = false;
+        this.form.emailErr = false;
+        this.form.mobileErr = false;
+        this.form.categoryErr = false;
+        this.form.issueErr = false;
+        this.form.tripErr = true;
+      }
+      else if(this.applyInfo.joinReason == ""){
+        this.form.nameErr = false;
+        this.form.emailErr = false;
+        this.form.mobileErr = false;
+        this.form.issueErr = false;
+        this.form.categoryErr = false;
+        this.form.tripErr = false;
+        this.form.joinReasonErr = true;
+      }
+      // else if(this.fileObj == null){
+      //   this.form.nameErr = false;
+      //   this.form.emailErr = false;
+      //   this.form.mobileErr = false;
+      //   this.form.issueErr = false;
+      //   this.form.issueErr1 = false;
+      //   this.form.tripErr = false;
+      //   this.form.joinReasonErr = false;
+      //   Toast({
+      //     message:"Please select the file",
+      //     duration:1500
+      //   });
+      // }
+      else{
+        this.form.nameErr = false;
+        this.form.emailErr = false;
+        this.form.mobileErr = false;
+        this.form.categoryErr = false;
+        this.form.issueErr = false;
+        this.form.tripErr = false;
+        this.form.joinReasonErr = false;
+        Indicator.open({
+          spinnerType: 'fading-circle'
+        });
+        this.fileUpload();
+      }
+    },
+    fileUpload(){
+      let fileForm = document.getElementById("fileForm");
+      let url = DomainManager.saveFeedback();
+      let formData = new FormData(fileForm);
+      this.$axios({
+        url:url,
+        method:"post",
+        data:formData,
+        headers:{"Content-Type":"multipart/form-data"},
+      }).then(res => {
+        Indicator.close();
+        if(res.succ){
+          this.showDialog = true;
+        }else{
+          Toast({
+            message: res.msg,
+            duration: 1500
+          });
+        }
+      }).catch(err =>{
+        Indicator.close();
+        console.log(err)
+      });
+    },
+    applySuccess(){
+      this.showDialog = false;
+      Object.assign(this.$data, this.$options.data());
+      this.$router.push('/support');
+    },
+    onSubmit(){
+      return false;
+    }
+  },
+  directives:{
+    clickOutside,
+    focus: {
+      inserted(el) {
+        el.focus()
+      }
+    }
+  }
+}
+</script>
+<style lang="less" scoped>
+#my-careers{
+  position: relative;
+  background: #eee;
+  height: 100%;
+  .category-back-icon{
+    width: 8px;
+    padding-left: 4px;
+    background: url(./images/icon-back.png) no-repeat center/8px;
+  }
+  .content{
+    padding: 2.53rem 0.64rem 0;
+    text-align: left;
+    .form-group{
+      li{
+        width:100%;
+        color:#999;
+        background: #fff;
+        margin-bottom:0.95rem;
+        position: relative;
+        input, textarea{
+          width:93.5%;
+          padding:0.5rem 3%;
+          vertical-align: top;
+          font-size: 0.6rem;
+          border:1px solid #ddd;
+          border-radius:2px;
+        }
+        *::placeholder{
+          color:#999; 
+        }
+      }
+      .reason-li{
+        width:auto;
+        border:1px solid #ddd;
+        border-radius: 2px;
+        textarea{
+          resize: none;
+          font-family: inherit;
+          border:0;
+          padding:0.5rem 3% 0;
+        }
+        p{
+          background: #fff;
+          font-size:0.6rem;
+          text-align: right;
+          padding:0 3% 0.2rem 0;
+        }
+        .errP{background: #eee;}
+      }
+      .info-link{
+        background: #eee;
+        .select{
+          padding:0.5rem 3%;
+          font-size: 0.6rem;
+          border:1px solid #ddd;
+          border-radius:2px;
+          background: #fff;
+        }
+        input{
+          position: absolute;
+          width:0;
+          height:1px;
+          opacity: 0;
+        }
+        .select-p{
+          position: relative;
+          span{
+            display: inline-block;
+            width:90%;
+            height: 0.65rem;
+            overflow:hidden;
+            white-space:nowrap;
+            text-overflow:ellipsis;
+          }
+          img{
+            display:block;
+            width:0.5rem;
+            position: absolute;
+            right: 0;
+            top: 0;
+            vertical-align: middle;
+          }
+        }
+        .select-ul{
+          width:93%;
+          max-height:150px;
+          overflow: scroll;
+          padding:0.5rem 3%;
+          position: absolute;
+          top: 1.7rem;
+          left: 0;
+          z-index: 12;
+          background: #fff;
+          border:1px solid #eee;
+          p{
+            padding:0.2rem 0 0.2rem 0.2rem;
+            overflow:hidden;
+            white-space:nowrap;
+            text-overflow:ellipsis;
+          }
+          p:hover{
+            background: #eee;
+          }
+          p.active{
+            background: #eee;
+          }
+        }
+      }
+      .info-file{
+        width:99%;
+        border:1px dashed #ccc;
+        font-size: 0.6rem;
+        text-align: center;
+        padding:0.6rem 0;
+        // height:2rem;
+        margin-bottom:0.8rem;
+        .file-span{
+          color:#999;
+          background:#fff;
+          padding:0.2rem 0.5rem;
+          margin-bottom:0.3rem;
+          border:1px solid #ddd;
+          border-radius:2px;
+          box-shadow:0 2px 5px #999;
+        }
+        p{
+          position: relative;
+          line-height:0.85rem;
+          color:#999;
+          span{
+            color:#0b9d78;
+            text-decoration: underline;
+          }
+          input{
+            position: absolute;
+            width:2.8rem;
+            opacity: 0;
+            display:inline-block;
+            padding:0;
+            border:0;
+          }
+        }
+      }
+      .info-btns{
+        margin-bottom: 0;
+        button{
+          cursor: pointer;
+          width:9rem;
+          padding:0.3rem 0;
+          font-size: 0.726rem;
+          color:#999;
+          background: #eee;
+          border-radius:2px;
+          margin:auto;
+          cursor: pointer;
+        }
+        .active{
+          color:#fff;
+          background: #ffa000;
+        }
+      }
+      .errli{
+        border:1px solid #d32f2f;
+      }
+      .errP{
+        float: left;
+        font-size:0.5rem;
+        color:#d32f2f;
+        padding-left:3%;
+        margin-top: 0.2rem;
+        background: #eee;
+      }
+      li:last-child{
+        background: #eee;
+      }
+    }
+  }
+  .career-cover{
+    width: 100%;
+    height: 100%;
+    position:absolute;
+    top: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index:10;
+  }
+  .career-dialog{
+    width:12rem;
+    position: absolute;
+    top: 30%;
+    left: 0;
+    right: 0;
+    margin:auto;
+    z-index:11;
+    background:rgba(255, 255, 255, 1);
+    padding:0.8rem 1rem 0.8rem 0.64rem;
+    border-radius:5px;
+    overflow: hidden;
+    .d-top{
+      font-size: 16px;
+      color:#333;
+      font-weight: bold;
+    }
+    .d-center{
+      padding:1rem 0 1rem;
+      color:#333;
+      font-size: 14px;
+      line-height:20px;
+      text-align: left;
+    }
+    .d-bottom{
+      position: relative;
+      height:0.8rem;
+      margin-bottom:0.6rem;
+      button{
+        position: absolute;
+        width:8.5rem;
+        padding:0.3rem 0;
+        font-size: 0.726rem;
+        color:#fff;
+        background: #ffa000;
+        border-radius:3px;
+        left: 0;
+        right: 0;
+        margin:auto;
+        z-index:9;
+      }
+    }
+    img{
+      opacity: 0.2;
+      position:absolute;
+      width:6rem;
+      top: 2rem;
+      right: -0.4rem;
+      z-index:8;
+    }
+  }
+
+  // animate
+  .slide-fade-enter-active, .slide-fade-leave-active{
+    transition:all .2s ease-in;
+  }
+  .slide-fade-enter, .slide-fade-leave-to{
+    /* .slide-fade-leave-active for below version 2.1.8 */ 
+    transform: translateY(20px);
+    opacity: 0;
+  }
+}
+</style>

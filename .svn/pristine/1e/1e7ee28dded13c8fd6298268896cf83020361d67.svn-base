@@ -1,0 +1,148 @@
+<template>
+	<div class="wrapper">
+		<head-top class="head">
+			<i slot="left" class="iconfont icon-back"></i>
+			<div slot="title" class="title flex">
+				<h2>{{departCity}}</h2>
+				<div class="title-img">
+					-
+				</div>
+				<h2>{{ariveCity}}</h2>
+			</div>
+			<i class="sp iconfont icon-back"></i>
+		</head-top>
+		<div class="container">
+			<div>
+				<flightInfo :orders="orders"></flightInfo>
+				<bg></bg>
+				<fareDetail :orders="orders" :fee="fee"></fareDetail>
+			</div>
+		</div>
+	</div>
+</template>
+<script>
+import headTop from '../../../components/head/head.vue'
+import flightInfo from './base/flightInfo.vue'
+import traveller from './base/traveller.vue'
+import fareDetail from './base/fareDetail.vue'
+import bg from './base/bg.vue'
+export default {
+	components: {
+		flightInfo,
+		headTop,
+		traveller,
+		fareDetail,
+		bg
+	},
+	data() {
+		return {
+			orders: [],
+			fee: '',
+		}
+	},
+	computed: {
+		base() {
+			let base = 0;
+			for (let el of this.orders) {
+				base += el.fare["Base Fare"];
+			}
+			return base;
+		},
+		taxes() {
+			let taxes = 0;
+			for (let el of this.orders) {
+				taxes += el.fare["Taxes and Fees"];
+			}
+			return taxes;
+		},
+		convenience() {
+			let convenience = 0;
+			for (let el of this.orders) {
+				convenience += el.fare["Convenience Fee"];
+			}
+			return convenience;
+		},
+		total() {
+			return this.convenience + this.taxes + this.base;
+		},
+		departCity() {
+			if (this.orders.length != 0) {
+				return this.orders[0].voyageinfo[0].dc;
+			}
+		},
+		ariveCity() {
+			if (this.orders.length != 0) {
+				return this.orders[0].voyageinfo[this.orders[0].voyageinfo.length - 1].ac;
+			}
+		}
+	},
+	mounted() {
+		// this.orders = this.$store.getters.orderDetail;
+		// if(!this.orders){
+		// 	this.orders = JSON.parse(sessionStorage.getItem('orders'));
+		// }
+		this.orders = JSON.parse(sessionStorage.getItem('orders'));
+		this.fee = JSON.parse(sessionStorage.getItem('orderFee')).fee;
+	}
+}
+</script>
+<style lang="less" scoped>
+.head {
+	background: #0b9d78!important;
+	.title {
+		h2 {
+			font-size: 0.768rem;
+			color: #fff;
+		}
+		.title-img {
+			width: 1.2rem;
+			height: 2.04rem;
+			line-height: 2.04rem;
+			padding: 0 0.2rem;
+			img {
+				margin-top: 4px;
+				width: 1rem;
+			}
+		}
+	}
+	.sp {
+		opacity: 0;
+	}
+}
+
+.container>div {
+	padding: 2.4rem 0.68rem 0;
+}
+
+.fareDetail {
+	background-color: #fff;
+	border-radius: 0.4rem;
+	margin-top: 0.4rem;
+	h2 {
+		font-size: 0.68rem;
+		color: #333;
+		text-align: left;
+		padding: 0.4rem 0.4rem 0;
+	}
+	.fare-cont {
+		background-color: #fff;
+		border-radius: 0.4rem;
+		padding: 0.4rem;
+		.list,
+		.total {
+			font-size: 0.6rem;
+			color: #333;
+			height: 1.4rem;
+			line-height: 1.4rem;
+			span {
+				text-align: left;
+			}
+		}
+		.total {
+			font-size: 0.768rem;
+			color: #333;
+			padding: 0.2rem 0rem;
+		}
+	}
+}
+</style>

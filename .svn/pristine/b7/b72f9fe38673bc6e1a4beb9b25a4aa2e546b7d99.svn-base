@@ -1,0 +1,90 @@
+<template>
+  <div id="heg-autumnrules">
+    <head-top class="header">
+      <i slot="left" class="top_icon iconfont icon-back"></i>
+      <p slot="title" style="margin-left:-1.5rem;">Game Rules</p>
+    </head-top>
+    <div class="content">
+      <div class="appTop" v-show="isShowBtn"></div>
+      <div class="part part-top">
+        <h4>Game Rules:</h4>
+        <ol>
+          <li>You need to log in on the HappyEasyGo Android/iOS app and shake your phone to win free air ticket coupon, Rs.500 discount voucher, up to 1000 Happy Silver, and other exclusive discount coupons offered by our partners like Zoomcar, Treebo Hotels, Xoxoday, Ganna, Zomato and more.</li>
+          <li>The game is available only on the HappyEasyGo mobile app (Android/iOS). </li>
+          <li>You will have limited chances to play Shake & Win. </li>
+          <li>All prizes you win will be valid for a limited period only.</li>
+        </ol>
+      </div>
+      <div class="part part-middle">
+        <h4>Terms &amp; Conditions:</h4>
+        <ul>
+          <li>HappyEasyGo Travel Pvt. Ltd. ("HappyEasyGo") reserves the right to add, alter, modify all or any of these terms and conditions, or replace wholly or in part, this offer by any other offer, whether similar to this offer or not, without prior notice.</li>
+          <li>Any disputes arising out of this offer shall be subject to the exclusive jurisdiction of competent courts in Gurgaon, Haryana, India.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import headTop from '../../components/head/head.vue';
+export default {
+  components:{
+    headTop,
+  },
+  data(){
+    return{
+      isShowBtn:true,
+    }
+  },
+  created() {
+    try {
+      let deviceObj =
+        typeof window.heg.getNativeSource() === "string"
+          ? JSON.parse(window.heg.getNativeSource())
+          : window.heg.getNativeSource();
+      this.contentMargin =
+        Number(deviceObj.deviceType) == 1 && !deviceObj.deviceNative;
+      this.isShowBtn = false;
+    }catch(err){}
+  },
+  methods:{}
+}
+</script>
+<style lang="less" scoped>
+#heg-autumnrules{
+  img{vertical-align: top}
+  a,button{cursor: pointer;}
+  .appTop{padding-top:2.04rem;}
+  text-align:left;
+  .content{
+    background:#eee;
+  }
+  h4{
+    font-size:0.68rem;
+    color: #111111;
+    letter-spacing: 0;
+    line-height:1rem;
+    padding-bottom:0.4rem;
+    border-bottom:1px solid #eee;
+  }
+  .part{
+    background:#fff;
+    padding:0.64rem 0.64rem 0.4rem;
+    p,li{
+      font-size: 0.598rem;
+      color: #111111;
+      letter-spacing: 0;
+      line-height: 0.9rem;
+      margin-left:0.64rem;
+      padding:0.42rem 0 0;
+    }
+  }
+  .part-top p{padding:0.4rem 0 1.28rem;}
+  .part-middle{
+    margin-top:0.64rem;
+    li{
+      list-style-type:disc;
+    }
+  }
+}
+</style>

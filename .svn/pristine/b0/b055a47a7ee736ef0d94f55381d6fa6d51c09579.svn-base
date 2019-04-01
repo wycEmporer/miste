@@ -1,0 +1,242 @@
+<template>
+  <div class="main">
+    <div class="area form-group">
+      <label>City/Hotel</label>
+      <input type="text" :value="searchInfo.name" @click='openSearchCity'>
+    </div>
+    <div class="datepicker form-group">
+      <div class="checkIn">
+        <label>Check-In</label>
+        <input
+          type="text"
+          readonly
+          @click="openPickerFrom('START')"
+          :class="{active:isActive&&targetStatus=='START'}"
+          :value="TimeFormatUtil.getOrderDetailDate(startDate)"
+        >
+      </div>
+      <div class="checkOut">
+        <label>Check-Out</label>
+        <input
+          type="text"
+          readonly
+          @click="openPickerFrom('END')"
+          :class="{active:isActive&&targetStatus=='END'}"
+          :value="TimeFormatUtil.getOrderDetailDate(endDate)"
+        >
+      </div>
+    </div>
+
+    <transition enter-active-class="fadeInUp" leave-active-class="fadeOutDown">
+      <calendar v-if="isShowCalendar" :limit='limit' class="animated" @getVal="getVal"></calendar>
+    </transition>
+    <guests @guestsInfo="getGuestsInfo" />
+    <div class="searchBtn">
+      <button @click="search">Search Hotels</button>
+    </div>
+    <hotelSearchCity v-if="isShow" @getCity="getCity" @close="closeSearchCity" />
+
+    <transition enter-active-class="fadeIn" leave-active-class="fadeOut">
+			<div class="mark" style="top: 0; left:0" v-show="isShowmark"></div>
+		</transition>
+  </div>
+</template>
+
+<script>
+import {TimeFormatUtil} from 'models/utils';
+import {emitCustomEvent} from 'models/utils/adGAEvent';
+export default {
+  name: 'HotelSearch',
+  components: {
+    guests:() => import('./guests'),
+    calendar: () => import('../../../components/calendar/calendar.vue'),
+    hotelSearchCity: () => import('./base/hotelSearchCity'),
+  },
+  data(){
+    return{
+      TimeFormatUtil,
+      isActive: false,
+      areaName: '',
+      limit:{},
+      isShow: false,
+      isShowCalendar: false,
+      isShowmark: false,
+      currentCalendarTarget: '',
+      areaName:'',
+      searchInfo:{
+        name: 'New Delhi',
+        code: '1601',
+        cityName: 'New Delhi',
+        cityId: '1601',
+        flag: 'city',
+      },
+      guestsInfo: [
+          {
+            id: 1,
+            age: [],
+            active: true,
+            adult: 1,
+            child: 0,
+          }
+
+        ],
+      startDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
+      endDate: new Date(new Date().getTime() + 48 * 60 * 60 * 1000),
+    }
+  },
+  methods:{
+    getGuestsInfo(playload){
+      this.guestsInfo = playload;
+    },
+    search() {
+      emitCustomEvent('hotelSearch', 'FlightAndHotel');
+      
+      let param = {
+        name: this.areaName,
+        checkIn: TimeFormatUtil.getYearMonthDateString(this.startDate),
+        checkOut: TimeFormatUtil.getYearMonthDateString(this.endDate),
+        guests: this.guestsInfo,
+      }
+      if (this.searchInfo.flag === 'city') {
+        // setSession('hotelList', JSON.stringify(param));
+        window.location.href ='https://m-hotel.happyeasygo.com/m_site/' + this.searchInfo.code + '/hotelList?p=' + JSON.stringify(param)
+
+      } else if (this.searchInfo.flag === 'hotel') {
+        // setSession('hotelStatus', JSON.stringify(param));
+        window.location.href ='https://m-hotel.happyeasygo.com/m_site/' + this.searchInfo.code + '/hotelStatus?p=' + JSON.stringify(param);
+      }
+    },
+    closeSearchCity(){
+      this.isShow = false;
+    },
+    openSearchCity(){
+      this.isShow = true;
+    },
+    getCity(playload){
+      this. searchInfo = playload;
+      this.isShow = false;
+    },
+    openPickerFrom(current){
+      this.currentCalendarTarget = current;
+      if(this.currentCalendarTarget === 'START'){
+        // this.$set(this.limit, )
+        this.limit = {
+          minYear: new Date().getFullYear(),
+          minMonth: new Date().getMonth() + 1,
+          minDay: new Date().getDate() +1,
+          maxYear: new Date().getFullYear() + 1
+        };
+      }else{
+        this.limit = {
+          minYear: this.startDate.getFullYear(),
+          minMonth: this.startDate.getMonth() + 1,
+          minDay: this.startDate.getDate() + 1,
+          maxYear: this.startDate.getFullYear() + 1
+        };
+      }
+      this.isShowCalendar = true;
+      this.isShowmark = true;
+    },
+    getVal(date){
+      this.isShowCalendar = false;
+      this.isShowmark = false;
+      if(this.currentCalendarTarget === 'START'){
+        this.startDate = date;
+      }else{
+        this.endDate = date;
+      }
+    },
+  },
+  watch:{
+    startDate(newVal, oldVal){
+      if(new Date(newVal.getTime() + 24*60*60*1000) > this.endDate){
+        this.endDate = new Date(newVal.getTime() + 24*60*60*1000);
+      }
+    }
+  }
+}
+</script>
+<style lang="less" scoped>
+*{
+  box-sizing: border-box;
+}
+.calendar-wrapper{
+  top:0;
+  left:0;
+}
+.main {
+    width: 100%;
+    padding: 0 0.64rem;
+    .area {
+      padding-top: 6px;
+      input {
+        background: url("../../../assets/images/home/icon-search-normal.png") no-repeat center right 0.4rem/0.68rem 0.68rem;
+      }
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0.6rem;
+      label {
+        font-size: 0.48rem;
+        text-align: left;
+        line-height: 0.64rem;
+        margin-bottom: 0.2rem;
+        width: 100%;
+      }
+      input {
+        border: 1px solid #CECFD0;
+        border-radius: 2px;
+        padding: 0 0.2rem;
+        height: 1.8rem;
+        font-size: 0.56rem;
+        width: 100%;
+        &.active {
+          border-color: #0B9D78;
+        }
+      }
+      &.datepicker {
+        flex-direction: row;
+        justify-content: space-between;
+        input {
+          background: url("../../../assets/images/home/icon-calendar-normal.png") no-repeat center right / 0.68rem 0.68rem; 
+          background-origin:content-box;
+          font-size: 0.56rem;
+        }
+        div {
+          width: 45%;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+        }
+        i {
+          position: absolute;
+          width: 0.68rem;
+          height: 0.68rem;
+          background: url("../../../assets/images/home/icon-calendar-normal.png") no-repeat center/contain;
+          right: 0.2rem;
+          top: 1.4rem
+        }
+      }
+    }
+    .searchBtn {
+      margin-top: 0.6rem;
+      width: 100%;
+      button {
+        height: 1.6rem;
+        display: block;
+        width: 100%;
+        line-height: 1.6rem;
+        color: #fff;
+        font-size: 0.64rem;
+        background: #FFA000;
+        border-radius: 2px;
+      }
+    }
+    .calendar {
+      margin-bottom: 0.6rem;
+    }
+  }
+</style>
+
+

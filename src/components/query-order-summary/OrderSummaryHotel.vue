@@ -1,0 +1,276 @@
+<template>
+  <div class="summarys" :class="{hide:summaryLists.length <= 0}">
+    <div v-for="(item, index) in summaryLists" :key="index">
+      <div class="summary" v-show="showIndex == index">
+        <div class="summary-top">
+          <div class="summary-top-text"><span>{{payStatus[item.status]}}</span> <i v-if="item.status == 2">: Your booking will be issued shortly</i></div>
+          <div class="summary-top-close" @click="close">
+            &times;
+          </div>
+        </div>
+        <div class="summary-wrap">
+          <div class="summary-name flex space-between align-items-center">
+            <p>{{item.hotelName}}</p>
+            <p><span class="rs">Rs</span>{{item.price}}</p>
+          </div>
+          <div class="summary-room flex space-between align-items-center">
+            <p>{{item.ratePlanName}}</p>
+            <p>{{item.guests}} Guests,{{item.room}} Rooms</p>
+          </div>
+          <div class="summary-time flex space-between align-items-center">
+            <div class="time-left">
+              <span>Check-In</span>
+              <p>{{item.inTime}}</p>
+            </div>
+            <div class="time-right">
+              <span>Check-Out</span>
+              <p>{{item.outTime}}</p>
+            </div>
+          </div>
+          <div class="summary-title-num clear1">
+            Order ID : {{item.bookingNo}} 
+            <i class="icon-copy" @click="copyId(item.bookingNo)"></i>
+            <span @click="searchOrderDetail(item.bookingNo, item.phone, item.email)">View Details</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="summary-controler" v-if="summaryLists.length > 1">
+      <button class="summary-controler-btn" :disabled="showIndex <= 0" :class="{active:showIndex > 0}" @click="controler(-1)">
+        &lsaquo;
+      </button>
+      <div>
+        {{showIndex +1}}/{{summaryLists.length}}
+      </div>
+      <button class="summary-controler-btn" :disabled="showIndex +1 >= summaryLists.length" :class="{active:showIndex +1 < summaryLists.length}" @click="controler(1)">
+        &rsaquo;
+      </button>
+    </div>
+  </div>
+</template>
+
+<script>
+import {TimeFormatUtil, CookieUtil} from 'models/utils/index';
+import Clipboard from 'clipboard';
+import { Toast,Indicator } from 'mint-ui';
+import { DomainManager } from 'config/DomainManager';
+import { AppBridge } from 'models/appbridge/appbridge.js';
+
+export default {
+  props:{
+    params: Object,
+  },
+  data(){
+    return {
+      summaryLists:[],
+      showIndex: 0,
+      payStatus:['',
+        'To be paid', 'Pending', 'Booking Comfirmed',
+        'Completed', 'Canceled'
+      ]
+    }
+  },
+  mounted(){
+    this.getOrderSummary();
+  },
+  activated(){
+    this.getOrderSummary();
+  },
+  methods:{
+    close(){
+      this.$emit('closeDetail');
+    },
+    getOrderSummary(){
+      const {phoneNo, orderId, code} = this.params;
+      const data = {
+        phone: `${code} ${phoneNo}`,
+        bookingNoAndConfirmId: orderId,
+      };
+      this.$axios({
+        method: 'get',
+        url: '/api/web/orders/orders_fly?params='+JSON.stringify(data),
+        headers:{
+          'content-type': 'application/json',
+        }
+      }).then(res => {
+        if(res.length > 0){
+          const tmpArr = [];
+          res.forEach(value => {
+            let roomInfo = JSON.parse(value.snapshot);
+            let inDate = new Date(roomInfo.checkInDate.replace(/-/g, '/'));
+            let outDate = new Date(roomInfo.checkOutDate.replace(/-/g, '/'));
+            const tempObj = {
+              id: value.id,
+              guests: roomInfo.guests,
+              room: roomInfo.room,
+              ratePlanName: roomInfo.ratePlanName,
+              hotelName: roomInfo.hotelName,
+              price: value.price,
+              inTime: TimeFormatUtil.getOrderDetailDate2(inDate),
+              outTime: TimeFormatUtil.getOrderDetailDate2(outDate),
+              bookingNo: value.bookingNo,
+              status: value.status,
+              email: JSON.parse(value.stayin.value).email,
+              phone: JSON.parse(value.stayin.value).contactNumber
+            }
+            tmpArr.push(tempObj);
+          });
+          this.summaryLists = tmpArr;
+          this.$emit('loadSuccess');
+        }else{
+          this.$emit('closeDetail', 2,'No record found.Please check the information you entered.');
+        }
+      }).catch(err=>{
+        Toast(err);
+        this.$emit('closeDetail', 2,'');
+      })
+    },
+    controler(val){
+      this.showIndex+= val;
+    },
+    copyId(val){
+      let clipboard = new Clipboard('.icon-copy',{
+        text: function() {
+          return val;
+        }
+      });
+      clipboard.on('success', function(e) {
+        Toast({
+          message:"Successfully copied to the Clipboard! ",
+          duration:1200
+        });
+        e.clearSelection();
+        clipboard.destroy();
+      });
+    },
+    searchOrderDetail(orderId, phone, email) {
+      let url = `/hotel_order/order/${orderId}/${phone}?email=${email}`;
+      AppBridge.jumpNewWebView(this, url);
+    },
+
+  }
+}
+</script>
+
+<style lang="less" scoped>
+  .hide{
+    display: none;
+  }
+  .fontSz12{
+    font-size: 12px;
+  }
+  .textR{
+    text-align: right;
+  }
+  .textC{
+    text-align: center;
+  }
+  .icon-copy{
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-left: 10px;
+    background: url('./images/icon-copy.png') center/ 10px;
+  }
+  .icon-plane{
+    display: inline-block;
+    width: 13px;
+    height: 7px;
+    margin-right: 5px;
+    background: url('./images/icon-plane.png') center center / 13px;
+  }
+  .icon-combined{
+    display: inline-block;
+    width: 30px;
+    height: 3px;
+    background: url('./images/icon-combined.png') center center / 30px;
+  }
+
+  .summary{
+    width: 345px;
+    margin: 10px auto;
+  }
+  .summary-top{
+    display:flex;
+    height: 34px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    background-color: rgba(1,117,86,0.1);
+  }
+  .summary-top-text{
+    font-size: 11px;
+    color: #0B9D78;
+    span{font-weight: bold;}
+  }
+  .summary-top-close{
+    color: #fff;
+    font-size: 20px;
+  }
+
+  .summary-wrap{
+    padding: 15px 10px;
+    background-color: #fff;
+  }
+  .summary-name{
+    font-size: 17px;
+    color: #333333;
+    margin-bottom: 0.427rem;
+    p:last-child{
+      font-weight: bold;
+      color: #111111;
+      span{font-weight: bold;}
+    }
+  }
+  .summary-room{
+    color: #111111;
+    margin-bottom: 1.8rem;
+    p:first-child{
+      font-size: 12px;
+    }
+    p:last-child{
+      font-size: 11px;
+    }
+  }
+  .summary-time{
+    margin-bottom: 15px;
+    padding-bottom: 0.64rem;
+    border-bottom:1px solid #eee;
+    span{
+      color: #999;
+      font-size: 10px;
+      padding-bottom: 5px;
+    }
+    p{
+      color: #111111;
+      font-size: 12px;
+    }
+    .time-right{text-align:right;}
+  }
+  .summary-title-num{
+    font-size: 11px;
+    span{
+      float: right;
+      cursor: pointer;
+    }
+  }
+  .summary-controler{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    margin-bottom: 10px;
+    padding: 0 30px;
+  }
+  .summary-controler-btn{
+    font-size: 24px;
+    color: #ccc;
+    padding:0;
+    &.active{
+      color: #0B9D78;
+    }
+  }
+
+</style>
+
+

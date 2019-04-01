@@ -1,0 +1,187 @@
+<template>
+  <div id="coupon-detail">
+    <head-top class="header ">
+      <i slot="left" class="top_icon iconfont icon-back"></i>
+      <img slot="title" class="flight_logo" :src="require('../../assets/images/home/home-logo.png')" alt="Online Travel Agency" title="Lowest Airfares in India">
+    </head-top>
+    <section class="d_content">
+      <h5 class="con_title">{{title}}</h5>
+      <div class="con_border con_top1">
+        <p class="f_p_left f_p">Coupon Code</p>
+        <p class="f_p_left f_p_w">{{couponCode}}</p>
+      </div>
+      <div class="con_border con_top2">
+        <p class="f_p_left f_p">Offer Details</p>
+        <p class="f_p_left f_p_w" v-html="description"><span>{{discount}}</span >&nbsp;{{description}}</p>
+      </div>
+      <div class="con_border con_top3">
+        <p class="f_p_left f_p">Booking&nbsp;Channel</p>
+        <p class="f_p_left f_p_w">
+          <span v-for="item in couponType" :key="item.id">{{item}}</span>
+        </p>
+      </div>
+      <div class="con_border con_top4">
+        <p class="f_p_left f_p">Noted</p>
+        <p class="f_p_left f_p_w">{{startTime}}&nbsp;-&nbsp;{{endTime}}</p>
+      </div>
+      <div class="con_terms">
+        <p class="t_title">Terms &amp; Conditions</p>
+        <ul class="term_detail">
+          <li v-html="tc">{{tc}}</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</template>
+<script>
+import headTop from '../../components/head/head.vue';
+import { DomainManager } from "../../config/DomainManager.js";
+import {Toast,Loadmore } from "mint-ui";
+export default {
+  components:{
+    headTop
+  },
+  data(){
+    return {
+      id:0,
+      tc:'',
+      couponCode:"",
+      title:'',
+      discount:'',
+      description:'',
+      startTime:'',
+      endTime:'',
+      couponType:[],
+      couponTerms:[],
+      months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    }
+  },
+  methods:{
+    loadCouponData(){
+      let that = this
+      let code = this.$route.query.code
+      let type = this.$route.query.type
+      let url = DomainManager.getCouponDetail()+'?code='+code+'&type='+type
+      this.$http({
+        type:'get',
+        url:url,
+        headers:{"x-Device":"mobile"}
+      }).then(res => {
+        that.tc = res.data.data[0].tc
+        that.couponCode = res.data.data[0].couponCode
+        that.couponType = res.data.data[0].suitablePlatform.split(",")
+        that.title = res.data.data[0].title
+        that.discount = res.data.data[0].discount
+        that.description = res.data.data[0].landingPageDescription
+        let timer1 = new Date(res.data.data[0].startDate)
+        let timer2 = new Date(res.data.data[0].endDate)
+        that.startTime = this.months[timer1.getMonth()]+' '+timer1.getDate();
+        that.endTime = this.months[timer2.getMonth()]+' '+timer2.getDate();
+      }).catch(err => {console.log(err)})
+    }
+  },
+  created(){
+    this.id = this.$route.query.id;
+    this.loadCouponData();
+  }
+}
+</script>
+<style lang="less" scoped>
+#coupon-detail{
+  .header {
+    position: static!important;
+    background: #0b9d78;
+    img{
+      width: 6.4rem;
+    }
+  }
+  .d_content{
+    padding:0 0.64rem 3rem;
+    .con_title{
+      padding:0.65rem 0;
+      color:#333;
+      font-size:0.696rem;
+      // font-family: "PingFangSC-Medium";
+      line-height: 0.98rem;
+    }
+    .con_border{
+      text-align: left;
+      border:1px solid #cdcdcd;
+      border-radius:4px;
+      margin-bottom:0.435rem;
+      .f_p{
+        background: #FAFAFA;
+        height:1.302rem;
+        line-height: 1.302rem;
+        color:#333;
+        font-size:0.652rem;
+        // font-family: "PingFangSC-Regular";
+        letter-spacing:1px;
+      }
+      .f_p_left{
+        padding:0 0.435rem;
+      }
+      .f_p_w{
+        font-size: 0.565rem;
+        height:1.739rem;
+        line-height: 1.739rem;
+        letter-spacing:0.5px;
+        color:#666;
+        // font-family: "PingFangSC-Light";
+      }
+    }
+    .con_top2{
+      .f_p_w{
+        height:auto;
+        padding-top:0.3rem;
+        padding-bottom:0.3rem;
+        line-height:0.9rem;
+      }
+      span{
+        color:#FF3E2A;
+      }
+    }
+    .con_top3{
+      .f_p_w{
+        display:flex;
+      }
+      span{
+        display:block;
+        margin-right:1.302rem;
+      }
+    }
+    .con_terms{
+      text-align: left;
+      margin-top:0.65rem;
+      .t_title{
+        font-size:0.609rem;
+        // font-family: "PingFangSC-Regular";
+        letter-spacing:1px;
+        color:#333;
+      }
+      .term_detail{
+        li{
+          position: relative;
+          padding-left: 0.505rem;
+          margin-top: 0.65rem;
+          font-size: 0.522rem;
+          line-height: 0.8rem;
+          letter-spacing: 0.5px;
+          // font-family: "HelveticaLTPro-Light";
+        }
+        // li:before{
+        //   content:"";
+        //   display:inline-block;
+        //   width: 0.304rem;
+        //   height:0.304rem;
+        //   background: #000;
+        //   border-radius: 50%;
+        //   position:absolute;
+        //   left: 0;
+        //   top: 0.25rem;
+        // }
+      }
+    }
+  }
+}
+</style>

@@ -1,0 +1,125 @@
+<template>
+	<div>
+		<div class="section flex" v-show="true" v-for="(item,idx) in orders" @click="orderDetail(item)" :key="idx">
+			<div class="dateTime flex" v-for="(obj,key,i) in item.ticketsinfo" v-if="i==0" :key="key">
+				<h2>{{new Date(item.voyageinfo[0].dt).getDate()}}</h2>
+				<h3 :class="{upcomings:obj[0].status==105,notpays:obj[0].status==107}">{{TimeFormatUtil.getMonthDescription(new Date(item.voyageinfo[0].dt).getMonth()).replace(/\./ig,"")}}</h3>
+			</div>
+			<div class="bookInfo">
+				<div class="tripID">
+					<span>Trip Id:{{item.id}}</span>
+				</div>
+				<div class="city flex">
+					<span class="fromCity">{{item.voyageinfo[0].dc}}</span>
+					<span class="arive"></span>
+					<span class="toCity">{{item.voyageinfo[item.voyageinfo.length-1].ac}}</span>
+				</div>
+				<div class="orderDate">
+					<span>Order date:{{TimeFormatUtil.getMonthDescription(new Date(item.creatTime).getMonth()).replace(/\./ig,"")}} {{new Date(item.creatTime).getDate()}}</span>
+				</div>
+			</div>
+			<div class="orderType" v-for="(obj,key) in item.ticketsinfo" :class="{upcoming:obj[0].status==105,notpay:obj[0].status==107}" :key="key">
+				<span>{{OrderStatusUtil.getOrderStatus(obj[0].status)}}</span>
+			</div>
+		</div>
+	</div>
+</template>
+<script>
+import { TimeFormatUtil, OrderStatusUtil } from '../../../../models/utils'
+
+export default {
+	props: {
+		orders: {
+			type: Array
+		}
+	},
+	data() {
+		return {
+			TimeFormatUtil,
+			OrderStatusUtil
+		}
+	},
+	methods: {
+		orderDetail(item) {
+			this.$store.commit("orderDetail", this.orders);
+			let status;
+			for (let obj in item.ticketsinfo) {
+				status = item.ticketsinfo[obj][0].status;
+			}
+			if (status == 107 || item.payStatus == 0 || item.payStatus == 9 || item.payStatus == 3 || item.payStatus == 4) {
+				this.$router.push('/order/nopay');
+			} else if (status == 106) {
+				this.$router.push('/order/complete');
+			} else {
+				this.$router.push('/order/upcoming');
+			}
+		}
+	}
+}
+</script>
+<style lang="less" scoped>
+.section {
+	justify-content: flex-start;
+	background-color: #fff;
+	border-radius: 2px;
+	box-shadow: 0 0.4rem 0.68rem #ddd;
+	position: relative;
+	overflow: hidden;
+	margin-bottom: 0.4rem;
+	.dateTime {
+		width: 2.6rem;
+		justify-content: center;
+		align-items: center;
+		flex-direction: column;
+		border-right: 1px solid #ddd;
+		h2 {
+			font-size: 1.02rem;
+		}
+		h3 {
+			font-size: 0.6rem;
+			color: #ccc;
+		}
+	}
+	.bookInfo {
+		width: 100%;
+		.tripID {
+			font-size: 0.56rem;
+			color: #ccc;
+			text-align: left;
+			padding: 0.2rem;
+			border-bottom: 1px dashed #ddd;
+		}
+		.city {
+			justify-content: space-between;
+			align-items: center;
+			padding: 0.2rem;
+			span {
+				font-size: 0.6rem;
+				color: #333;
+			}
+			.arive {
+				height: 0.4rem;
+				width: 1.2rem;
+				padding: 0 0.4rem;
+				background: url('../../../../assets/images/re-flight_07.png') center no-repeat;
+				background-size: 1.2rem;
+			}
+		}
+		.orderDate {
+			font-size: 0.6rem;
+			color: #ccc;
+			text-align: left;
+			padding: 0 0.2rem 0.6rem;
+		}
+	}
+	.orderType {
+		position: absolute;
+		right: -1px;
+		bottom: -1px;
+		font-size: 0.5rem;
+		padding: 0.2rem 0.4rem;
+		background-color: #efefef;
+		color: #ccc;
+	}
+}
+</style>

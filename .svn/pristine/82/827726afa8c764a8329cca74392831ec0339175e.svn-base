@@ -1,0 +1,45 @@
+<template>
+	<div class="silverb">
+		<div class="content">
+			<p>
+				&bull; In order to use Happy Wallet, you need to log in to your HappyEasyGo account and while booking the ticket you have to choose Happy Gold or Happy Silver as an option to pay. If you choose Happy Silver to pay, you will be shown an instant discount price. And you can pay the amount using both Happy Gold as well as through credit/debit card or net banking.
+			</p>
+			<p>
+				&bull; Every transaction where the customer uses Happy Wallet as a mode of payment will be validated through payment password.
+			</p>
+			<p>
+				&bull; Each time the Customer redeems or earns Happy Wallet, the same will be intimated to the Customer on his/her email and/or mobile.
+			</p>
+			<p>
+				&bull; HappyEasyGo shall not be liable for any hacking or unauthorized use of the Customer's account and it shall be the sole responsibility of the Customer to ensure privacy and confidentiality of his/her account details.
+			</p>
+			<p>
+				&bull; Promo code are not applicable on booking with Happy Silver.
+			</p>
+		</div>
+	</div>
+</template>
+<style lang='less' scoped>
+.silverb {
+	.content {
+		font-size: 0.52rem;
+		color: #666;
+		border-bottom: 1px solid #eee;
+		padding-top: 0.4rem;
+		h2 {
+			font-size: 0.64rem;
+			color: #0b9d78;
+			text-align: left;
+			line-height: 1.2rem;
+		}
+		p {
+			text-align: left;
+			margin: 0.4rem 0;
+			line-height: 0.769rem;
+		}
+		.gray {
+			color: #b0b0b0;
+		}
+	}
+}
+</style>

@@ -1,0 +1,816 @@
+<template>
+  <div class="wrapper">
+    <head-top class="header">
+      <i slot="left" class="prev iconfont icon-back"></i>
+      <div slot="title" class="title">Cashback Program</div>
+      <i slot="right" class="sp iconfont icon-back"></i>
+    </head-top>
+    <div class="container">
+      <div class="top" :class="{marTop: contentMargin}">
+        <img :src="mUrl" :alt="mAlt" :title="mTitle">
+      </div>
+      <div class="section1">
+        <ul>
+          <li class="flex content-start">
+            <img :src="require('../../assets/images/cashback/icon-1.png')" alt="">
+            <p class="title">Valid from</p>
+            <span>
+              <strong>31 Dec 2018</strong>
+            </span>
+          </li>
+          <li class="flex content-start">
+            <img :src="require('../../assets/images/cashback/icon-2.png')" alt="">
+            <p class="title">Applicable on</p>
+            <span>
+              <strong>Domestic Flights</strong>
+            </span>
+          </li>
+          <li class="flex content-start">
+            <img :src="require('../../assets/images/cashback/icon-3.png')" alt="">
+            <p class="title">Applicable to</p>
+            <span>
+              <strong>Mobile Site &amp; APP</strong>
+            </span>
+          </li>
+          <li class="flex content-start align-items-center">
+            <img :src="require('../../assets/images/cashback/icon-4.png')" alt="">
+            <p class="title">Valid till</p>
+            <span>
+              <strong>∞</strong>
+            </span>
+          </li>
+        </ul>
+      </div>
+      <div class="section2">
+        <h2>HappyEasyGo Cashback Program</h2>
+        <p>
+          Book your tickets with cashback option on HappyEasyGo.com and get upto
+          <span class="red font-bold">Rs.30000</span> cashback per booking. The amount will be credited in your Happy Wallet immediately after the departure
+          of the flight. Enjoy this cashback for further bookings.
+        </p>
+        <p>You can check your cashback in your Account Center and call on our 24/7 customer service for further inquiries.</p>
+        <div class="text-wrap">
+          <span class="green" v-if="isShowBtn" @click="$router.push('/')">Book Now</span>
+        </div>
+        <p>
+          OOPS, not registered yet? Register now and start experiencing HappyEasyGo Cashback Program!
+          <span class="green" v-if="isShowBtn" @click="$router.push('/register')">Sign Up</span>
+        </p>
+        <p>
+          Additionally, you can top-up your happy Gold account here and get 1% extra on the amount you transferred.
+          <span class="green" v-if="isShowBtn" @click="$router.push('/register')">know more</span>
+        </p>
+      </div>
+
+      <div class="section-share">
+        <h2 class="green">Share on your Social Media</h2>
+        <div class="line"></div>
+        <div class="share">
+          <div class="share-list flex content-center">
+            <a class="fb" href="javascript:">
+              <img src="../../assets/images/referral/facebook.jpg" alt="">
+            </a>
+            <a class="tw" href="javascript:">
+              <img src="../../assets/images/referral/twitter.jpg" alt="">
+            </a>
+            <a class="sms" href="javascript:">
+              <img src="../../assets/images/referral/unkonw.jpg" alt="">
+            </a>
+          </div>
+
+          <div class="share-list">
+            <h2>
+              <span class="fc">By Email </span> (Invite upto 5 friends at 1 time)</h2>
+            <div class="form-group flex space-between">
+              <input type="text" placeholder="Enter Friend's Email">
+              <a href="javascript:">Share</a>
+            </div>
+          </div>
+          <div class="share-list">
+            <h2>
+              <span class="fc">By SMS</span> (Invite upto 5 friends at 1 time)</h2>
+            <div class="form-group flex space-between">
+              <input type="text" placeholder="Enter Friend's Mobile No.">
+              <a href="javascript:">Share</a>
+            </div>
+          </div>
+          <div class="share-list">
+            <h2>
+              <span class="fc">By URL</span> (Copy your unique url at 1 time)</h2>
+            <div class="form-group flex space-between">
+              <input type="text" placeholder="https://www.happeasygo.com/">
+              <a href="javascript:">Copy</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="section3">
+        <h2>About The Offer</h2>
+        <h4>
+          How to book with cashback price and get your cashback
+        </h4>
+        <div class="list flex flex-start align-items-center">
+          <div class="ico">
+            <img :src="require('../../assets/images/cashback/icon-6.png')" alt="">
+          </div>
+          <div class="text">
+            <p>
+              Sign up/sign in and search your flight on Happyeasygo.com.
+            </p>
+          </div>
+        </div>
+        <div class="list flex flex-start align-items-center">
+          <div class="ico">
+            <img :src="require('../../assets/images/cashback/icon-7.png')" alt="">
+          </div>
+          <div class="text">
+            <p>
+              Click on the BOOK button of your selected flight and choose Cashback Price.
+            </p>
+          </div>
+        </div>
+        <div class="list flex flex-start align-items-center">
+          <div class="ico">
+            <img :src="require('../../assets/images/cashback/icon-8.png')" alt="">
+          </div>
+          <div class="text">
+            <p>
+              Complete the booking process.
+            </p>
+          </div>
+        </div>
+        <div class="list flex flex-start align-items-center">
+          <div class="ico">
+            <img :src="require('../../assets/images/cashback/icon-9.png')" alt="">
+          </div>
+          <div class="text">
+            <p>
+              Cashback will be credited into your happy Gold account in 1 hour after you complete your payment.
+            </p>
+          </div>
+        </div>
+        <div class="list flex flex-start align-items-center">
+          <div class="ico">
+            <img :src="require('../../assets/images/cashback/icon-10.png')" alt="">
+          </div>
+          <div class="text">
+            <p>
+              Your cashback will be activated when your flight departs and then can be used to pay for your booking.
+            </p>
+          </div>
+        </div>
+        <div class="line"></div>
+      </div>
+      <div class="section5">
+        <h2 class="sp">FAQS</h2>
+        <div class="list">
+          <h2>What is Happy Gold?</h2>
+          <div class="text">
+            <p>
+              Happy gold is a kind of e - cash given by HappyEasyGo to its Users under our Happy Wallet Program and it has no usage limit
+              or expiry date.
+            </p>
+          </div>
+        </div>
+        <div class="list">
+          <h2>what is HappyeasyGo cash program?</h2>
+          <div class="text">
+            <p>
+              HappyEasygo Cashback is a special reward program provided to the registered users only.
+            </p>
+          </div>
+        </div>
+        <div class="list">
+          <h2>When will I receive my cashback?</h2>
+          <div class="text">
+            <p>
+              Cashback will be credited in your Happy Gold Wallet after one hour of your payment .It will be activated for usage only after
+              the flight departs.
+            </p>
+          </div>
+        </div>
+        <div class="list">
+          <h2>How can I use my cashback?</h2>
+          <div class="text">
+            <p>
+              Your cashback credited in your Happy Gold Wallet is available to use only after the flight daparts. Use can use it by selecting
+              “Use my Happy Gold XXX” on the review your flight detail page for next subsequent bookings.
+            </p>
+          </div>
+        </div>
+        <div class="list">
+          <h2>Do I need to pay for the difference amount of the ticket at the time of rescheduling my flight?</h2>
+          <div class="text">
+            <p>
+              HappyEasyGo will provide the assistance for rescheduling your flight however the amount difference of the would be borne
+              by the user only.
+            </p>
+          </div>
+        </div>
+        <div class="list">
+          <h2>How can I reschedule my flight?</h2>
+          <div class="text">
+            <p>
+              Your can submit your reschedule request on our website. The user gets a chance to reschedule his flight under the same Airlines
+              however the passenger, departure and destination cannot be altered.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="btn flex content-center">
+        <a href="javascript:" v-if="isShowBtn" @click="LoginAndGoWallet()">Know more about Happy Wallet Program.</a>
+      </div>
+      <div class="terms">
+        <h2 class="sp">Terms and Conditions</h2>
+        <div class="list">
+          <div class="text">
+            <p>
+              Create an account by signing up to become HappyEasyGo user.</p>
+          </div>
+        </div>
+        <div class="list">
+          <div class="text">
+            <p>
+              HappyEasyGo Cashback Program is applicable for HappyEsayGo Registered Users only. It is mandatory to
+              <span class="yellow" v-if="isShowBtn" @click="$router.push('/login')">Sign up</span>
+              <span class="yellow" v-else>Sign up</span>
+               or
+              <span class="yellow" v-if="isShowBtn" @click="$router.push('/login')">login</span>
+              <span class="yellow" v-else>login</span>
+               to avail cashback offer.
+            </p>
+          </div>
+        </div>
+        <div class="list">
+          <div class="text">
+            <p>
+              The cashback amount in your Happy Gold Wallet can be redeemed with various coupons, discounts and offers extended by HappyEasygGo.
+            </p>
+          </div>
+        </div>
+        <div class="list">
+          <div class="text">
+            <p>
+              In case of cancellation / refund, user wouldn’t be eligible for any cashback. The cashback credited will be deducted from
+              the total refund due. </p>
+          </div>
+        </div>
+        <div class="list">
+          <div class="text">
+            <p>
+              HappyEasyGo Travel Pvt. Ltd. ("HappyEasyGo") reserves the right to add, alter, modify all or any of these terms and conditions,
+              or replace wholly or in part, this offer by any other offer, whether similar to this offer or not, without
+              prior notice. </p>
+          </div>
+        </div>
+        <div class="list">
+          <div class="text">
+            <p>
+              HappyEasyGo has the sole right to decide on the amount of cashback and the eligibility for the HappyEasyGo Cashback Program,
+              sole right to alter and/or amend the terms and conditions of the HappyEasyGo Cashback Program and cashback
+              amount at any time and also reserves the right to cancel a cashback in case booking details are found to be
+              fraudulent. </p>
+          </div>
+        </div>
+        <div class="list">
+          <div class="text">
+            <p>
+              HappyEasyGo Cashback is a promotional scheme by HappyEasyGo for its registered users only. The scheme starts from 30 Aug
+              2017. </p>
+          </div>
+        </div>
+        <div class="list">
+          <div class="text">
+            <p>
+              HappyEasyGo would like to contact its registered users for its promotional activities or feedback during the course of the
+              HappyEasyGO Cashback Program </p>
+          </div>
+        </div>
+        <div class="list">
+          <div class="text">
+            <p>
+              All other standard terms and conditions available at HappyEasyGo.com shall apply. </p>
+          </div>
+        </div>
+        <div class="list">
+          <div class="text">
+            <p>
+              Any disputes arising out of this offer shall be subject to the exclusive jurisdiction of competent courts in Gurgaon, Haryana,
+              India. </p>
+          </div>
+        </div>
+      </div>
+      <div class="share" v-show='false'>
+        <h2 class="yellow">Share this Offer</h2>
+        <div class="ico flex space-between">
+          <img :src="require('../../assets/images/cashback/icon-12.png')" alt="">
+          <img :src="require('../../assets/images/cashback/icon-13.png')" alt="">
+          <img :src="require('../../assets/images/cashback/icon-14.png')" alt="">
+        </div>
+        <div class="input-group">
+          <div class="list flex space-between">
+            <input type="text" placeholder="Enter your email">
+            <a href="javascript:">Send</a>
+          </div>
+          <div class="list flex space-between">
+            <input type="text" placeholder="https://www.happyeasygo.com/">
+            <a href="javascript:">Copy</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import headTop from "../../components/head/head.vue";
+import { CookieUtil } from "../../models/utils";
+import { User } from "../../models/user";
+import {AppBridge} from '../../models/appbridge/appbridge.js';
+
+export default {
+  components: {
+    headTop
+  },
+  data() {
+    return {
+      isShowBtn:true,
+      mUrl: "",
+      mAlt: "",
+      mTitle: "",
+      model: 0,
+      contentMargin: false
+    };
+  },
+  async created() {
+    this.isShowBtn = await AppBridge.getNativeSource(this);
+    this.contentMargin = this.isShowBtn;
+    let id = await AppBridge.getNativeUuid(this);
+    window.onReceviedUuid = this.onReceviedUuid;
+    if(id != ""){
+      CookieUtil.removeItem("uuid");
+      CookieUtil.setItem("uuid",id);
+    }
+    this.checkType();
+  },
+  methods: {
+    checkType() {
+      let type = AppBridge.device;
+      if(type == 1){
+        this.model = 2;
+      }else if(type == 2){
+        this.model = 3;
+      }else{
+        this.model = 0;
+      }
+      this.getImg();
+    },
+    getImg() {
+      let parmTop = "type=13&device="+ this.model +"&addr=cashback&businessType=1";
+      User.advList(this, parmTop).then(res => {
+        if (res.success) {
+          if(res.list.length >= 1){
+            this.mUrl =
+              res.list[0].landingPageUrl == null
+                ? ""
+                : res.list[0].landingPageUrl;
+            this.mAlt =
+              res.list[0].landingPageAlt == null
+                ? ""
+                : res.list[0].landingPageAlt;
+            this.mTitle =
+              res.list[0].landingPageTitle == null
+                ? ""
+                : res.list[0].landingPageTitle;
+            }
+          }
+        })
+        .catch(err => {
+          console.log(err.msg);
+        });
+    },
+    onReceviedUuid(uuid) {
+      CookieUtil.removeItem("uuid");
+      CookieUtil.setItem("uuid", uuid);
+      return "1";
+    },
+    LoginAndGoWallet() {
+      if (!CookieUtil.hasItem("uuid")) {
+        
+      } else {
+        this.$router.push("/happywallet");
+      }
+    }
+  }
+};
+</script>
+<style lang='less' scoped>
+.wrapper {
+  font-family: "PingFangSC";
+  background: #f4f4f4;
+}
+
+.header {
+  background: #0b9d78;
+  .title {
+    font-size: 0.768rem;
+    color: #fff;
+  }
+  .sp {
+    opacity: 0;
+  }
+}
+.marTop{
+  margin-top: 2rem;
+}
+.top {
+  // height: 9rem; // background: #fff url('../../assets/images/cashback/M-cashback.jpg') center no-repeat;
+  // background-size: 100% 9rem;
+  background: #fff;
+  img {
+    display: block;
+    width: 100%;
+  }
+}
+
+.section1 {
+  padding: 0.4rem 0.68rem 1rem;
+  background-color: #fff;
+  ul li {
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #ccc;
+    text-align: left;
+    img {
+      width: 0.769rem;
+      height: 0.769rem;
+    }
+    p,
+    span {
+      font-size: 0.68rem;
+      color: #999;
+      padding-left: 1rem;
+      strong {
+        color: #000;
+        font-weight: 400;
+      }
+    }
+    p {
+      // width: 30%;
+    }
+    .title {
+      font-size: 0.68rem;
+      color: #999;
+      padding-left: 1rem;
+    }
+  }
+}
+
+.section2 {
+  padding: 0.68rem;
+  background-color: #fff;
+  margin-top: 0.21rem;
+  .text-wrap {
+    font-size: 0.52rem;
+    text-align: left;
+  }
+  h2 {
+    font-size: 0.6rem;
+  }
+  h3 {
+    font-size: 0.6rem;
+    color: #0b9d78;
+  }
+  p {
+    font-size: 0.52rem;
+    color: #999;
+    text-align: left;
+    line-height: 0.769rem;
+    margin: 0.4rem 0;
+  }
+  .cp {
+    height: 1.5rem;
+    background: #eee;
+    img {
+      display: block;
+      height: 0.64rem;
+      margin: 0 0.5rem;
+    }
+    span {
+      display: block;
+    }
+    .green {
+      color: #0b9d78;
+      font-size: 0.512rem;
+    }
+  }
+  .red {
+    color: #f65858;
+    font-size: 0.64rem;
+  }
+  .yellow {
+    font-weight: bold;
+  }
+  .font-bold {
+    font-weight: bold;
+  }
+  .sp {
+    color: #0b9d78;
+  }
+  .icon-info {
+    width: 0.56rem;
+  }
+  .font-yellow {
+    font-weight: bold;
+    color: #ffad3d;
+  }
+  .ly {
+    color: #ffad3d;
+  }
+}
+
+.sp {
+  color: #0b9d78;
+}
+
+.section-share {
+  display: none;
+  background-color: #fff;
+  margin-top: 0.21rem; // display: none;
+  h2 {
+    font-size: 0.597rem;
+    height: 1.2rem;
+    line-height: 1.2rem;
+  }
+  .line {
+    width: 12%;
+    margin: 0 auto;
+    border-bottom: 1px solid #0b9d78;
+  }
+  .share {
+    padding: 0.64rem;
+    .share-list {
+      text-align: left; // padding: 1.7rem 0;
+      h2 {
+        color: #999;
+        .fc {
+          color: #666;
+        }
+      }
+      div {
+        padding: 0.4rem 0;
+      }
+      .form-group {
+        height: 1.7rem;
+        input {
+          width: 78%;
+          height: 100%;
+          line-height: 1.7rem;
+          font-size: 0.6rem;
+          box-sizing: border-box;
+          padding: 0.32rem;
+          border: 1px solid #ddd;
+          border-right: 0;
+          border-top-left-radius: 2px;
+          border-bottom-left-radius: 2px;
+          border-top-right-radius: 0;
+          border-bottom-right-radius: 0;
+        }
+        a {
+          display: inline-block;
+          width: 22%;
+          height: 100%;
+          line-height: 1.7rem;
+          font-size: 0.512rem;
+          color: #fff;
+          background-color: #ffa033;
+          text-align: center;
+          border-top-right-radius: 2px;
+          border-bottom-right-radius: 2px;
+        }
+      }
+
+      .fb,
+      .tw,
+      .sms {
+        width: 1.7rem;
+        height: 1.7rem;
+        color: #000;
+        background: lightblue;
+        text-align: center;
+        display: block;
+        border-radius: 4px;
+        margin: 0 1.06rem;
+        img {
+          display: block;
+          width: 1.7rem;
+          height: 1.7rem;
+        }
+      }
+    }
+  }
+}
+
+.section3 {
+  position: relative;
+  background-color: #fff;
+  margin-top: 0.21rem;
+  padding: 0.68rem;
+  h2 {
+    font-size: 0.6rem;
+    padding: 0.6rem 0;
+  }
+  h4 {
+    font-size: 0.6rem;
+    color: #666;
+    font-weight: normal;
+    text-align: left;
+    padding: 0.2rem 0;
+  }
+  .line {
+    width: 1px;
+    height: 10.2rem;
+    background-color: #ffa033;
+    position: absolute;
+    left: 1.36rem;
+    top: 4.68rem;
+    z-index: 1;
+  }
+  .list {
+    padding: 0.4rem 0;
+    .ico {
+      z-index: 2;
+      img {
+        width: 1.32rem;
+      }
+    }
+    .text {
+      p {
+        font-size: 0.52rem;
+        color: #999;
+        text-align: left;
+        padding-left: 0.4rem;
+        line-height: 0.769rem;
+      }
+    }
+  }
+}
+
+.section4 {
+  padding: 0.6rem;
+  background-color: #fff;
+  h2 {
+    font-size: 0.68rem;
+    color: #666;
+    text-align: left;
+    padding: 0.4rem 0;
+  }
+  p {
+    font-size: 0.52rem;
+    color: #999;
+    line-height: 0.769rem;
+    margin: 0.4rem 0;
+    text-align: left;
+  }
+}
+
+.section5 {
+  padding: 0 0.68rem 0.68rem;
+  background-color: #fff;
+  margin-top: 0.21rem;
+  h2 {
+    font-size: 0.6rem;
+    padding: 0.68rem 0;
+  }
+  .list {
+    h2 {
+      text-align: left;
+      padding: 0.4rem 0 0.4rem 1rem;
+      color: #666;
+      line-height: 0.85rem;
+      background: url("../../assets/images/cashback/icon-11.png") left center
+        no-repeat;
+      background-size: 0.8rem;
+    }
+    .text {
+      padding: 0.68rem;
+      background-color: #fbfbfb;
+      p {
+        font-size: 0.52rem;
+        color: #999;
+        line-height: 0.769rem;
+        text-align: left;
+      }
+    }
+  }
+}
+
+.btn {
+  background-color: #fff;
+  padding: 1rem 0;
+  a {
+    height: 1.2rem;
+    line-height: 1.2rem;
+    border: 1px solid #ffa234;
+    font-size: 0.52rem;
+    color: #ffa234;
+    text-align: center;
+    border-radius: 0.2rem;
+    padding: 0 0.2rem;
+  }
+}
+
+.terms {
+  margin-top: 0.21rem;
+  padding: 0 0.68rem;
+  background-color: #fff;
+  h2 {
+    font-size: 0.6rem;
+    height: 2rem;
+    line-height: 2rem;
+    background: url("../../assets/images/cashback/Cashback-app_39.png") right
+      center no-repeat;
+    background-size: 0.68rem;
+  }
+  .list {
+    h2 {
+      text-align: left;
+      padding: 0.4rem 0 0.4rem 1rem;
+      color: #666;
+      background: url("../../assets/images/cashback/icon-11.png") left center
+        no-repeat;
+      background-size: 0.8rem;
+    }
+    .text {
+      padding: 0.68rem;
+      background-color: #fbfbfb;
+      p {
+        font-size: 0.52rem;
+        color: #999;
+        line-height: 0.769rem;
+        text-align: left;
+      }
+    }
+  }
+}
+
+.share {
+  padding: 0.68rem;
+  margin-top: 0.4rem;
+  background-color: #fff;
+  h2 {
+    font-size: 0.6rem;
+    height: 2rem;
+    line-height: 2rem;
+  }
+  .ico {
+    padding: 0 2rem;
+    img {
+      width: 1.6rem;
+      height: 1.6rem;
+    }
+  }
+  .input-group {
+    padding: 0.6rem 0 1rem;
+    .list {
+      margin-top: 0.4rem;
+      input {
+        width: 80%;
+        text-indent: 0.4rem;
+        height: 1.2rem;
+        line-height: 1.2rem;
+        font-size: 0.6rem;
+        border: 1px solid #eee;
+      }
+      a {
+        display: block;
+        width: 20%;
+        height: 1.2rem;
+        line-height: 1.2rem;
+        text-align: center;
+        background-color: #ffa033;
+        color: #fff;
+        font-size: 0.6rem;
+      }
+    }
+  }
+}
+
+::-webkit-input-placeholder {
+  color: #ccc;
+  font-size: 0.6rem;
+  padding-left: 0.2rem;
+}
+
+::-moz-placeholder {
+  color: #ccc;
+  font-size: 0.6rem;
+  padding-left: 0.2rem;
+}
+
+:-moz-placeholder {
+  color: #ccc;
+  font-size: 0.6rem;
+  padding-left: 0.2rem;
+}
+</style>

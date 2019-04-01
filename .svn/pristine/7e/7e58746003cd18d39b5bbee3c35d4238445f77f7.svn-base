@@ -1,0 +1,405 @@
+<template>
+	<div class="wrapper" id="no_pay">
+		<head-top class="head">
+			<i slot="left" class="iconfont icon-back" ></i>
+			<div slot="title" class="title flex" v-for="(item,index) in orders" v-if="index==0" :key="item.id">
+				<h2>{{departCity}}</h2>
+				<div class="title-img">
+					-
+				</div>
+				<h2>{{ariveCity}}</h2>
+			</div>
+			<span class="h-cancel" slot="right" @click="cancelOrderFn">Cancel</span>
+		</head-top>
+		<div class="container">
+			<div class="content">
+				<div class="flight-info">
+					<div class="dates" v-show="ispasetime">
+						<h2>
+							<span>Fares change rapidly</span>
+						</h2>
+						<p class="sp">It will take a few minutes to process your payment. If you have completed payment, please do not make payment again.</p>
+						<p>So please complete the</p>
+						<p>Payment process before
+							<span>{{expirationTime}}(IST)</span>
+						</p>
+						<p class="tripid">
+							Trip Id:{{orderInfo.id}}
+						</p>
+					</div>
+					<flight-info :orders="orders"></flight-info>
+					<bg></bg>
+					<fare-detail :orders="orders" :fee="fee"></fare-detail>
+				</div>
+			</div>
+		</div>
+		<payment class="payment " :orderDetail="orderDetail" :ispasetime="showPay"></payment>
+		<mt-popup v-model="cancelOrder" popup-transition="popup-fade" modal="true" closeOnClickModal="false">
+      <cancel-dialog>
+        <div slot="head">Cancel Payment</div>
+        <div slot="content">
+          <p>We want to know why you cancel your payment so that we can improve our service.</p>
+          <mt-checklist
+            v-show="options.length > 0"
+            v-model="value"
+            :options="options">
+          </mt-checklist>
+        </div>
+        <mt-button slot="btn" @click="noCancel" class="btn btn1" type="default">Back</mt-button>
+        <mt-button slot="btn" @click="canceled" class="btn btn2" :class="{active:option}" :disabled="!option" type="default">Submit</mt-button>
+      </cancel-dialog>
+    </mt-popup>
+	</div>
+</template>
+<script>
+import headTop from 'components/head/head.vue'
+import cancelDialog from "pages/trip/dialog.vue";
+import payment from './base/payment.vue'
+import flightInfo from './base/flightInfo.vue'
+import traveller from './base/traveller.vue'
+import fareDetail from './base/fareDetail'
+import { CookieUtil, GetFlightOrderUtil } from 'models/utils'
+import { User } from '../../../models/user'
+import { Toast,Checklist,Indicator } from 'mint-ui'
+import { DomainManager } from 'config/DomainManager';
+// import orderAction from './base/orderAction'
+// import orderRtAction from './base/orderRtAction'
+import bg from './base/bg.vue'
+export default {
+	components: {
+		headTop,
+		payment,
+		flightInfo,
+		traveller,
+		fareDetail,
+		bg,
+		cancelDialog,
+		"mt-checklist":Checklist ,
+	},
+	data() {
+		return {
+			orders: [],
+			fee: '',
+			ifPay: '',
+			showAction: false,
+			isSelect: false,
+			orderDetail: '',
+			id:"",
+      cancelOrder:false,
+      value:[],
+      options:[],
+      option:false,
+		}
+	},
+	watch:{
+    value:function(val,oldV){
+      let arr = [this.value[this.value.length - 1]];
+      if(this.value.length > 0){
+        this.option = true;
+      }else{
+        this.option = false;
+      }
+      if(this.value.length > 1){
+        this.value = arr;
+      }
+    }
+  },
+	computed: {
+		orderInfo() {
+			if (this.orders) {
+				return this.orders[0];
+			} else {
+				return ''
+			}
+		},
+		ispasetime() {
+			if (this.orders.length != 0) {
+				let creatTime = new Date(this.orders[0].creatTime + 15 * 60 * 1000).getTime();
+				let curTime = new Date().getTime();
+				return creatTime > curTime ? true : false;
+			}
+
+		},
+		showPay() {
+			return this.ifPay == 107 ? true : false;
+		},
+		expirationTime() {
+			let creatTime = null;
+			if (this.orders.length > 0) {
+				creatTime = new Date(this.orders[0].creatTime);
+				let year = creatTime.getFullYear();
+				let month = creatTime.getMonth() + 1;
+				let date = creatTime.getDate();
+				let hour = creatTime.getHours();
+				let minute = creatTime.getMinutes() + 15;
+				// let minute = creatTime.getMinutes();
+
+				let second = creatTime.getSeconds();
+				if (minute > 59) {
+					minute -= 59;
+					hour += 1;
+					if (hour > 24) {
+						hour = 0;
+					}
+				}
+				return (date + '/' + month + '/' + year + ',' + hour + ':' + minute + ':' + second)
+			}
+		},
+		departCity() {
+			if (this.orders.length != 0) {
+				return this.orders[0].voyageinfo[0].dc;
+			}
+		},
+		ariveCity() {
+			if (this.orders.length != 0) {
+				return this.orders[0].voyageinfo[this.orders[0].voyageinfo.length - 1].ac;
+			}
+		}
+	},
+	created() {
+		this.loadReasons();
+		this.orders = JSON.parse(sessionStorage.getItem('orders'));
+		this.fee = JSON.parse(sessionStorage.getItem('orderFee')).fee;
+		this.orderDetail = JSON.parse(sessionStorage.getItem('orderFee'));
+		this.ifPay = this.orders[0].ticketsinfo[0][0].status;
+	},
+	beforeRouteLeave(to, from, next) {
+		if(to.path.indexOf("/payment-state") > -1){
+			if(CookieUtil.getItem("uuid")){
+				this.$router.push('/trip');
+			}else{
+				this.$router.push('/');
+			}
+		}
+		next();
+	},
+	methods: {
+		cancelOrderFn(){
+      this.value = [];
+			this.cancelOrder = true;
+			this.id = this.$route.query.id;
+    },
+		loadReasons(){
+      let url = DomainManager.CancelReason();
+      this.$axios.get(url).then(res =>{
+        if(res.success){
+          res.data.forEach((e,i)=>{
+            this.$set(e,"label",e.desc);
+            this.$set(e,"value",e.causeValue);
+          });
+          this.options = res.data;
+        }else{
+          Toast(res.msg);
+        }
+      }).catch(err => {
+        console.log(err);
+      })
+		},
+		canceled(){
+      Indicator.open({
+        text:"cancelling...",
+        spinnerType: 'fading-circle'
+      });
+      let time = new Date().getFullYear()+""+(this.addZero(new Date().getMonth() + 1))+""+this.addZero(new Date().getDate());
+      let value = this.value[0];
+      let obj = {
+        id:this.id,
+        cancelReason:value,
+        date:time,
+        operatorType:2,
+        route:1,
+        userName:CookieUtil.getItem('email')?(CookieUtil.getItem('email').indexOf('"') == -1? CookieUtil.getItem('email')
+        : CookieUtil.getItem('email').split('"')[1]):"",
+      };
+      let url = DomainManager.cancelOrder();
+      this.$axios.post(url,obj).then(res =>{
+        Indicator.close();
+				if(res.success && res.data){
+					Toast({
+						message:"Cancel Successfully",
+						duration:1500
+					});
+					this.cancelOrder = false;
+					this.$router.replace({
+						path:"/trip",
+					})
+				}else{
+					this.cancelOrder = false;
+					Toast({
+						message:res.msg,
+						duration:2500
+					});
+				}
+      }).catch(err => {
+        Indicator.close();
+        console.log(err);
+      })
+    },
+    noCancel(){
+      this.cancelOrder = false;
+    },
+    goBack(){
+      this.cancelOrder = false;
+		},
+		addZero(who){ // 月份天数前面补零
+      if(who < 10 && who > 0){
+        who = "0"+who;
+      }else{
+        who = who;
+      }
+      return who;
+    },
+		isEnter() {
+			for (var i in this.orders) {
+				for (var y in this.orders[i].travellerinfo) {
+					if (this.orders[i].travellerinfo[y].status == 1 && this.orders[0].ticketsinfo[0][0].ticketno) {
+						this.showAction = true;
+					}
+				}
+			}
+		}
+	},
+	mounted() {
+		this.isEnter();
+	}
+}
+</script>
+<style lang="less">
+#no_pay{
+  .mint-checklist{
+    text-align: left;
+    .mint-checklist-title{margin: 0;}
+    .mint-cell:last-child {background-repeat: repeat;}
+    .mint-cell{
+      min-height:1.5rem;
+      .mint-cell-wrapper{background-repeat: repeat;}
+      .mint-checklist-label{
+        display:flex;
+        padding: 0;
+      }
+      .mint-checkbox-input:checked + .mint-checkbox-core {
+        background-color: #0b9d78;
+        border-color: #0b9d78;
+      }
+      .mint-checkbox-label{
+				line-height: 19px;
+				height: 19px;
+				margin-left:10px;
+				font-size:0.6rem;
+      }
+      .mint-checkbox-core{
+        border-radius:0;
+        width: 16px;
+        height: 16px;
+      }
+      .mint-checkbox-core:after{
+        top: 1px;
+        left: 5px;
+      }
+    }
+  }
+}
+</style>
+<style lang="less" scoped>
+.head {
+	background: #0b9d78!important;
+	.title {
+		h2 {
+			font-size: 0.768rem;
+			color: #fff;
+		}
+		.title-img {
+			width: 1.2rem;
+			height: 2.04rem;
+			line-height: 2.04rem;
+			padding: 0 0.2rem;
+			img {
+				margin-top: 4px;
+				width: 1rem;
+			}
+		}
+	}
+	.h-cancel{
+		padding: 0 0.64rem 0 0;
+		font-size: 0.768rem;
+		color:#fff;
+	}
+}
+.container {
+	overflow: auto;
+	.content {
+		padding: 2.1rem 0.68rem 0rem;
+	}
+	.flight-info {
+		.dates {
+			// padding-bottom: 0.8rem;
+			h2 {
+				font-size: 0.68rem;
+				color: #333;
+				padding: 0.2rem 0;
+				span {
+					// padding-left: 1.2rem;
+					// background: url('../../../assets/images/order/paid_03.png') left no-repeat;
+					background-size: 0.68rem;
+				}
+			}
+			.sp {
+				color: red;
+			}
+			p {
+				// text-align: left;
+				font-size: 0.52rem;
+				color: #666;
+				padding-top: 0.2rem;
+				span {
+					font-size: 0.56rem;
+					color: #333;
+				}
+			}
+			.tripid {
+				display: none;
+				padding-top: 0.4rem;
+				text-align: left;
+				padding-bottom: 0.2rem;
+			}
+		}
+	}
+	.traveller {
+		background-color: #fff;
+		border-radius: 0.4rem;
+		margin-top: 0.6rem;
+		.title {
+			h2 {
+				font-size: 0.6rem;
+				color: #333;
+				text-align: left;
+				span {
+					font-size: 0.68rem;
+					padding: 0 0.2rem;
+				}
+			}
+		}
+		ul>li {
+			h2 {
+				font-size: 0.6rem;
+				color: #333;
+				text-align: left;
+				padding: 0.4rem 0;
+				span {
+					padding-right: 0.2rem;
+				}
+			}
+		}
+	}
+}
+
+.payment {
+	position: fixed;
+	bottom: 0;
+	-webkit-overflow-scrolling: touch;
+}
+
+.pasetime {
+	background-color: #ccc!important;
+}
+</style>

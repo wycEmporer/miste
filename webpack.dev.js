@@ -1,0 +1,224 @@
+var path = require("path");
+var webpack = require("webpack");
+var autoprefixer = require("autoprefixer");
+var precss = require("precss");
+var HtmlWebpackPlugin = require("html-webpack-plugin");
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+// const rimraf = require('rimraf');
+const CleanWebpackPlugin = require("clean-webpack-plugin");
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const SpritesmithPlugin = require('webpack-spritesmith');
+
+// const PrerenderSpaPlugin = require("prerender-spa-plugin");
+
+const extractLess = new ExtractTextPlugin({
+  filename: "dist/[name].[contenthash].css",
+  disable: process.env.NODE_ENV === "development"
+});
+const templateFunction = function (data) {
+  // console.log(data.sprites);
+  const shared = '.s-icon {display:inline-block; background-image: url(I); }'
+      .replace('I', data.sprites[0].image);
+  // 注意：此处默认图标使用的是二倍图
+  const perSprite = data.sprites.map(function (sprite) {
+    // background-size: SWpx SHpx;
+    return '.s-icon-N {width: Wpx; height: Hpx; background-position: Xpx Ypx; background-size: SWpx SHpx;}'
+      .replace(/N/g, sprite.name)
+      .replace(/SW/g, sprite.total_width / 2)
+      .replace(/SH/g, sprite.total_height / 2)
+      .replace(/W/g, sprite.width / 2)
+      .replace(/H/g, sprite.height / 2)
+      .replace(/X/g, sprite.offset_x / 2)
+      .replace(/Y/g, sprite.offset_y / 2);
+  }).join('\n');
+
+  return shared + '\n' + perSprite;
+};
+
+const proxyIP = 'http://192.168.29.11:8080';
+
+module.exports = {
+  entry: {
+    main: "./src/main.js",
+    vendor: ["babel-polyfill", 'vue', "vue-resource", "vuex", "underscore", "mint-ui", 'jsonp', "axios"]
+  },
+  output: {
+    path: path.resolve(__dirname, "./build/"),
+    publicPath: "/",
+    filename: "dist/js/[name].js",
+    chunkFilename: "dist/js/[name].js"
+  },
+  module: {
+    rules: [{
+        test: /\.vue$/,
+        loader: "vue-loader",
+        // options: {
+        //   extractCSS: true
+        // }
+        options: {
+          loaders: {
+            less: ExtractTextPlugin.extract({
+              loader: "css-loader!less-loader?indentSyntax",
+              fallback: "vue-style-loader" // <- this is a dep of vue-loader, so no need to explicitly install if using npm3
+            })
+          }
+        }
+      },
+      {
+        test: /\.js$/,
+        loader: "babel-loader",
+        exclude: /node_modules/
+      },
+      {
+        test: /\.(css|less)$/,
+        use: extractLess.extract({
+          use: [{
+              loader: "css-loader",
+              options: {
+                importLoaders: 1
+              }
+            },
+            {
+              loader: "postcss-loader"
+            },
+            {
+              loader: "less-loader",
+              options: {
+                importLoaders: 1
+              }
+            }
+          ],
+          fallback: "vue-style-loader"
+        })
+      },
+      {
+        test: /\.(eot|svg|ttf|woff|woff2)$/,
+        loader: "file-loader",
+        options: {
+          name: "dist/[hash].[ext]"
+        }
+      },
+      {
+        test: /\.(png|jpg|gif|svg)$/,
+        loader: "file-loader",
+        options: {
+          name: "dist/images/[hash].[ext]"
+        }
+      }
+    ]
+  },
+  resolve: {
+    extensions: ["css", ".js", ".vue", ".less"],
+    alias: {
+      vue$: "vue/dist/vue.esm.js",
+      assets: path.resolve(__dirname, "./src/assets"),
+      pages: path.resolve(__dirname, "./src/pages"),
+      models: path.resolve(__dirname, "./src/models"),
+      components: path.resolve(__dirname, "./src/components"),
+      $vuex: path.resolve(__dirname, "./src/vuex"),
+      config: path.resolve(__dirname, './src/config'),
+      mixins: path.resolve(__dirname, './src/mixins'),
+    },
+    modules: ['node_modules', 'less',],
+  },
+  devServer: {
+    contentBase: "./build/",
+    disableHostCheck: true,
+    historyApiFallback: true,
+    noInfo: true,
+    hot: true,
+    // inline: true,
+    host: 'app.happyeasygo.com',
+    // 192.168.1.160
+    port: 8088,
+    compress: true,
+    // watchContentBase: false,
+    proxy: {
+      "/heg_api": {
+        target: proxyIP,
+        changeOrigin: true,
+        secure: false
+      },
+      "/flight_api": {
+        target: proxyIP,
+        changeOrigin: true,
+        secure: false
+      },
+      "/offer_api": {
+        target: proxyIP,
+        changeOrigin: true,
+        secure: false
+      },
+      "/heg_log": {
+        target: proxyIP,
+        changeOrigin: true,
+        secure: false
+      },
+      '/oss_api': {
+        target: proxyIP,
+        changeOrigin: true,
+        secure: false
+      },
+      '/api': {
+        target: 'http://web.staging.johnable.net',
+        changeOrigin: true,
+        secure: false
+        //http://web.staging.johnable.net/api/web/pay/
+      },
+    },
+  },
+  performance: {
+    hints: false
+  },
+  devtool: "#eval-source-map",
+  plugins: [
+    new CopyWebpackPlugin([{
+      from: __dirname + '/static',
+      to: __dirname + '/build/static',
+      toType: 'dir'
+    }]),
+    extractLess,
+    // new SpritesmithPlugin({
+    //   src: {
+    //       cwd: path.resolve(__dirname, './src/assets/images/ico'),
+    //       glob: '*.png'
+    //     },
+    //     target: {
+    //       image: path.resolve(__dirname, './src/assets/less/sprite.png'),
+    //       css: [
+    //         [path.resolve(__dirname, './src/assets/less/sprite.css'), {
+    //           format: 'retinaOnly'
+    //         }]
+    //       ]
+    //     },
+    //     spritesmithOptions: {padding: 4},
+    //     apiOptions: {cssImageRef: '~assets/less/sprite.png?'},
+    //     customTemplates: {
+    //       retinaOnly: templateFunction,
+    //     },
+    // }),
+    new CleanWebpackPlugin(['build']),
+    new webpack.HotModuleReplacementPlugin(),
+
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'vendor',
+      // minChunks: Infinity,
+    }),
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'manifest',
+    }),
+    new HtmlWebpackPlugin({
+      title: "HappyEasyGo",
+      template: "./index.html",
+      filename: path.resolve(__dirname, "./build/index.html"),
+      // hash: true,
+      xhtml: true
+    }),
+    new webpack.DefinePlugin({
+      "process.env": {
+        NODE_ENV: '"development"'
+      }
+    }),
+
+  ]
+};

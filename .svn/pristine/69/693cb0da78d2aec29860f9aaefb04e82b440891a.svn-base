@@ -1,0 +1,263 @@
+<template>
+  <div id="heg-autumnprizes">
+    <head-top class="header">
+      <i slot="left" class="top_icon iconfont icon-back"></i>
+      <p slot="title" style="margin-left:-1.5rem;">My Prizes</p>
+    </head-top>
+    <div class="content">
+      <div class="appTop" v-if="!noPrize && isShowBtn" ></div>
+      <div class="noPirze" v-if="noPrize">
+        <img style="width:100%;height:100%;vertical-align:top;" :src="noPrizeImg" alt="">
+      </div>
+      <ul class="hasPrize" v-if="hasPrize">
+        <li v-for="(item,index) in prizeInfo" :key="index">
+          <div class="item-top">
+            <div class="flex space-between align-items-center">
+              <h4>{{item.prizeName}}</h4>
+              <span>{{item.winningTime}}</span>
+            </div>
+            <p v-html="item.introduction" >{{item.introduction}}</p>
+          </div>
+          <div class="item-middle">
+            <div class="item-coupon flex space-between" v-if="item.category == 1">
+              <p>Validity:</p>
+              <p> {{item.startDate}} - {{item.endDate}}</p>
+            </div>
+            <div class="item-coupon flex space-between" v-if="item.category == 1">
+              <input :id="'foo'+[index]" v-model="item.subPrizeName" style="width:1px;position:absolute;left:0;opacity:0;">
+              <span>USE CODE:</span>
+              <div>
+                <span>{{item.subPrizeName}}</span>
+                <button class="copy" :id="'copyUrl1'+[index]" :data-clipboard-target="'#foo'+[index]" @click="copyCode(index)" >
+                  <img :src="require('../../assets/images/autumn/icon_copy.png')" alt="">
+                </button>
+              </div>
+            </div>
+            <div @click="openDetail(index)" class="detail-title flex space-between align-items-center">
+              <h5>More details</h5>
+              <i class="iconfont icon-emptydown" :class="{isfold:item.flag}" ></i>
+            </div>
+            <div class="detail-text" v-show="item.flag" v-html="item.tC" >{{item.tC}}</div>
+            <h5 v-show="item.flag" style="padding:0 0 0.42rem;">Steps to Redeem</h5>
+            <div class="detail-text" v-show="item.flag" v-html="item.useMethod">{{item.useMethod}}</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</template>
+<script>
+import Clipboard from 'clipboard';
+import headTop from '../../components/head/head.vue';
+import { Toast, Indicator } from 'mint-ui';
+import { CookieUtil } from 'models/utils';
+import { DomainManager } from "../../config/DomainManager.js";
+export default {
+  components:{
+    headTop,
+  },
+  data(){
+    return{
+      flag:true,
+      hasPrize:false,
+      noPrize:false,
+      prizeInfo:[],
+      isShowBtn:true,
+      ifLogin: CookieUtil.hasItem("uuid"),
+      noPrizeImg:require('../../assets/images/anniversary/ani-no-prize.png'),
+    }
+  },
+  created() {
+    try {
+      let deviceObj =
+        typeof window.heg.getNativeSource() === "string"
+          ? JSON.parse(window.heg.getNativeSource())
+          : window.heg.getNativeSource();
+      this.isShowBtn =
+        Number(deviceObj.deviceType) == 1 && !deviceObj.deviceNative;
+      let uuid = window.heg.getNativeUuid();
+      if(uuid){
+        CookieUtil.setItem('uuid', uuid);
+      }else{
+        CookieUtil.removeItem('uuid');
+      }
+      window.onReceviedUuid = this.onReceviedUuid;
+      if(CookieUtil.hasItem("uuid")) {//登陆后
+        this.ifLogin = true;
+        this.getPrizeRecord();
+      }
+    } catch (error) {
+      this.getPrizeRecord();
+    }
+  },
+  methods:{
+    openDetail(who){
+      this.prizeInfo.forEach((e,i)=>{
+        if(who == i){
+          this.prizeInfo[who].flag = !this.prizeInfo[who].flag;
+        }else{
+          this.prizeInfo[i].flag = false;
+        }
+      })
+    },
+    getPrizeRecord(){
+      Indicator.open({
+        text: 'loading...',
+        spinnerType: 'fading-circle'
+      });
+      let url = DomainManager.getPrizeHistory()+'?activityType=2';
+      this.$axios.get(url).then(res =>{
+        Indicator.close();
+        if(res.data.length >= 1){
+          this.noPrize = false;
+          this.hasPrize = true;
+          this.prizeInfo = res.data;
+          this.prizeInfo.forEach((e,i) => { 
+            this.$set(this.prizeInfo[i],"flag",false);
+            this.$set(e,"winningTime",this.transformDate(e.winningTime,1));
+            this.$set(e,"startDate",this.transformDate(e.startDate,2));
+            this.$set(e,"endDate",this.transformDate(e.endDate,2));
+          });
+        }else{
+          console.log("000");
+          this.noPrize = true;
+          this.hasPrize = false;
+        }
+      }).catch(err => {
+        Indicator.close();
+        this.noPrize = true;
+        this.hasPrize = false;
+        console.log(err);
+      })
+    },
+    copyCode(who){
+      let clipboard;
+      if(this.flag){
+        this.flag = false;
+        clipboard = new Clipboard('#copyUrl1'+who);
+        clipboard.on('success', (e) =>{
+          Toast({
+            message:"Successfully copied to the Clipboard! ",
+            duration:1200
+          });
+          e.clearSelection();
+          clipboard.destroy();
+        });
+        clipboard.on('error', (e)=> {
+          Toast({
+            message:"Copy failed, please input manually! ",
+            duration:1200
+          });
+          e.clearSelection();
+          clipboard.destroy();
+        });
+        setTimeout(()=>{
+          this.flag = true;
+        },1200);
+      }
+    },
+    transformDate(who,type){
+      let date = new Date(who);
+      var Y = date.getFullYear();
+      var M = date.getMonth() + 1;
+      var D = (date.getDate() < 10 ? '0' + (date.getDate()) : date.getDate());
+      var h = (date.getHours() < 10 ? '0' + date.getHours() : date.getHours());
+      var m = (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes());
+      var s = (date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds());
+      if(type == 1){
+        return Y+'-'+M+'-'+D+' '+h+':'+m+':'+s
+      }else if(type == 2){
+        return Y+'/'+M+'/'+D;
+      }
+    },
+    onReceviedUuid(uuid) {
+      CookieUtil.removeItem("uuid");
+      CookieUtil.setItem("uuid", uuid);
+      this.ifLogin = true;
+      return "1";
+    },
+  }
+}
+</script>
+<style lang="less" scoped>
+#heg-autumnprizes{
+  img{vertical-align: top}
+  a,button{cursor: pointer;}
+  .content,.noPirze{height:100%;}
+  .appTop{padding-top:2.04rem;}
+  .hasPrize{
+    background:#eee;
+    text-align:left;
+    padding:0 0 1rem;
+    li{
+      background:#fff;
+      padding:0.64rem 0.64rem 0.2rem;
+      margin:0 0 0.64rem;
+      h4{
+        font-size: 0.68rem;
+        color: #111111;
+        letter-spacing: 0;
+        line-height:1rem;
+      }
+      h5{
+        font-size: 0.512rem;
+        color: #111111;
+        letter-spacing: 0;
+        line-height:0.7rem;
+      }
+      .item-top{
+        border-bottom:1px solid #eee;
+        p{
+          font-size: 0.68rem;
+          color: #111111;
+          letter-spacing: 0;
+          line-height:1rem;
+        }
+        span{
+          font-size: 0.47rem;
+          color: #999999;
+          letter-spacing: 0;
+          line-height: 1rem;
+        }
+        p{
+          margin:0.42rem 0;
+          font-size: 0.598rem;
+        }
+      }
+      .item-middle{
+        .item-coupon{
+          font-size: 0.512rem;
+          color: #111111;
+          letter-spacing: 0;
+          line-height:0.7rem;
+          margin:0.512rem 0 0;
+          span{
+            font-weight: bold;
+            margin-right:0.427rem;
+          }
+          img{
+            width:0.854rem;
+            height:0.854rem;
+            vertical-align: middle;
+            cursor: pointer;
+          }
+        }
+        .detail-title{
+          margin:0.512rem 0 0.42rem;
+          i{color:#999e;}
+          .isfold{
+            transform:rotate(180deg);
+          }
+        }
+        .detail-text{
+          font-size: 0.512rem;
+          color: #111111;
+          letter-spacing: 0;
+          line-height: 1rem;
+          margin-bottom:0.42rem;
+        }
+      }
+    }
+  }
+}
+</style>

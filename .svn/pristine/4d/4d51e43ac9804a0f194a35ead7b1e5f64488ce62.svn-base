@@ -1,0 +1,82 @@
+<template>
+	<div class="silvera">
+		<div class="content">
+			<h2>Happy Silver</h2>
+			<p>
+				Happy Silver can be used to deduct the difference of Member Price on Flight Booking. It can be earned through promotional activities: cashback, voucher code redemption, etc. </p>
+			<p>
+				* Now you will get Rs. 2000 instantly when you sign-up on PC or Mobile Site.
+			</p>
+			<p>
+				* It will be valid immediately after you get it and will last for three calendar months.
+			</p>
+		</div>
+		<!-- <div class="content">
+									<h2>Happy Silver Usage Rules</h2>
+									<p>
+										Happy Silver can be used for flight booking under the following rules:
+										<p>
+											1. Flights Booking: Deduct the difference of Member Price.
+										</p>
+										<p>
+											2. Happy Silver cannot be used with other promotional codes at the same time.
+										</p>
+										<p>
+											3. Happy Silver cannot be recharged or withdrawn.
+										</p>
+								</div> -->
+		<div class="content">
+			<h2>Happy Silver Usage Rules</h2>
+			<p>
+				Happy Silver can be used for flight booking under the following rules:
+				<p>
+					1. Flights Booking: Deduct the difference of Member Price.
+				</p>
+				<p>
+					2. Happy Silver cannot be used with other promotional codes at the same time.
+				</p>
+				<!-- <p>
+							3. Happy Silver cannot be recharged or withdrawn.
+						</p> -->
+		</div>
+		<div class="content">
+			<h2>How to use Happy Silver</h2>
+			<p>
+				1. Login and click on Book button of your selected flights.
+			</p>
+			<p>
+				2. Choose Get instant discount with Happy Silver Price for member on the confirm page.
+			</p>
+			<p>
+				3. Finish your booking process and Happy Silver will be deducted from your Happy Wallet Account automatically.
+			</p>
+			<p>
+				4. Check your Happy Wallet Account Balance.
+			</p>
+		</div>
+	</div>
+</template>
+<style lang='less' scoped>
+.silvera {
+	.content {
+		font-size: 0.52rem;
+		color: #666;
+		border-bottom: 1px solid #eee;
+		padding-top: 0.4rem;
+		h2 {
+			font-size: 0.64rem;
+			color: #0b9d78;
+			text-align: left;
+			line-height: 1.2rem;
+		}
+		p {
+			text-align: left;
+			margin: 0.4rem 0;
+			line-height: 0.769rem;
+		}
+		.gray {
+			color: #b0b0b0;
+		}
+	}
+}
+</style>

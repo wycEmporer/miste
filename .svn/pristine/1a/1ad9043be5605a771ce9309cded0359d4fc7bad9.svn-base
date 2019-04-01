@@ -1,0 +1,31 @@
+import { SerializableObject } from "../serializable/SerializableObject.js";
+
+export class Airline extends SerializableObject {
+  //iconPath= '../../assets/images/filter/G8.png'
+  constructor(shortname, name, iconPath) {
+    super();
+    this.shortname = shortname;
+    this.name = name;
+    this.iconPath = iconPath;
+  }
+
+  getJsonPropertis(i, object) {
+    if (i == "shortname") {
+      object.shortname = this.shortname;
+    } else if (i == "name") {
+      object.name = this.name;
+    } else if (i == "iconPath") {
+      object.iconPath = this.iconPath;
+    }
+  }
+
+  setJsonToObjPropertis(i, object) {
+    if (i == "shortname") {
+      this.shortname = object.shortname;
+    } else if (i == "name") {
+      this.name = object.name;
+    } else if (i == "iconPath") {
+      this.iconPath = object.iconPath;
+    }
+  }
+}

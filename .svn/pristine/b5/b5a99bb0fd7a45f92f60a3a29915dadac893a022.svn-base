@@ -1,0 +1,241 @@
+<template>
+	<div id="monSoon">
+		<head-top class="header">
+			<i slot="left" class="iconfont icon-back"></i>
+			<span slot="title">Mega Monsoon Sale</span>
+			<i slot="right" alt="" class="right iconfont icon-back"></i>
+		</head-top>
+		<div class="mon-content">
+      <div class="top" :class="{marTop: contentMargin}">
+				<img :src="mUrl" :alt="mAlt" :title="mTitle">
+			</div>
+      <div class="section1">
+        <p>As Monsoon season comes, HappyEasyGo brings you major airlines sale at one platform for selected domestic routes. It starts at only Rs.699 on selected domestic flights from specific airlines, including IndiGo, SpiceJet and GoAir.</p>
+        <p>Hurry, offer is valid from 4 Jul to 8 Jul, 2018. Book your tickets now!</p>
+        <h3>How to get offer?</h3>
+        <ol>
+          <li> Search flights on www.happyeasygo.com or Happy-EasyGo app.</li>
+          <li>Select flight of the airline you preferred and proceed to booking.</li>
+          <li v-show="model == 0">Apply coupon code:{{msite.code}}, to get extra Rs.{{msite.Rs}} off your flight booking.</li>
+          <li v-show="model != 0">Apply coupon code:{{android.code}}, to get extra Rs.{{android.Rs}} off your flight booking.</li>
+        </ol>
+      </div>
+      <!-- <div class="section2">
+        <h2>Details of Airlines Sale</h2>
+        <h3>SpiceJet</h3>
+        <p>Fares start at Rs.999 (all-inclusive).</p>
+        <p>Sale period: 4th-8th July, 2018.</p>
+        <p>Travel period: Till 8th October, 2018.</p>
+        <p>Terms and conditions:</p>
+        <ul>
+          <li>The discount is applicable on one-way fares and Direct Domestic flights only.</li>
+          <li>Offer can't be clubbed with any other offers and not applicable on group bookings.</li>
+          <li>Fares are refundable with a nominal cancellation charge.</li>
+          <li>Changeable with change fee and fare adjustment.</li>
+          <li>Limited inventory and available on first-come, first-served basis only.</li>
+          <li>Black-out dates applicable.</li>
+        </ul>
+      </div>
+      <div class="section2">
+        <h3>IndiGo</h3>
+        <p>Fares start at Rs.999 (all-inclusive).</p>
+        <p>Sale period: 4th July to 8th July 2018.</p>
+        <p>Travel period: 4th July to 27th Sep 2018.</p>
+        <p>Terms and conditions:</p> 
+        <ul>
+          <li>Available on limited seats on selected sectors and flights.</li>
+          <li>The fares paid for tickets purchased under this offer are non-refundable upon cancellation by the customer On cancellation, only statutory taxes will be refunded.</li>
+          <li>Valid only on non-stop flights operating on domestic network.</li>
+          <li>Invalid on IndiGo's group bookings.</li>
+          <li>Cannot be clubbed with any other offer or promotion.</li>
+        </ul>
+      </div>
+      <div class="section2">
+        <h3>GoAir</h3>
+        <p>Fares start at Rs.999 (all-inclusive).</p>
+        <p>Sale period: 4th July to 6th July 2018.</p>
+        <p>Travel period:10th July to 30th Sep 2018.</p>
+        <p>Terms and conditions:</p>
+        <ul>
+          <li> Available on first come first basis.</li>
+          <li>Blackout dates applicable, please check at the time of booking.</li>
+          <li>Offer valid across selective fare types and fare products.</li>
+          <li>Tickets will be non-transferable/non-refundable.</li>
+        </ul>
+      </div> -->
+      <div class="section3">
+        <h3>Terms &amp; Conditions</h3>
+        <p>HappyEasyGo Travel Pvt. Ltd. ("HappyEasyGo") reserves the right to add, alter, modify all or any of Spring Travel Offer, or replace wholly or in part, this offer by any other offer, whether similar to this offer or not, without prior notice.</p>
+        <p>All other standard T&amp;C available at HappyEasyGo.com shall apply.</p>
+        <p>Any disputes arising out of this offer shall be subject to the exclusive jurisdiction of competent courts in Gurgaon, Haryana, India.</p>
+      </div>
+		</div>
+	</div>
+</template>
+<script>
+import headTop from "../../../components/head/head.vue";
+import { Toast, Indicator } from "mint-ui";
+import { User } from "../../../models/user";
+
+export default {
+  components: {
+    headTop
+  },
+  data() {
+    return {
+      contentMargin: true,
+      mUrl: "",
+      mAlt: "",
+      mTitle: "",
+      model:0,
+      msite:{code:'MONSOON',Rs:'200'},
+      android:{code:'HEGAPP',Rs:'250'},
+      textList:[
+        {}
+      ]
+    };
+  },
+  methods: {
+    checkType() {
+       try {
+        let typeA = typeof window.heg.getNativeSource() === "string"
+          ? JSON.parse(window.heg.getNativeSource())
+          : window.heg.getNativeSource();
+        this.model = Number(typeA.deviceType) + 1;
+      } catch (e) {
+        this.model = 0;
+      }
+      this.getImg();
+    },
+    getImg() {
+      let parmTop = "type=13&device=" + this.model + "&addr=monsoon";
+      User.advList(this, parmTop).then(res => {
+        if (res.success) {
+          this.mUrl =
+            res.list[0].landingPageUrl == null
+              ? ""
+              : res.list[0].landingPageUrl;
+          this.mAlt =
+            res.list[0].landingPageAlt == null
+              ? ""
+              : res.list[0].landingPageAlt;
+          this.mTitle =
+            res.list[0].landingPageTitle == null
+              ? ""
+              : res.list[0].landingPageTitle;
+        }
+      })
+      .catch(err => {
+        console.log(err.msg);
+      });
+    }
+  },
+  created() {
+    try {
+      let deviceObj =
+        typeof window.heg.getNativeSource() === "string"
+          ? JSON.parse(window.heg.getNativeSource())
+          : window.heg.getNativeSource();
+      this.contentMargin =
+        Number(deviceObj.deviceType) == 1 && !deviceObj.deviceNative;
+    } catch (e) {}
+    this.checkType();
+  }
+};
+</script>
+<style lang='less' scoped>
+#monSoon {
+  .header {
+    background: #0b9d78;
+    span {
+      color: #fff;
+      font-size: 0.768rem;
+    }
+    .right {
+      opacity: 0;
+    }
+  }
+  .mon-content {
+    h2,h3{font-weight:500;}
+    .marTop {
+      margin-top: 2rem;
+    }
+    .top {
+      font-size: 0;
+      img {
+        width: 100%;
+      }
+    }
+    .section1{
+      margin:0.854rem 0.68rem 0;
+      padding-bottom: 0.3rem;
+      color:#666;
+      font-size:0.612rem;
+      text-align: left;
+      border-bottom:1px solid #ddd;
+      p{
+        font-size:0.612rem;
+        line-height:0.769rem;
+        padding-bottom: 0.4rem;
+      }
+      h3{
+        color:#333;
+        font-size: 0.741rem;
+        padding:0.5rem 0;
+      }
+      li{
+        line-height:0.769rem;
+        padding-bottom: 0.427rem;
+        margin-left: 0.6rem;
+      }
+    }
+    .section2{
+      text-align: left;
+      padding:0.5rem 0.68rem;
+      border-bottom: 1px solid #ddd;
+      h2{
+        text-align: center;
+        font-size: 0.869rem;
+        color:#333;
+        padding-bottom: 0.5rem;
+      }
+      h3{
+        padding:0 0 0.5rem;
+        font-size: 0.741rem;
+        color:#333;
+      }
+      p{
+        font-size: 0.612rem;
+        color:#666;
+        padding-bottom: 0.2rem;
+      }
+      p:last-of-type{padding:0.1rem 0 0.2rem;}
+      ul{
+        font-size: 0.612rem;
+        list-style-type:disc;
+        margin-left: 0.6rem;
+        li{
+          padding-bottom: 0.2rem;
+          color:#999;
+          line-height: 0.8rem;
+        }
+      }
+    }
+    .section3{
+      padding:0 0.68rem 2rem;
+      h3{
+        font-size: 0.869rem;
+        color:#333;
+        padding:1rem 0 0.5rem;
+      }
+      p{
+        text-align: left;
+        font-size: 0.6rem;
+        color:#666;
+        line-height: 0.8rem;
+        padding-bottom: 0.5rem;
+      }
+    }
+  }
+}
+</style>

@@ -1,0 +1,148 @@
+<template>
+    <div class="wrapper">
+        <head-top>
+            <img slot="left"  class="prev">
+            <div slot="title" class="title">recharge</div>
+            <div slot="right" class="set"></div>
+        </head-top>
+    <div class="container">
+        <div class="content">
+            <div class="form-group">
+                <label for="card">Bank</label>
+                <div class="fw">
+                    <select name="card" id="card">
+                        <option value="" disabled selected>Please Choose</option>
+                        <option value="">card1</option>
+                        <option value="">card1</option>
+                        <option value="">card1</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="account">Account Name</label>
+                <div class="fw">
+                    <input type="text" id="account" placeholder="Please Write">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="account-number">Acount Number</label>
+                <div class="fw">
+                    <input type="text" id="account-number" placeholder="Please enter the bank card number">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="cash">Cash Withdrawl Amount</label>
+                <div class="fw">
+                    <input type="text" id="cash" placeholder="Please Write Iphone Number">
+                </div>
+
+            </div>
+            <div class="form-group sp">
+                <label for="iphone-number">Iphone Number</label>
+                <div class="fw">
+                    <input type="text" id="iphone-number" placeholder="Please Write Iphone Number">
+                    <span><a href="javascript::">Get Code</a></span>
+                </div>
+
+            </div>
+            <p class="info">Recharge return point information: 1%</p>
+            <submit class="btn">Submit</submit>
+        </div>
+    </div>
+    </div>
+</template>
+<script>
+    import headTop from '../../../../components/head/head.vue'
+    export default{
+        components:{
+            headTop
+        },
+        data(){
+            return {
+
+            }
+        }
+    }
+</script>
+<style lang='less' scoped>
+    .container{
+        background-color: #f4f4f4;
+        padding: 0.427rem;
+        padding-top: 2.467rem;
+        .content{
+            background-color: #ffffff;
+            padding: 1.195rem 0.64rem 0.64rem 0.64rem;
+            .form-group{
+                text-align: left;
+                padding-bottom:1.07rem;
+                width:90%;
+                margin:0 auto;
+                label{
+                    display: inline-block;
+                    font-size: 0.64rem;
+                    padding-bottom: 0.43rem;
+                }
+                input{
+                    width: 100%;
+                    padding: 0.3rem;
+                    outline:none;
+                    text-indent: 0;
+                    border-radius:0;
+                    display: inline-block;
+                    box-sizing: border-box;
+                }
+                .fw{
+                    display: table;
+                    width:100%;
+                    border:1px #ccc solid;
+                    border-radius:3px;
+                    overflow:hidden;
+                    input,span{
+                        font-size: 0.64rem;
+                        display: table-cell;
+                        vertical-align: middle;
+                    }
+                    #card:after{
+                        width: 100%;
+                        height: 100%;
+                        color:red;
+                    }
+                    span{
+                        background-color:#0b9d78;
+                        text-align: center;
+                         a{
+                            display: inline-block;
+                            width: 3.45rem;
+                            height:100%;
+                            color: #ffffff;
+                        }
+                    }
+                }
+                #card{
+                    display:block;
+                    width: 100%;
+                    font-size: 0.64rem;
+                    outline:none;
+                }
+            }
+            .sp{
+                padding-bottom: 3.24rem;
+            }
+            .info{
+                font-size: 0.64rem;
+                color: #cccccc;
+                padding-bottom: 0.6rem;
+            }
+            .btn{
+                width: 100%;
+                height: 1.7rem;
+                line-height:1.7rem;
+                display: block;
+                font-size: 0.64rem;
+                border-radius:5px;
+                color: #ffffff;
+                background-color: #ffad3d;
+            }
+        }
+    }
+</style>

@@ -1,0 +1,191 @@
+<template>
+	<div class="wrapper">
+		<head-top class="header">
+			<i slot="left" class="prev iconfont icon-back"></i>
+			<div slot="title" class="title">Wallet</div>
+			<i slot="right" class="sp iconfont icon-back"></i>
+		</head-top>
+		<div class="container">
+			<div class="top" :class="{marTop: contentMargin}"></div>
+			<div class="section1">
+				<h2>Happy Wallet Usage Rules</h2>
+				<div class="content">
+					<p>
+						Happy Wallet is your personal travel wallet provided by HappyEasyGo. Any point earned through participating promotional campaigns will be credited into the Happy Wallet account. You will save big on flights booking if you join in our marketing programs.</p>
+				</div>
+				<div class="content">
+					<p>
+						Happy Wallet is comprised of Happy Gold and Happy Silver.
+					</p>
+				</div>
+				<div class="content">
+					<p>
+						Happy Wallet is composed of Happy Gold and Happy Silver. 1 Happy Gold/Happy Silver point = INR 1
+					</p>
+				</div>
+			</div>
+			<div class="section2">
+				<div class="choose flex content-center align-items-center">
+					<div class="btn flex space-between">
+						<a id="oneway" :class="{green:isChooseA}" @click="isChooseA=true">Happy Silver</a>
+						<a id="roundtrip" :class="{green:!isChooseA}" @click="isChooseA=false">Happy Gold</a>
+					</div>
+				</div>
+				<silver-a v-show='isChooseA'></silver-a>
+				<gold-a v-show='!isChooseA'></gold-a>
+			</div>
+
+			<div class="section2">
+				<div class="choose flex content-center align-items-center">
+					<div class="btn flex space-between">
+						<a id="oneway" :class="{green:isChooseB}" @click="isChooseB=true">General Rules</a>
+						<a id="roundtrip" :class="{green:!isChooseB}" @click="isChooseB=false">Cancellation Rules</a>
+					</div>
+				</div>
+				<silver-b v-show='isChooseB'></silver-b>
+				<gold-b v-show='!isChooseB'></gold-b>
+			</div>
+
+			<div class="section2">
+				<div class="choose flex content-center align-items-center">
+					<div class="btn wallet-btn flex space-between">
+						<a id="oneway" :class="{green:isChooseC}">Wallet Rules</a>
+						<!-- <a id="roundtrip" :class="{green:!isChooseC}" @click="isChooseC=!isChooseC">Withdraw Rules</a> -->
+					</div>
+				</div>
+				<wallet v-show='isChooseC'></wallet>
+				<!-- <withdraw-info v-show='!isChooseC'></withdraw-info> -->
+			</div>
+		</div>
+	</div>
+</template>
+<script>
+import headTop from '../../../components/head/head.vue'
+import silverA from './base/silverA.vue'
+import silverB from './base/silverB.vue'
+import goldA from './base/goldA.vue'
+import goldB from './base/goldB.vue'
+import wallet from './base/wallet.vue'
+import withdrawInfo from './base/withdrawInfo'
+export default {
+	components: {
+		headTop,
+		silverA,
+		silverB,
+		goldA,
+		goldB,
+		wallet,
+		withdrawInfo
+	},
+	data() {
+		return {
+			isChooseA: true,
+			isChooseB: true,
+			isChooseC: true,
+			contentMargin:true,
+		}
+	},
+	created() {
+		try {
+        let deviceObj =
+          typeof window.heg.getNativeSource() === "string"
+            ? JSON.parse(window.heg.getNativeSource())
+            : window.heg.getNativeSource();
+        this.contentMargin =
+          Number(deviceObj.deviceType) == 1 && !deviceObj.deviceNative;
+    } catch (e) {}
+	},
+}
+</script>
+<style lang='less' scoped>
+.wrapper {
+	font-family: "PingFangSC";
+}
+
+.header {
+	background: #0b9d78;
+	.title {
+		font-size: 0.768rem;
+		color: #fff;
+	}
+	.sp {
+		opacity: 0;
+	}
+}
+.marTop{
+	margin-top: 2rem;
+}
+.top {
+	height: 9.8rem;
+	background: #fff url('../../../assets/images/wallet/wallet-app-silver_01.png') center no-repeat;
+	background-size: 100% 9.8rem;
+}
+
+.green {
+	background-color: #0b9d78;
+	color: #fff!important;
+}
+
+.section1 {
+	padding: 0 0.68rem 0.769rem;
+	background-color: #fff;
+	h2 {
+		font-size: 0.6rem;
+		color: #0b9d78;
+	}
+	.content {
+		font-size: 0.52rem;
+		color: #999;
+		padding-top: 0.769rem;
+		p {
+			text-align: left;
+			line-height: 0.769rem;
+		}
+	}
+}
+
+.section2 {
+	padding: 0.768rem 0.68rem;
+	margin-top: 0.4rem;
+	background-color: #fff;
+
+	.Heg-info {
+		text-align: left;
+		line-height: .769rem;
+		color: #666;
+		font-size: 0.52rem;
+	}
+	.Heg-text {
+		text-align: left;
+		line-height: .769rem;
+		color: #666;
+		font-size: 0.52rem;
+		margin-bottom: 0.5rem;
+		background: #fffef4;
+		padding: 0.64rem 0;
+	}
+	.choose {
+		.btn {
+			width: 10.68rem;
+			height: 1.276rem;
+			border: 1px solid #0b9d78;
+			border-radius: 2px;
+			a {
+				width: 50%;
+				height: 100%;
+				font-size: 0.52rem;
+				color: #333;
+				line-height: 1.276rem;
+				text-align: center;
+				display: block;
+			}
+		}
+		.wallet-btn{
+			width: 5.34rem;
+			a{
+				width: 100%;
+			}
+		}
+	}
+}
+</style>

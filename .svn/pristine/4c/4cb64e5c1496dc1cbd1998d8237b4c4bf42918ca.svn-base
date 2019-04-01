@@ -1,0 +1,213 @@
+<template>
+	<div class="wrapper">
+		<head-top class="head">
+			<i slot="left" class="iconfont icon-back"></i>
+			<div slot="title" class="title flex">
+				<h2>{{departCity}}</h2>
+				<div class="title-img">
+					-
+				</div>
+				<h2>{{ariveCity}}</h2>
+			</div>
+			<i slot="right" class="sp iconfont icon-back"></i>
+		</head-top>
+		<transition enter-active-class="fadeIn" leave-active-class="fadeOut">
+			<login class="animated" v-show="showLogin" @hideLog="hideLog"></login>
+		</transition>
+		<div class="container">
+			<div>
+				<flightInfo :orders="orders" @login="login"></flightInfo>
+				<bg></bg>
+				<fareDetail :orders="orders" :fee="fee"></fareDetail>
+
+			</div>
+		</div>
+	</div>
+</template>
+<script>
+import headTop from '../../../components/head/head.vue'
+import login from '../../login/login.vue'
+import flightInfo from './base/flightInfo.vue'
+import traveller from './base/traveller.vue'
+import fareDetail from './base/fareDetail.vue'
+import { CookieUtil } from "../../../models/utils";
+import bg from './base/bg.vue'
+import { Indicator } from 'mint-ui';
+import { Trip } from 'models/tripOrder/tripOrder'
+
+export default {
+	components: {
+		flightInfo,
+		headTop,
+		traveller,
+		fareDetail,
+		login,
+		bg,
+	},
+	data() {
+		return {
+			idx: -1,
+			orders: [],
+			fee: '',
+			showLogin: false,
+			showAction: false,
+			toPrint: '',
+			orderNubmer:null,
+			phoneNo:null,
+		}
+	},
+	beforeRouteLeave(to, from, next) {
+		if(to.path.indexOf("/payment-state") > -1){
+			if(CookieUtil.getItem("uuid")){
+				this.$router.push('/trip');
+			}else{
+				this.$router.push('/');
+			}
+		}
+		next();
+	},
+	methods: {
+		login(showLogin) {
+			this.showLogin = showLogin;
+		},
+		hideLog(hideLogin) {
+			this.showLogin = hideLogin;
+		}
+	},
+	computed: {
+		base() {
+			let base = 0;
+			for (let el of this.orders) {
+				base += el.fare["Base Fare"];
+			}
+			return base;
+		},
+		taxes() {
+			let taxes = 0;
+			for (let el of this.orders) {
+				taxes += el.fare["Taxes and Fees"];
+			}
+			return taxes;
+		},
+		convenience() {
+			let convenience = 0;
+			for (let el of this.orders) {
+				convenience += el.fare["Convenience Fee"];
+			}
+			return convenience;
+		},
+		total() {
+			return this.convenience + this.taxes + this.base;
+		},
+		departCity() {
+			if (this.orders.length != 0) {
+				return this.orders[0].voyageinfo[0].dc
+			}
+		},
+		ariveCity() {
+			if (this.orders.length != 0) {
+				return this.orders[0].voyageinfo[this.orders[0].voyageinfo.length - 1].ac;
+			}
+		}
+	},
+	created() {
+		this.orders = JSON.parse(sessionStorage.getItem('orders'));
+		this.fee = JSON.parse(sessionStorage.getItem('orderFee')).fee;
+		const tripId = this.orders[0].id;
+		this.toPrint = '/heg_api/itinerary/printInvoice.do?tripId=' + tripId;
+
+		this.ifTicket = this.order
+	},
+	mounted() {
+		if (this.orders[0].travellerinfo[0].status == 1) {
+			this.showAction = true;
+		}
+	}
+}
+</script>
+<style lang="less" scoped>
+.head {
+	background: #0b9d78!important;
+	.title {
+		h2 {
+			font-size: 0.768rem;
+			color: #fff;
+		}
+		.title-img {
+			width: 1.2rem;
+			height: 2.04rem;
+			line-height: 2.04rem;
+			padding: 0 0.2rem;
+			img {
+				margin-top: 4px;
+				width: 1rem;
+			}
+		}
+	}
+	.sp {
+		opacity: 0;
+	}
+}
+
+.container {
+	overflow: auto;
+}
+
+.container>div {
+	padding: 3.1rem 0.68rem;
+}
+
+.bg {
+	width: 100%;
+	height: 0.6rem;
+	background: url('../../../assets/images/payment/parting.png') center center no-repeat;
+	background-size: 100%;
+}
+
+.fareDetail {
+	background-color: #fff;
+	// border: 1px solid #ccc;
+	border-top: none;
+	border-radius: 2px; // margin-top: 0.4rem;
+	h2 {
+		font-size: 0.68rem;
+		color: #333;
+		text-align: left;
+		padding: 0.4rem 0.4rem 0;
+	}
+	.fare-cont {
+		background-color: #fff;
+		border-radius: 0.4rem;
+		padding: 0.4rem;
+		.list,
+		.total {
+			font-size: 0.6rem;
+			color: #333;
+			height: 1.4rem;
+			line-height: 1.4rem;
+			span {
+				text-align: left;
+			}
+		}
+		.total {
+			font-size: 0.768rem;
+			color: #333;
+			padding: 0.2rem 0rem;
+		}
+	}
+}
+
+.funPart {
+	padding: 0.4rem;
+	.print {
+		width: 35%;
+		height: 1.5rem;
+		line-height: 1.5rem;
+		font-size: 0.64rem;
+		display: block;
+		background: #0b9d78;
+		color: #fff;
+		border-radius: 4px;
+	}
+}
+</style>

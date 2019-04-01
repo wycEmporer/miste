@@ -1,0 +1,352 @@
+<template>
+  <div class="guests form-group">
+    <label>Rooms/Guests</label>
+    <input type="text" readonly :value="guestValue" @click="showGuests" :class="isActive">
+    <transition name="bounce">
+      <div class="select-guest" v-if="showGuest">
+        <div class="g-item" v-for="(item, index) in guests" :key="item.id">
+          <div class="g-title" @click="edit(index)">
+            <h2>Rooms {{ index+1 }}</h2>
+            <a href="javascript:void(0)">
+              <span>{{item | guestInfo }}</span>
+              <i v-if="index !=0" @click.stop="delRoom(index)"></i>
+            </a>
+          </div>
+          <div class="g-content" v-if="item.active">
+            <div class="g-adult c-item">
+              <div class="title">Adult <span>(+12 yrs)</span></div>
+              <div class="g-operate">
+                <i></i>
+                <span>{{ item.adult }}</span>
+                <em @click="reduceAdult(index)" :class=" item.adult <=1 ? '' : 'active' "></em>
+                <em @click="addAdult(index)" :class=" item.adult >=4 ? '' : 'active' "></em>
+              </div>
+            </div>
+            <div class="g-child c-item">
+              <div class="title">Children <span>(1-12 yrs)</span></div>
+              <div class="g-operate">
+                <i></i>
+                <span>{{ item.child }}</span>
+                <em @click="reduceChild(index)" :class=" item.child === 0 ? '':'active'"></em>
+                <em @click="addChild(index)" :class=" item.child >=2 ? '': 'active'"></em>
+              </div>
+            </div>
+            <div class="g-age c-item" v-for="(age, i) in item.age" :key="i">
+              <label><span>Age of child </span><span>{{ age }}</span><i></i></label>
+              <select name="age" :value="age" @input="changeAge(index, i)">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="g-actions">
+          <button @click="addRoom">ADD ROOM</button>
+          <button @click="hideGuests">DONE</button>
+        </div>
+      </div>
+    </transition>
+  </div>
+</template>
+
+<script>
+  export default {
+    name: "guests",
+    data() {
+      return {
+        showGuest: false,
+        isActive: '',
+        guests:[
+          {
+            id: 1,
+            age: [],
+            active: true,
+            adult: 1,
+            child: 0,
+          }
+
+        ]
+      }
+    },
+    methods: {
+      showGuests() {
+        this.showGuest = true
+        this.isActive = 'active'
+      },
+      hideGuests() {
+        this.$emit('guestsInfo' ,this.guests);
+        this.showGuest = false
+        this.isActive = ''
+      },
+      changeAge(index, i) {
+        let element = document.querySelectorAll('.g-age select')
+        let val = +element[i].value;
+        this.$set(this.guests[index].age, i, val);
+        // this.guests[index].age[i] = val;
+        // this.$store.commit('changeAge', {index, i, val})
+      },
+      addRoom() {
+        this.guests.forEach((e, i) => {
+        e.active = false
+        })
+        this.guests.push({
+          id: this.guests[this.guests.length - 1].id + 1,
+          adult: 1,
+          child: 0,
+          age: [],
+          active: true
+        })
+        // this.$store.commit('addRoom')
+      },
+      delRoom(index) {
+        this.guests.splice(index, 1)
+        // this.$store.commit('delRoom', index)
+      },
+      edit(index) {
+        this.guests.forEach((e, i) => {
+          e.active = false
+        })
+        this.guests[index].active = true;
+        // this.$store.commit('reEdit', index)
+      },
+      reduceAdult(index) {
+        if (this.guests[index].adult <= 1) {
+          return
+        }
+        this.guests[index].adult --;
+        // this.$store.commit('reduceAdult', index)
+      },
+      addAdult(index) {
+        if (this.guests[index].adult >= 4) {
+          return
+        }
+        this.guests[index].adult ++
+        // this.$store.commit('addAdult', index)
+      },
+      addChild(index) {
+        if (this.guests[index].child >= 2) {
+          return
+        }
+        this.guests[index].child++
+        this.guests[index].age.push(1)
+        // this.$store.commit('addChild', index)
+      },
+      reduceChild(index) {
+        if (this.guests[index].child <= 0) {
+          return
+        }
+        this.guests[index].child--
+        this.guests[index].age.pop()
+        // this.$store.commit('reduceChild', index)
+      }
+    },
+    computed: {
+      guestValue() {
+        let num = 0
+        this.guests.forEach((e, i) => {
+          num += e.adult + e.child
+        })
+        let title1 = num > 1 ? 'Guests' : 'Guest'
+        let title2 = this.guests.length > 1 ? 'Rooms' : 'Room'
+        return this.guests.length + ' ' + title2 + '/' + num + ' ' + title1
+      },
+      // guests() {
+      //   return this.$store.state.searchInfo.guests
+      // }
+    },
+    filters: {
+      guestInfo(obj) {
+        let label1 = obj.adult > 1 ? 'Adults' : 'Adult'
+        let label2 = obj.child > 1 ? 'Children' : 'Child'
+        return obj.adult + label1 + '/' + obj.child + label2
+      }
+    }
+  }
+</script>
+
+<style lang="less" scoped>
+  *{
+    box-sizing: border-box;
+  }
+  .guests {
+    label {
+      font-size: 0.48rem;
+      text-align: left;
+      line-height: 0.64rem;
+      margin-bottom: 0.2rem;
+      width: 100%;
+    }
+    input {
+      font-size: 0.56rem;
+      border: 1px solid #CECFD0;
+      border-radius: 2px;
+      padding: 0 0.2rem;
+      height: 1.8rem;
+      width: 100%;
+      background: url("../../../assets/images/home/icon-down-selected@2x.png") no-repeat center right 0.4rem/0.6rem 0.4rem;
+      &.active {
+        border-color: #0B9D78;
+        background: url("../../../assets/images/home/iconupselected.png") no-repeat center right 0.4rem/0.6rem 0.4rem;
+      }
+    }
+    .select-guest {
+      display: flex;
+      flex-direction: column;
+      padding: 0.4rem 0.2rem;
+      border: 1px solid #CDCDCD;
+      border-radius: 2px;
+      border-top: none;
+      .g-item {
+        border-bottom: 1px solid #CDCDCD;
+        padding: 0.2rem 0;
+        .g-title {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          h2 {
+            font-size: 0.56rem;
+            line-height: 1.04rem;
+          }
+          a {
+            font-size: 0.48rem;
+            color: #0B9D78;
+          }
+          i {
+            width: 0.56rem;
+            height: 0.56rem;
+            display: inline-block;
+            margin-left: 0.6rem;
+            vertical-align: bottom;
+            background: url("../../../assets/images/home/icon-cancel-normal.png") no-repeat center/contain;
+          }
+        }
+        .g-content {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          padding: 0.4rem 0;
+          .title {
+            line-height: 0.8rem;
+            font-size: 0.56rem;
+            span {
+              font-size: 0.44rem;
+              color: #CDCDCD;
+            }
+          }
+          .c-item {
+            width: 45%;
+            text-align: left;
+            border-bottom: 1px solid #CDCDCD;
+            &.g-age {
+              border-bottom: none;
+            }
+          }
+          .g-operate {
+            height: 1.2rem;
+            position: relative;
+            i {
+              width: 0.48rem;
+              height: 0.56rem;
+              position: absolute;
+              top: 0.32rem;
+              background: url("../../../assets/images/home/icon-radult-normal@2x.png") no-repeat center/contain;
+            }
+            span {
+              line-height: 1.2rem;
+              font-size: 0.6rem;
+              position: absolute;
+              left: 1.2rem;
+            }
+            em {
+              position: absolute;
+              width: 0.6rem;
+              height: 0.6rem;
+              top: 0.28rem;
+              right: 1.2rem;
+              background: url("../../../assets/images/home/icon-Less-normal.png") no-repeat center/contain;
+              &.active {
+                background: url("../../../assets/images/home/icon-Less-selected.png") no-repeat center/contain;
+              }
+              &:last-of-type {
+                right: 0;
+                background: url("../../../assets/images/home/icon-add-normal.png") no-repeat center/contain;
+                &.active {
+                  background: url("../../../assets/images/home/icon-add-selected.png") no-repeat center/contain;
+                }
+              }
+            }
+          }
+          .g-age {
+            height: 1.2rem;
+            margin: 0.4rem 0;
+            position: relative;
+            label {
+              width: 100%;
+              height: 100%;
+              line-height: 1.2rem;
+              border: 1px solid #CDCDCD;
+              border-radius: 2px;
+              padding: 0 0.2rem;
+              margin: 0;
+              display: flex;
+              flex-direction: row;
+              span {
+                width: 70%;
+                &:last-of-type {
+                  width: 20%;
+                }
+              }
+              i {
+                flex: 1;
+                width: 10%;
+                position: absolute;
+                height: 0.6rem;
+                top: 0.28rem;
+                right: 0.28rem;
+                background: url("../../../assets/images/home/icon-down-selected.png") no-repeat center/contain;
+              }
+            }
+            select {
+              width: 100%;
+              height: 1.2rem;
+              position: absolute;
+              top: 0;
+              left: 0;
+              opacity: 0;
+            }
+          }
+        }
+      }
+      .g-actions {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        width: 100%;
+        margin-top: 0.6rem;
+        button {
+          background: #FC9525;
+          border-radius: 4px;
+          width: 26%;
+          height: 1.4rem;
+          line-height: 1.4rem;
+          color: #fff;
+          &:last-child {
+            background: #1C9C78;
+          }
+        }
+      }
+    }
+  }
+
+</style>

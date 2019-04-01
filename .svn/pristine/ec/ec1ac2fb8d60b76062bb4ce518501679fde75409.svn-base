@@ -1,0 +1,4 @@
+import {SerializableObject} from './SerializableObject.js'
+
+
+export {SerializableObject}

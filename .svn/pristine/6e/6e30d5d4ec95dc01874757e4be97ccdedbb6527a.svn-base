@@ -1,0 +1,162 @@
+<template>
+  <div id="privateCoupons">
+    <head-top class="header ">
+      <i slot="left" class="top_icon iconfont icon-back"></i>
+      <span slot="title">My Coupons</span>
+    </head-top>
+    <ul class="priContent" v-show="isHasCoupon">
+      <li v-for="(item,index) in list" :key="index" @click="jumpDetail(item.couponCode)">
+        <div class="child-con">
+          <img class="child-bg" :src="iconList[0].bgIcon" alt="">
+          <div class="child-bottom flex space-between">
+            <img :src="iconList[0].typeIcon" alt="">
+            <p>Validity till: <span>{{item.expirydate}}</span><img :src="arrowIcon"></p>
+          </div>
+        </div>
+        <div class="child-code">
+          <p>- <span class="rs">Rs.</span>{{item.discount}}</p>
+          <p>{{item.couponCode}}</p>
+        </div>
+      </li>
+    </ul>
+    <p class="noCoupon" v-show="!isHasCoupon" >No valid private coupon</p>
+  </div>
+</template>
+<script>
+import headTop from "../../components/head/head.vue";
+import { DomainManager } from "../../config/DomainManager.js";
+import { Toast, Loadmore, Indicator } from "mint-ui";
+export default {
+  components: {
+    headTop
+  },
+  data() {
+    return {
+      list: [],
+      isHasCoupon:true,
+      weekDays:['1 days','2 days','3 days','4 days','5 days','6 days','7 days'],
+      months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      arrowIcon:require("../../assets/images/home-img/sg-arrow.png"),
+      iconList: [
+        {
+          bgIcon: require("../../assets/images/home-img/bg-flight.png"),
+          typeIcon: require("../../assets/images/home-img/type-flight.png")
+        },
+        {
+          bgIcon: require("../../assets/images/home-img/bg-hotel.png"),
+          typeIcon: require("../../assets/images/home-img/type-hotel.png")
+        }
+      ]
+    };
+  },
+  methods: {
+    jumpDetail(code){
+      this.$router.push({path:'/coupondetail',query:{'code':code,type:1}});
+    },
+    loadCoupons(){
+      let that = this
+      const url = DomainManager.getAllPrivateCoupons()
+      this.$axios.get(url,{headers:{"x-Device":"mobile"}}).then(res => {
+        if(res.success){
+          if(res.data.length == 0){
+            this.isHasCoupon = false;
+          }else{
+            this.isHasCoupon = true;
+            that.list = res.data
+            that.list.forEach((e,i)=>{
+              let leftDate = new Date(new Date(e.expirydate)-new Date());
+              let leftDays = parseInt(leftDate/(3600*24*1000)+1);
+              if(leftDays < 1){
+                this.$set(e,'expirydate','today');
+              }else if (leftDays <= 7 && leftDays >= 1){
+                this.$set(e,'expirydate',this.weekDays[leftDays-1]);
+              }else if(leftDays > 7){
+                this.$set(e,'expirydate',e.expirydate);
+              }
+            })
+          }
+        }else{
+          Toast(res.msg);
+        }
+      }).catch(err => {
+        console.log(err)
+      })
+    }
+  },
+  created(){
+    this.loadCoupons();
+  }
+};
+</script>
+<style lang="less" scoped>
+#privateCoupons {
+  .header {
+    position: static !important;
+    background: #0b9d78;
+    img {
+      width: 6.4rem;
+    }
+  }
+  .priContent {
+    padding: 0.75rem 0.64rem;
+    li{
+      margin-bottom: 0.75rem;
+      border-radius:5px;
+      box-shadow:0px 5px 5px #999;
+      position: relative;
+      .child-con{
+        cursor: pointer;
+        font-size: 0;
+        img.child-bg{
+          width: 100%;
+          height:8rem;
+        }
+        .child-bottom{
+          align-items: center;
+          padding:0.4rem 0.4rem;
+          img{
+            width: 1.3rem;
+          }
+          p{
+            flex: 1;
+            color:#333;
+            text-align: right;
+            font-size:0.533rem;
+            height:0.8rem;
+            line-height: 0.8rem;
+            img{
+              width: 0.4rem;
+              height:0.6rem;
+              margin-left: 0.5rem;
+              vertical-align: text-top;
+            }
+          }
+        }
+      }
+      .child-code{
+        width:5rem;
+        position: absolute;
+        top:0.5rem;
+        left:0.5rem;
+        border:1px solid #fff;
+        font-weight: bold;
+        p:nth-child(1){
+          background:#fff;
+          color:#f00;
+          padding:0.4rem 0.22rem;
+          font-size:1.33rem;
+        }
+        p:last-child{
+          color:#fff;
+          padding:0.22rem 0.22rem;
+          font-size:0.844rem;
+        }
+      }
+    }
+  }
+  .noCoupon{
+    padding:1rem 0.8rem;
+    text-align: left;
+  }
+}
+</style>

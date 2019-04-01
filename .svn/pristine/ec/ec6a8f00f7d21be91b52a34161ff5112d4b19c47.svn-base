@@ -1,0 +1,81 @@
+#my_profile .header {
+  background: #0b9d78;
+}
+#my_profile .header .title {
+  font-size: 0.768rem;
+  color: #fff;
+}
+#my_profile .header .sp {
+  opacity: 0;
+}
+#my_profile .mp_container {
+  background-size: cover;
+}
+#my_profile .mp_container .mp_info {
+  padding-top: 2.04rem;
+  background-color: #0b9d78;
+}
+#my_profile .mp_container .mp_info .mp_avatar {
+  padding-top: 0.6rem;
+  padding-bottom: 0.34rem;
+}
+#my_profile .mp_container .mp_info .mp_avatar .avatar {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+}
+#my_profile .mp_container .mp_info .mp_avatar .avatar img {
+  width: 100%;
+}
+#my_profile .mp_container .mp_info .info_text {
+  padding: 0.8rem 0;
+}
+#my_profile .mp_container .mp_info .info_text span {
+  display: block;
+  line-height: 1.5;
+  height: 1rem;
+  color: #ffffff;
+  font-size: 0.64rem;
+}
+#my_profile .mp_container .mp_info .info_text .tel {
+  font-size: 0.512rem;
+}
+#my_profile .mp_container .mp_info .change_info a {
+  display: inline-block;
+  padding: 0 0.2rem;
+}
+#my_profile .mp_container .mp_info .change_info a img {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+}
+#my_profile .mp_container .wave-img {
+  width: 100%;
+  height: 1rem;
+}
+#my_profile .mp_container .pro_info .title {
+  text-align: left;
+  font-size: 0.64rem;
+  height: 1.7rem;
+  line-height: 1.7rem;
+  border-bottom: 1px solid #ccc;
+  padding: 0 0.64rem;
+}
+#my_profile .mp_container .pro_info .title .edit {
+  display: block;
+}
+#my_profile .mp_container .pro_info .pro_list {
+  padding: 0 0.64rem;
+  text-align: left;
+}
+#my_profile .mp_container .pro_info .pro_list .mint-cell {
+  min-height: 1.7rem;
+  font-size: 16px;
+}
+#my_profile .mp_container .pro_info .pro_list .sexBox {
+  display: flex;
+  justify-content: flex-start;
+}
+/*::-webkit-input-placeholder{*/
+/*font-size: 0.512rem;*/
+/*}*/

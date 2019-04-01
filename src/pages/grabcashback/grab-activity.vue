@@ -1,0 +1,431 @@
+<template>
+  <div id="grab-activity">
+    <div class="grab-activity-box">
+      <activity-part1 :orderId="orderId" :isShowBtn="isShowBtn"
+      :orderinfo="orderinfo" :diwaliProcess="diwaliProcess" :isLogin="isLogin" :theShareHrefEnd="theShareHrefEnd" :theShareHrefEnd2="theShareHrefEnd2"
+      :beforeData="beforeData" @succRegister="succRegister" @showShareDialog="showShareDialog"></activity-part1>
+      <div class="part-center">
+        <div class="center-adv">
+          <a :href='landingHref' target="_blank">
+            <img :src="mUrl" :alt="mAlt" :title="mTitle">
+          </a>
+        </div>
+        <div class="center-title ">
+          <div class="flex space-between">
+            <h4>Friends</h4>
+            <!-- <p><span>{{helpRecord?helpRecord.length:0}}</span> Helps</p> -->
+            <p>Cashback</p>
+          </div>
+        </div>
+        <ul class="center-list">
+          <li class="flex space-between align-items-center" v-for="(item,index) in helpRecord" :key="index">
+            <div class="list-left">
+              <p>{{ item.username }}</p>
+              <p>{{ item.time }}</p>
+            </div>
+            <div class="list-right">
+              <img :src="imgGroups.gold" alt="">
+              <span class="rs">Rs</span>{{item.helperAmount}} x 2
+            </div>
+          </li>
+        </ul>
+      </div>
+      <ul class="part-how">
+        <li>How it works?</li>
+        <li>1.Book a flight &amp; start your grab program</li>
+        <li>2.Share with your friends  </li>
+        <li>3.Each friend grabs a part of <span class="rs">Rs</span>{{Math.floor(Math.abs(diwaliProcess.totalAmount) / 2)}} cashback </li>
+        <li>4.You get same cashback amount instantly   (Total <span class="rs">Rs</span>{{Math.floor(Math.abs(diwaliProcess.totalAmount) / 2)}})</li>
+        <li>5.Use the cashabck to pay your travels</li>
+        <li>* Initiator can check cashbacks in Happy Wallet</li>
+        <li>* Participator can check rewards in Grab Cashback Offer Page only on APP</li>
+      </ul>
+      <div class="part-bottom flex space-between" @click="JumpToTerms">
+        <p>Terms &amp; Conditions:</p>
+        <i class="iconfont icon-emptydown"></i>
+      </div>
+      <share-dialog v-show="shareDialog" @hideShareBox="hideShareBox" :shareDialog="shareDialog" :copyLink="copyLink" :shareText="shareText"></share-dialog>
+    </div>
+  </div>
+</template>
+<script>
+import activityPart1 from './child/activity-part1.vue';
+import shareDialog from './child/share-dialog.vue';
+import { CookieUtil } from "../../models/utils";
+import { User } from "../../models/user";
+import { DomainManager } from "../../config/DomainManager.js";
+import { Toast,Indicator } from 'mint-ui';
+import { Activity } from '../../models/activity';
+import { parseQueryStr } from "models/utils/parseQueryStr";
+import { AppBridge } from '../../models/appbridge/appbridge.js';
+
+export default {
+  components:{
+    shareDialog,
+    activityPart1,
+  },
+  data(){
+    return {
+      index:0,
+      mUrl:'',
+      mAlt:'',
+      mTitle:'',
+      orderId:'',
+      copyLink:'',
+      shareText:'',
+      orderinfo:{},
+      diwaliProcess:{},
+      beforeData:{},
+      model:0,
+      timer:null,
+      isShowBtn: false,
+      contentMargin:false,
+      theShareHrefEnd:false,
+      theShareHrefEnd2:false,
+      shareDialog:false,
+      isLogin:CookieUtil.hasItem('uuid'),
+      helpRecord:[],
+      months: [
+        "Jan","Feb","Mar","Apr","May","Jun",
+        "Jul","Aug","Sep","Oct","Nov","Dec"
+      ],
+      imgGroups:{
+        gold:require('../../assets/images/grabcashback/grab_share_gold.png'),
+      },
+      landingHref:'https://app.adjust.com/for04bk?campaign=landing&adgroup=Download&creative=Online',
+    }
+  },
+  methods:{
+    showShareDialog(){
+      let obj = {
+        SMS:this.shareText,
+        WhatsApp:this.shareText,
+        Messenger:this.shareText,
+        More:this.shareText
+      };
+      if(this.isShowBtn){
+        this.shareDialog = true;
+      }else{
+        AppBridge.showShareView(obj,this);
+      }
+    },
+    succRegister(){
+      this.index = 2;
+      this.getPageData();
+      this.getPageData2();
+    },
+    hideShareBox(){
+      this.shareDialog = false;
+    },
+    JumpToTerms(){
+      try {
+        window.heg.trackEvent("AC_Grab_landing_T&C");
+      } catch (error) {
+        if(window.WebViewJavascriptBridge){
+          this.$bridge.callhandler("trackEvent","AC_Grab_landing_T&C");
+        }
+      }
+      this.$router.push("/grab-cashback");
+    },
+    getPageData(){
+      Indicator.open({
+        spinnerType: 'fading-circle'
+      });
+      Activity.grabInviteRegisterRecord(this,this.orderId).then(res => {
+        if(res.succ){
+          res.data.forEach((e,i)=>{
+            const d = new Date(e.regTime);
+            const d2 = new Date(e.currentDate);
+            let timestamp_set = this.getGMTtime(d2);;
+            let timestamp = this.getGMTtime(d);
+            let cha_timestamp = timestamp_set-timestamp; 
+            let t = this.countDown(cha_timestamp, 'bottom',e);
+            this.$set(res.data[i],'time',t);
+            if(e.realName){
+              this.$set(res.data[i],'username',e.realName);
+            }else{
+              let str = e.phone.split(' ')[1];
+              // if(str.length < 6){
+              //   str = str.substr(0,2)+'****'+str.substr(2);
+              // }else{
+              //   str = str.substr(0,2)+'****'+str.substr(-4);
+              // }
+              this.$set(res.data[i],'username',str);
+            }
+            
+          });
+          this.helpRecord = res.data;
+        }
+      }).catch(err => {
+        clearTimeout(this.timer);
+        console.log(err)
+      });
+    },
+    getPageData2(){
+      Activity.grabActivityDetail(this,this.orderId).then(res => {
+        Indicator.close();
+        if(res.succ){
+          this.shareText = res.data.message;
+          this.orderinfo = res.data;
+          this.diwaliProcess = res.data.diwaliProcess;
+          if(res.data.diwaliProcess.obtainNum >= res.data.diwaliProcess.totalNum ||
+            res.data.diwaliProcess.expirydate < res.data.diwaliProcess.currentDate ){
+            clearInterval(this.timer);
+            this.theShareHrefEnd = false;
+            this.theShareHrefEnd2 = true;
+            this.$set(this.diwaliProcess,'time','00h 00m 00s')
+          }else{
+            this.datetime_to_unix();
+          }
+        }else{
+          this.theShareHrefEnd = false;
+          this.theShareHrefEnd2 = true;
+          AppBridge.goHomePage(this);
+        }
+      }).catch(err => {
+        Indicator.close();
+        console.log(err)
+      });
+    },
+    getBeforeRegisterData(){
+      Activity.getDiwaliAmount(this).then(res =>{
+        if(res.success){
+          this.beforeData = res.data;
+        }else{
+          Toast(res.msg);
+        }
+      }).catch(err=>{
+        console.log(err);
+      })
+    },
+    checkType() {
+      let type = AppBridge.device;
+      if(type == 1){
+        this.model = 2;
+      }else if(type == 2){
+        this.model = 3;
+      }else{
+        this.model = 0;
+      }
+      this.getImg();
+    },
+    getImg() {
+      let parmTop = "type=26&device=" + this.model+"&businessType=1";
+      User.advList(this, parmTop).then(res => {
+        if (res.success) {
+          this.mUrl =
+            res.list[0].landingPageUrl == null
+              ? ""
+              : res.list[0].landingPageUrl;
+          this.mAlt =
+            res.list[0].landingPageAlt == null
+              ? ""
+              : res.list[0].landingPageAlt;
+          this.mTitle =
+            res.list[0].landingPageTitle == null
+              ? ""
+              : res.list[0].landingPageTitle;
+        }
+      })
+      .catch(err => {
+        console.log(err.msg);
+      });
+    },
+    countDown(cha_timestamp,who,data){
+      var sy_day = parseInt(cha_timestamp/(3600*24));
+      var sy_day2 = sy_day > 9?sy_day:'0' + sy_day;
+      var sy_hour = parseInt((cha_timestamp-sy_day*3600*24)/3600);
+      var sy2_hour = sy_hour > 9 ? sy_hour : '0' + sy_hour;
+      var sy_hours = parseInt((cha_timestamp)/3600) > 9?parseInt((cha_timestamp)/3600):'0'+parseInt((cha_timestamp)/3600);
+      var sy_min = parseInt((cha_timestamp-sy_hour*3600-sy_day*24*3600)/60);
+      var sy2_min = sy_min > 9 ? sy_min : '0' + sy_min;
+      var sy_miao = cha_timestamp-sy_day*3600*24-sy_hour*3600-sy_min*60;
+      var sy2_miao = sy_miao > 9 ? sy_miao : '0' + sy_miao;
+      if(who == 'top'){
+        if(cha_timestamp <= 0){
+          clearInterval(this.timer);
+          this.cha_timestamp = 0;
+          this.getPageData2();
+          this.theShareHrefEnd = false;
+          this.theShareHrefEnd2 = true;
+          this.$set(this.diwaliProcess,'time','00h 00m 00s')
+        }else{
+          this.theShareHrefEnd = true;
+          this.theShareHrefEnd2 = false;
+          if(this.diwaliProcess){
+            this.$set(this.diwaliProcess,'time',sy_hours+'h '+sy2_min+'m '+sy2_miao+'s')
+          }
+        }
+      }else if(who == 'bottom'){
+        if(sy_hour < 1){
+          let t;
+          if(sy_min <= 0){
+            t = '1 min ago';
+          }else{
+            t = sy_min + ' mins ago';
+          }
+          return t;
+        }else if(sy_hour < 24 && sy_hour >=1 ){
+          let t = sy_hour +' h ago ';
+          return t;
+        }else{
+          let time = new Date(e.regTime);
+          let y = time.getFullYear();
+          let m = time.getMonth() + 1;
+          let d = time.getDate();
+          let h = time.getHours();
+          let mm = time.getMinutes();
+          let t = h +':'+ mm +' '+ d +' '+this.months[Number(m) -1]+', '+y;
+          return t;
+        }
+      }
+    },
+    getGMTtime(d){
+      let loaclTime = d.getTime();
+      let localOffset = d.getTimezoneOffset() * 60000;
+      let utc = loaclTime + localOffset;
+      let offset = 5.5;
+      let bombay = utc + (3600000*offset);
+      return parseInt(bombay/1000);
+    },
+    datetime_to_unix(){
+      let d = new Date(this.diwaliProcess.currentDate);
+			let d2 = new Date(this.diwaliProcess.expirydate);
+			var timestamp_set = this.getGMTtime(d2);;
+      var timestamp = this.getGMTtime(d);
+      var cha_timestamp = timestamp_set-timestamp;
+      this.countDown(cha_timestamp, 'top');
+      this.timer = setInterval(()=>{
+        cha_timestamp--;
+        this.countDown(cha_timestamp, 'top');
+      },1000);
+    }
+  },
+  async activated() {
+    Object.assign(this.$data, this.$options.data());
+    this.isShowBtn = await AppBridge.getNativeSource(this);
+    this.checkType();
+    this.orderId = parseQueryStr().orderId;
+    this.copyLink = window.location.href;
+    this.getPageData();
+    this.getPageData2();
+    this.getBeforeRegisterData();
+  },
+  beforeRouteLeave (to, from, next) {
+    clearInterval(this.timer);
+    next();
+  }
+}
+</script>
+<style lang="less" scoped>
+#grab-activity{
+  height:auto;
+  position: relative;
+  background: #252B67;
+  .grab-activity-box{
+    padding-bottom: 1.282rem;
+    background:#252B67;
+  }
+  img{
+    width:100%;
+    vertical-align: top;
+  }
+  button{padding:0 0;}
+  .part-center{
+    .center-adv{
+      margin: 0.641rem;
+      a{
+        width:100%;
+        height:100%;
+        color:#fff;
+        img{
+          width:100%;
+        }
+      }
+    }
+    .center-title{
+      background:#252B67;
+      div{
+        margin:0 0.64rem;
+        padding:0.427rem 0;
+        border-bottom:1px solid #D8D8D8;
+      } 
+      h4{
+        color: #fff;
+        font-size: 0.68rem;
+        line-height: 0.8rem;
+      }
+      p{
+        font-size: 0.47rem;
+        color: #fff;
+        line-height: 0.8rem;
+        span{color:#fff;font-weight: bold;}
+      }
+    }
+    .center-list{
+      text-align: left;
+      background:#252B67;
+      padding:0 0.64rem 0.64rem;
+      img{
+        width:0.536rem;
+      }
+      li{
+        padding:0.427rem 0 0.3rem;
+        border-bottom:1px solid #eee;
+      }
+      .list-left{
+        p:first-child{
+          font-size:0.598rem;
+          color: #fff;
+          // font-weight: bold;
+          font-family: "SFCompactText-Regular";
+        }
+        p:last-child{
+          font-size:11px;
+          color: #EAEAEA;
+          opacity: 0.8;
+          margin-top:0.22rem;
+        }
+      }
+      .list-right{
+        font-size: 0.512rem;
+        color: #fff;
+      }
+    }
+  }
+  .part-how{
+    padding:0 0.64rem;
+    border-bottom:1px solid #fff;
+    li{
+      text-align: left;
+      font-size: 0.512rem;
+      color: #EAEAEA;
+      opacity: 0.9;
+      line-height:0.6rem;
+      margin-bottom: 0.427rem;
+      font-family: "SFCompactText-Regular";
+    }
+    li:first-child{
+      font-family: "SFCompactText-Medium";
+      font-size: 0.68rem;
+      color: #FFFFFF;
+      opacity: 1;
+      text-align: center;
+    }
+  }
+  .part-bottom{
+    padding: 0.64rem 0.64rem;
+    background:#252B67;
+    cursor: pointer;
+    p{
+      font-size: 0.6rem;
+      color: #fff;
+    }
+    .icon-emptydown{
+      color:#fff;
+      transform: rotate(-90deg);
+    }
+  }
+
+}
+</style>

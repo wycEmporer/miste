@@ -1,0 +1,852 @@
+<template>
+  <div id="heg-autumnsale">
+    <head-top class="header">
+      <i slot="left" class="top_icon iconfont icon-back"></i>
+      <p slot="title" style="margin-left:-1.5rem;">Dussehra Mega Sale</p>
+    </head-top>
+    <div class="content">
+      <div class="appTop" v-show="isShowBtn"></div>
+      <div class="top-banner">
+        <img :src="mUrl">
+        <div class="top-cover">
+          <p v-if="startOrEnd == 'start'"><span>Campaign Starts In :</span>{{saleTime}}</p>
+          <p v-else-if="startOrEnd == 'in'">Campaign is live !</p>
+          <p v-else-if="startOrEnd == 'end'"><span>Campaign Ends In :</span>{{saleTime}}</p>
+          <p v-else>Campaign is closed.</p>
+          <p>Oct 01st,00:00:00 -- Oct 19th,23:59:59</p>
+        </div>
+      </div>
+      <div class="top-title">ON DOMESTIC &amp; INTERNATIONAL FLIGHTS</div>
+      <div class="part-mobile" :style="copyBg">
+        <div class="top-box flex space-between">
+          <div class="part-left" v-show="isShowBtn">
+            <img :src="icons.mobile" alt="">
+            <p>Discount on App</p>
+          </div>
+          <div class="part-right" v-show="isShowBtn">
+            <p class="right-top">Save <span>Rs.{{mTitle}}</span></p>
+            <div class="right-code flex space-between">
+              <p class="right-copy">Use Code: <span>HEGAPP</span></p>
+              <button class="copy" id="copyUrl1" @click="copyCode('mobile')" >
+                <img :src="icons.copy" alt="copy" title="copy the code">
+              </button>
+            </div>
+            <div class="dowload-app">
+              <a href="https://app.adjust.com/xmfxff?campaign=Dussehra0930&adgroup=PC&creative=Download" target="_blank"><img :src="icons.google" alt=""></a>
+              <a href="https://app.adjust.com/xmfxff?campaign=Dussehra0930&adgroup=PC&creative=Download" target="_blank"><img :src="icons.app" alt=""></a>
+            </div>
+          </div>
+          <div class="part-left21" v-show="!isShowBtn">
+            <img :src="icons.mobile" alt="">
+            <p>Discount on App</p>
+          </div>
+          <div class="part-right2" v-show="!isShowBtn">
+            <p class="right-top">Save <span>Rs.{{mTitle}}</span></p>
+            <div class="right-code flex space-between">
+              <p class="right-copy">Use Code: <span>HEGAPP</span></p>
+              <button class="copy" id="copyUrl1" @click="copyCode('mobile')" >
+                <img :src="icons.copy" alt="copy" title="copy the code">
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="right-bottom" v-show="isShowBtn" >Download our mobile App</p>
+      </div>
+      <div class="part-pc" :style="copyBg">
+        <div class=" top-box flex space-between">
+          <div class="part-left" v-show="isShowBtn">
+            <img :src="icons.pc" alt="">
+            <p>Discount on PC &amp; Mobile Site</p>
+          </div>
+          <div class="part-right" v-show="isShowBtn">
+            <p class="right-top">Save <span>Rs.{{mAlt}}</span></p>
+            <div class="right-code flex space-between">
+              <p class="right-copy">Use Code: <span>HEGPCM</span></p>
+              <button class="copy" id="copyUrl2" @click="copyCode('pc')" >
+                <img :src="icons.copy" alt="copy" title="copy the code">
+              </button>
+            </div>
+            <button class="right-signIn" v-show="!isLogin" @click="SignIn">Sign In</button>
+          </div>
+          <div class="part-left22" v-show="!isShowBtn">
+            <img :src="icons.pc" alt="">
+            <p>Discount on PC &amp; Mobile Site</p>
+          </div>
+          <div class="part-right2" v-show="!isShowBtn">
+            <p class="right-top">Save <span>Rs.{{mAlt}}</span></p>
+            <div class="right-code flex space-between">
+              <p class="right-copy">Use Code: <span>HEGPCM</span></p>
+              <button class="copy" id="copyUrl2" @click="copyCode('pc')" >
+                <img :src="icons.copy" alt="copy" title="copy the code">
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="right-signUp" v-show="isShowBtn && !isLogin">Have no account? <span @click="SignUp">Sign Up</span></p>
+      </div>
+      <div class="part-book">
+        <button @click="jumpHome" >Book Now</button>
+      </div>
+      <div class="part-shake" :style="artboardBg">
+        <p class="shake-p1"></p>
+        <div style="width:100%;background:#fff;">
+          <mt-swipe class="s1-banner" :show-indicators="false" :auto="3000">
+            <mt-swipe-item v-for="(item,index) in s1Banners" :key="index">
+              <div class="banner-box">
+                <img :src="item.url" alt="" @click="jumpDetails">
+              </div>
+            </mt-swipe-item>
+          </mt-swipe>
+        </div>
+        <div class="part-book1">
+          <button v-if="isShowBtn" @click="goForDetail">Go for Details</button>
+          <button v-else @click="goForDetail">Go to Shake</button>
+        </div>
+      </div>
+      <div style="height:0.427rem;"></div>
+      <div class="part-share">
+        <p class="share-title">Invite your friends to play now</p>
+        <ul class="flex space-around align-items-center">
+          <li v-for="(item,index) in sharesApp" :key="index">
+            <a v-if="index == 0" :href="(isIos && index == 0)?item.href2:item.href" target="_blank" @click="shareToApp(index)">
+              <img :src="item.icon" alt="">
+              <p>{{item.name}}</p>
+            </a>
+            <a v-else :href="item.href" :data-action="index == 1?item.action:''" target="_blank" @click="shareToApp(index)">
+              <img :src="item.icon" alt="">
+              <p>{{item.name}}</p>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div style="height:0.427rem;"></div>
+      <div class="s3-share" v-show="isShowBtn">
+        <p>Follow us on</p>
+        <ul class="share-icon flex">
+          <li v-for="(item,index) in s3Shares" :key="index">
+            <a :href="item.href" target="_blank">
+              <img :src="item.url" alt="">
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div style="height:1.282rem;"></div>
+      <!-- <div class="foot-bottom" v-show="isShowBtn">
+        <p>
+          <span @click="$router.push('/agreement')">T &amp; C</span>
+          <span @click="$router.push('/privacy')">Privacy</span>
+          <span @click="$router.push('/about')">About Us</span>
+          <span @click="$router.push('/contact')">Contact Us</span>
+        </p>
+        <p>2016-2018© Happyeasygo Group. All rights reserved.</p>
+      </div> -->
+    </div>
+    <div class="shareCover" v-show="upDataDialog" @click="clickOut"></div>
+    <div class="upDataDiaplog" v-show="upDataDialog">
+      <p class="up-p1"><span>The Autumn Season Sale</span> is <span>LIVE</span> on the new version of HEG App!!! </p>
+      <p class="up-p2">Update Now and <span>shake</span> your phone to Win <span>EXCLUSIVE Prizes</span>!</p>
+      <a :href="device.href" target="_blank" @click="upDateApp">update</a>
+    </div>
+  </div>
+</template>
+<script>
+import Clipboard from 'clipboard';
+import headTop from '../../components/head/head.vue';
+import {Toast,Indicator, Swipe, SwipeItem} from 'mint-ui';
+import { CookieUtil } from 'models/utils';
+import { User } from "../../models/user";
+import { DomainManager } from "../../config/DomainManager.js";
+import {emitCustomEvent} from 'models/utils/adGAEvent';
+import {AppBridge} from '../../models/appbridge/appbridge.js';
+export default {
+  components:{
+    headTop,
+    "mt-swipe":Swipe,
+    "mt-swipe-item":SwipeItem
+  },
+  data(){
+    return {
+      emitCustomEvent:emitCustomEvent,
+      mUrl: "",
+      mAlt: "",
+      mTitle: "",
+      model:0,
+      smallScreen:false,
+      flag:true,
+      timer:null,
+      isApp:false,
+      isIos:false,
+      isShowBtn:true,
+      saleTime:null,
+      upDataDialog:false,
+      startOrEnd:'satrt',
+      device:{href:'javascript:;'},
+      isLogin:CookieUtil.hasItem('uuid'),
+      copyBg:{
+        "background-color":"#fff",
+        "background-image":'url('+require('../../assets/images/autumn/mega-copy-bg.png')+')',
+        "background-size":"100% 100%",
+        "background-repeat":"no-repeat"
+      },
+      artboardBg:{
+        "background-color":"#fff",
+        "background-image":'url('+require('../../assets/images/autumn/mega-Artboard.png')+')',
+        "background-size":"17rem 100%",
+        "background-repeat":"no-repeat",
+        "background-position":"center top"
+      },
+      icons:{
+        banner:require('../../assets/images/autumn/topbanner.png'),
+        pc:require('../../assets/images/autumn/mega-pc.png'),
+        copy:require('../../assets/images/autumn/mega-copy.png'),
+        app:require('../../assets/images/autumn/icon_appstore.png'),
+        google:require('../../assets/images/autumn/icon_google.png'),
+        mobile:require('../../assets/images/autumn/mega-mobile.png'),
+        shake:require('../../assets/images/autumn/mega-Artboard.png'),
+      },
+      s1Banners:[
+        {prizeName:"ticket",url:require('../../assets/images/autumn/banner-flight-ticket.png')},
+        {prizeName:"GAANA",url:require('../../assets/images/autumn/banner-gaana.png')},
+        {prizeName:"sliver",url:require('../../assets/images/autumn/banner-happy-sliver.png')},
+        {prizeName:"NETMED",url:require('../../assets/images/autumn/banner-netmeds.png')},
+        {prizeName:"TREEBO",url:require('../../assets/images/autumn/banner-Treebo.png')},
+        {prizeName:"XOXODAY",url:require('../../assets/images/autumn/banner-Xoxoday.png')},
+        {prizeName:"ZOOMCAR",url:require('../../assets/images/autumn/banner-zoomcar.png')},
+       
+        {prizeName:"beardo",url:require('../../assets/images/autumn/banner-beardo.jpg')},
+        {prizeName:"Petals",url:require('../../assets/images/autumn/banner-Ferns-N-Petals.png')},
+        {prizeName:"floweraura",url:require('../../assets/images/autumn/banner-floweraura.png')},
+        {prizeName:"freshmeun",url:require('../../assets/images/autumn/banner-freshmeun.png')},
+        {prizeName:"MedLife",url:require('../../assets/images/autumn/banner-MedLife.png')},
+        {prizeName:"cliq",url:require('../../assets/images/autumn/banner-tata-cliq.png')},
+        {prizeName:"zomato",url:require('../../assets/images/autumn/banner-zomato.png')},
+        {prizeName:"Arzooo1",url:require('../../assets/images/autumn/Arzooo.com-1.png')},
+        {prizeName:"Arzooo2",url:require('../../assets/images/autumn/Arzooo.com-2.png')},
+        {prizeName:"Arzooo3",url:require('../../assets/images/autumn/Arzooo.com-3.png')},
+        {prizeName:"Arzooo4",url:require('../../assets/images/autumn/Arzooo.com-4.png')},
+        {prizeName:"hotel",url:require('../../assets/images/autumn/hotel.png')},
+        {prizeName:"licious",url:require('../../assets/images/autumn/licious.png')},
+        {prizeName:"Portal",url:require('../../assets/images/autumn/banner-Gift-Portal.png')},
+      ],
+      s3Shares:[
+        {href:'https://www.facebook.com/happyeasygo/',url:require('../../assets/images/anniversarysale/share-f.png')},
+        {href:'https://twitter.com/happyeasygo',url:require('../../assets/images/anniversarysale/share-b.png')},
+        {href:'https://www.instagram.com/happyeasygo_india/',url:require('../../assets/images/anniversarysale/share-c.png')},
+        {href:'https://www.youtube.com/channel/UCBlph2534GSN1PDJH9E5ylg',url:require('../../assets/images/anniversarysale/share-s.png')},
+        {href:'https://plus.google.com/+HappyEasyGoIndia',url:require('../../assets/images/anniversarysale/share-g.png')},
+      ],
+      sharesApp:[
+        {id:0,name:"SMS",href:"javascript:;",href2:"javascript:;",icon:require('../../assets/images/autumn/share_sms.png'),text:'Hey, I just found this amazing HappyEasyGo Dussehra Mega Sale. Get upto Rs.3000 off on flights & play Shake & Win to grab exclusive vouchers. http://bit.ly/2Q9Lmog'},
+        {id:1,name:"WhatsApp",href:"javascript:;",action:'share/whatsapp/share',icon:require('../../assets/images/autumn/share_whatsapp.png'),text:'Hi. Want to book flight tickets? Save upto Rs.3000 with HappyEasyGo Dussehra Mega Sale. Shake your phone to win amazing vouchers and more. http://bit.ly/2OfDUup'},
+        {id:2,name:"Messenger",href:"javascript:;",icon:require('../../assets/images/autumn/share_msg.png'),text:'Hey, HappyEasyGo is offering upto Rs.3000 off on flights during Dussehra Mega Sale till 19 Oct. Win vouchers and other gifts with Shake & Win. http://bit.ly/2NHWhJ3'},
+        {id:3,name:"More",href:'javascript:;',icon:require('../../assets/images/autumn/share_more.png'),text:'Hey, save upto Rs.3000 on flights with HappyEasyGo this Dussehra. Book before Oct.19. Get exclusive prizes with Shake & Win. http://bit.ly/2N3dTtX'},
+      ]
+    }
+  },
+  methods:{
+    clickOut(){
+      this.upDataDialog = false;
+    },
+    upDateApp(){
+      this.upDataDialog = false;
+    },
+    jumpHome(){
+      AppBridge.goHomePage(this);
+    },
+    SignIn(){
+      if(!this.isLogin){
+        AppBridge.nativeSignIn("in",this);
+      }
+    },
+    SignUp(){
+      if(!this.isLogin){
+        AppBridge.nativeSignIn("up",this);
+      }
+    },
+    shareToApp(who){
+      emitCustomEvent('Invite_'+who, 'AutumnSale');
+      if(!this.isShowBtn){     
+        AppBridge.shareToApps(who,this);
+      }else{
+        Toast({
+          message:"Please operate on app",
+          duration:1500,
+        });
+      }
+    },
+    jumpDetails(){
+      if(AppBridge.device != 0){
+        try {
+          if(window.heg.goShakePage){
+            window.heg.goShakePage();
+          }else{
+            this.upDataDialog = true;
+          }
+        } catch (error) {
+          if(this.$bridge.WebViewBridge.indexOf('goShakePage') > -1){
+            AppBridge.goShakePage(this);
+          }else{
+            this.upDataDialog = true;
+          }
+        }
+      }else{
+        this.$router.push('/shake');
+      }
+    },
+    goForDetail(){
+      if(AppBridge.device != 0){
+        try {
+          if(window.heg.goShakePage){
+            window.heg.goShakePage();
+          }else{
+            this.upDataDialog = true;
+          }
+        } catch (error) {
+          if(this.$bridge.WebViewBridge.indexOf('goShakePage') > -1){
+            AppBridge.goShakePage(this);
+          }else{
+            this.upDataDialog = true;
+          }
+        }
+      }else{
+        this.$router.push('/shake');
+      }
+    },
+    copyCode(who){
+      try {
+        window.heg.trackEvent("AC_Autmn_CouponCopy");
+      } catch (error) {
+        if(window.WebViewJavascriptBridge){
+          this.$bridge.callhandler('trackEvent','AC_Autmn_CouponCopy');
+        }
+      }
+      emitCustomEvent('CouponCopy', 'AutumnSale');
+      let that = this,clipboard;
+      if(this.flag){
+        this.flag = false;
+        if(who == 'mobile'){
+          clipboard = new Clipboard('#copyUrl1',{
+            text: function() {
+              return "HEGAPP";
+            }
+          });
+        }else if(who == 'pc'){
+          clipboard = new Clipboard('#copyUrl2',{
+            text: function() {
+              return "HEGPCM";
+            }
+          });
+        }
+        clipboard.on('success', function(e) {
+          Toast({
+            message:"Successfully copied to the Clipboard! ",
+            duration:1200
+          });
+          e.clearSelection();
+          clipboard.destroy();
+        });
+        clipboard.on('error', function(e) {
+          Toast({
+            message:"Copy failed, please input manually! ",
+            duration:1200
+          });
+          e.clearSelection();
+          clipboard.destroy();
+        });
+        setTimeout(function(){
+          that.flag = true;
+        },1200);
+      }
+    },
+    datetime_to_unix(who){
+      let date = new Date(Date.parse(who.replace(/-/g, '/')));
+      date = date.getTime();
+      return parseInt(date/1000);
+    },
+    getGMTtime(){
+      let d = new Date();
+      let loaclTime = d.getTime();
+      let localOffset = d.getTimezoneOffset() * 60000;
+      let utc = loaclTime + localOffset;
+      let offset = 5.5;
+      let bombay = utc + (3600000*offset);
+      return parseInt(bombay/1000);
+    },
+    GetRTime(){
+      let cha_timestamp;
+      let timestamp = this.getGMTtime();
+      let timestamp_set0 = this.datetime_to_unix('2018-10-01 00:00:00');
+      let timestamp_set2 = this.datetime_to_unix('2018-10-15 00:00:00');
+      let timestamp_set3 = this.datetime_to_unix('2018-10-19 23:59:59');
+      let cha_timestamp0 = timestamp_set0-timestamp;
+      let cha_timestamp2 = timestamp_set2-timestamp;
+      let cha_timestamp3 = timestamp_set3-timestamp;
+      if(cha_timestamp0 <= 0){
+        this.startOrEnd = 'in';
+        if( cha_timestamp2 <= 0){
+          this.startOrEnd = 'end';
+          cha_timestamp = cha_timestamp3;
+          if(cha_timestamp3 <= 0){
+            cha_timestamp = 0;
+            this.startOrEnd = '';
+            clearTimeout(this.timer);
+          }
+        }
+      }else{
+        this.startOrEnd = 'start';
+        cha_timestamp = cha_timestamp0;
+      }
+      
+      var sy_day = parseInt(cha_timestamp/(3600*24));
+      var sy_day2 = sy_day > 9?sy_day:'0' + sy_day;
+      var sy_hour = parseInt((cha_timestamp-sy_day*3600*24)/3600);
+      var sy2_hour = sy_hour > 9 ? sy_hour : '0' + sy_hour;
+      var sy_min = parseInt((cha_timestamp-sy_hour*3600-sy_day*24*3600)/60);
+      var sy2_min = sy_min > 9 ? sy_min : '0' + sy_min;
+      var sy_miao = cha_timestamp-sy_day*3600*24-sy_hour*3600-sy_min*60;
+      var sy2_miao = sy_miao > 9 ? sy_miao : '0' + sy_miao;
+
+      this.saleTime = sy_day2+'d:'+sy2_hour+'h:'+sy2_min+'m:'+sy2_miao+'s';
+      this.timer = setTimeout(this.GetRTime, 1000);
+    },
+    checkType() {
+      let type = AppBridge.device;
+      if(type == 1){
+        this.model = 2;
+        this.device.href = "https://play.google.com/store/apps/details?id=com.india.happyeasygo";
+      }else if(type == 2){
+        this.model = 3;
+        this.device.href = "https://itunes.apple.com/app/id1390426818?mt=8";
+      }else{
+        this.model = 0;
+        this.sharesApp[0].href = 'sms:?body='+encodeURIComponent(encodeURIComponent(' Hey, I just found this amazing HappyEasyGo Dussehra Mega Sale. Get upto Rs.3000 off on flights & play Shake & Win to grab exclusive vouchers. http://bit.ly/2QgXMuT'));
+        this.sharesApp[0].href2 = 'sms:&body='+encodeURIComponent(' Hey, I just found this amazing HappyEasyGo Dussehra Mega Sale. Get upto Rs.3000 off on flights & play Shake & Win to grab exclusive vouchers. http://bit.ly/2QgXMuT');
+        this.sharesApp[1].href = 'whatsapp://send?text='+encodeURIComponent(' Hi. Want to book flight tickets? Save upto Rs.3000 with HappyEasyGo Dussehra Mega Sale. Shake your phone to win amazing vouchers and more. http://bit.ly/2IlPhMj');
+        this.sharesApp[2].href = 'fb-messenger://share/?link='+encodeURIComponent('https://goo.gl/UrQBEq')+'&app_id=123456789';
+      }
+      this.getImg();
+    },
+    getImg() {
+      let parmTop = "type=13&device=" + this.model + "&addr=dussehra-mega-sale&businessType=1";
+      User.advList(this, parmTop).then(res => {
+        if (res.success) {
+          this.mUrl =
+            res.list[0].landingPageUrl == null
+              ? ""
+              : res.list[0].landingPageUrl;
+          this.mAlt =
+            res.list[0].landingPageAlt == null
+              ? ""
+              : res.list[0].landingPageAlt;
+          this.mTitle =
+            res.list[0].landingPageTitle == null
+              ? ""
+              : res.list[0].landingPageTitle;
+        }
+      })
+      .catch(err => {
+        console.log(err.msg);
+      });
+    },
+  },
+  async created() {
+    var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+    var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+    var u = navigator.userAgent;
+    var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1;
+    var isiOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); 
+    if(isiOS){
+      this.isIos = true;
+    }else{
+      this.isIos = false;
+    }
+    if(width <= 320){
+      this.smallScreen = true;
+    }
+
+    this.isShowBtn = await AppBridge.getNativeSource(this);
+    this.contentMargin = this.isShowBtn;
+    let id = await AppBridge.getNativeUuid(this);
+    window.onReceviedUuid = this.onReceviedUuid;
+    if(id){
+      CookieUtil.removeItem("uuid");
+      CookieUtil.setItem("uuid",id);
+      this.isLogin = true;
+    }else{
+      if(CookieUtil.hasItem("uuid")){
+        this.isLogin = true;
+      }else{
+        CookieUtil.removeItem("uuid");
+        this.isLogin = false;
+      }
+    }
+
+    this.checkType();
+    this.GetRTime();
+  },
+}
+</script>
+<style lang="less">
+#heg-autumnsale{
+  .s1-banner{
+    height:16rem;
+    .mint-swipe-items-wrap{
+      width:100%;
+      div{
+        .banner-box{
+          width: 12rem;
+          left: 0;
+          right: 0;
+          margin:auto;
+          box-shadow:0 2px 10px 1px #666;
+          border-radius:4px;
+        }
+        img{
+          width:12rem;
+          vertical-align: top;
+        }
+      }
+    }
+  }
+}
+</style>
+<style lang="less" scoped>
+#heg-autumnsale{
+  height:auto;
+  position: relative;
+  img{vertical-align: top}
+  a,button{cursor: pointer;}
+  .appTop{padding-top:2.04rem;}
+  .content{
+    background:#F2E9DD;
+    .top-banner{
+      min-height:3rem;
+      position: relative;
+      background:#fff;
+      img{width: 100%;}
+      .top-cover{
+        width: 100%;
+        position: absolute;
+        bottom: 0;
+        background:rgba(0,0,0,0.65);
+        padding:0.726rem 0 0.641rem;
+        p:first-child{
+          margin-bottom:0.32rem;
+          color:#fff;
+          font-size:0.9rem;
+          font-weight: bold;
+          span{
+            font-size:0.598rem;
+            color:#fefdfc;
+            font-weight: normal;
+            opacity:0.8;
+          }
+        }
+        p:last-child{
+          font-size:0.427rem;
+          color:#fefdfc;
+          opacity:0.6;
+        }
+      }
+    }
+  }
+  .app-p{font-weight:700;}
+  .top-title{
+    margin:0.641rem 0;
+    font-family: "SFCompactText-Regular";
+    font-size: 0.47rem;
+    color: #666666;
+    letter-spacing: 0;
+    font-style: italic;
+  }
+  .top-title::before,.top-title::after{
+    content:"";
+    width:1.28rem;
+    display:inline-block;
+    border-top:1px solid #CDCDCD;
+    vertical-align:middle;
+  }
+  .top-title::before{margin-right:0.427rem;}
+  .top-title::after{margin-left:0.427rem;}
+  .part-left,.part-left21,.part-left22{
+    width:55%;
+    p{
+      padding-top: 0.21rem;
+      font-size: 0.47rem;
+      color: #666666;
+    }
+  }
+  .part-right,.part-right2{
+    width:45%;
+    text-align: right;
+    .right-top{
+      font-size: 0.641rem;
+      line-height:0.769rem;
+      color: #000000;
+      letter-spacing: 0;
+      font-weight:bold;
+      span{
+        color:#f00;
+      }
+    }
+    .right-code{padding:0.36rem 0 0.64rem;}
+    .right-copy{
+      flex:1;
+      font-family: "SFCompactText-Medium";
+      font-size: 0.512rem;
+      color: #151515;
+      letter-spacing: 0;
+      margin-right: 0.427rem;
+      span{font-weight:bold;}
+    }
+    .copy{
+      padding:0 0;
+      width:0.598rem;
+      height:0.598rem;
+      img{
+        width:0.598rem;
+        height:0.598rem;
+        cursor: pointer;
+      }
+    }
+  }
+  .part-left21{
+    margin-top:0.342rem;
+    img{
+      width:1.282rem;
+      height:2.22rem;
+    }
+  }
+  .part-left22{
+    margin-top:0.342rem;
+    img{
+      width:3.14rem;
+      height:2.3rem;
+    }
+  }
+  .part-right2{
+    .right-top{
+      margin:0.854rem 0 0.641rem;
+    }
+    .right-code{padding:0 0;}
+  }
+  .part-mobile{
+    margin:0 0.64rem;
+    padding:0 0.6rem 0.576rem 0;
+    border-radius: 4px;
+    font-family: "SFCompactText-Regular";
+    // .top-box{height:4rem;}
+    .part-left{
+      margin-top:1.068rem;
+      img{
+        width:1.282rem;
+        height:2.22rem;
+      }
+    }
+    .part-right{
+      margin-top:0.576rem;
+      .dowload-app{
+        height:0.8rem;
+        overflow: hidden;
+        margin-bottom: 5px;
+        a{
+          width:2.778rem;
+          height:0.8rem;
+          cursor: pointer;
+        }
+        img{
+          width: 100%;
+          height: 100%;
+        }
+        a:first-child{float:left;}
+        a:last-child{float:right;}
+      }
+    }
+    .right-bottom{
+      text-align:right;
+      font-size: 0.47rem;
+      color: #666666;
+      line-height:0.556rem;
+    }
+  }
+  .part-pc{
+    margin:0.747rem 0.64rem 0.854rem;
+    border-radius: 4px;
+    padding:0 0.6rem 0.427rem 0;
+    font-family: "SFCompactText-Regular";
+    .part-left{
+      margin-top:1rem;
+      img{
+        width:3.14rem;
+        height:2.3rem;
+      }
+    }
+    .part-right{
+      margin-top:0.427rem;
+      overflow: hidden;
+      .right-signIn{
+        display:block;
+        width:4.7rem;
+        height:0.982rem;
+        line-height:0.982rem;
+        color:#fff;
+        background:#65290C;
+        border-radius: 2px;
+        cursor: pointer;
+        padding:0 0;
+        float: right;
+      }
+    }
+    .right-signUp{
+      text-align:right;
+      font-size: 0.47rem;
+      color: #666666;
+      padding-top: 5px;
+      span{
+        font-size: 0.512rem;
+        color: #0B9D78;
+        cursor: pointer;
+      }
+    }
+  }
+  .part-book{
+    margin:0.747rem 0 1.3rem;
+    button{
+      width:8.9rem;
+      height:1.6rem;
+      line-height:1.6rem;
+      font-size:0.641rem;
+      color:#fff;
+      background:#65290C;
+      border-radius:3px;
+    }
+  }
+  .part-shake{
+    background:#fff;
+    padding:0 0 1.282rem;
+    .shake-p1{
+      padding:3.931rem 0 0;
+    }
+    .part-book1{
+      margin:0.8rem 0 0;
+      button{
+        width:8.9rem;
+        height:1.6rem;
+        line-height:1.6rem;
+        font-size:0.641rem;
+        color:#fff;
+        background:#65290C;
+        border-radius:3px;
+      }
+    }
+  }
+  .part-share{
+    background:#fff;
+    padding:0.854rem 0.64rem 0;
+    .share-title{
+      font-size:0.598rem;
+      color:#333;
+    }
+    ul{
+      padding-bottom:1.282rem;
+      li{
+        flex:1;
+        a{color:#333;width:100%;}
+        font-size:0.598rem;
+        img{
+          width:1.282rem;
+          height:1.282rem;
+          border-radius:3px;
+          margin:0.854rem 0 0.5rem;
+        }
+      }
+    }
+  }
+  .s3-share{
+    background:#fff;
+    padding:0.854rem 2rem;
+    p{font-size:0.598rem;padding-bottom:0.427rem;color:#112645;}
+    .share-icon{
+      justify-content:space-around;
+      li{
+        width: 1.709rem;
+        height: 1.709rem;
+        img{
+          width: 100%;
+          height:100%;
+          border-radius:50%;
+          cursor: pointer;
+          border:1px solid #eee;
+        }
+      }
+    }
+  }
+  .foot-bottom {
+    vertical-align: middle;
+    background:#0b9d78;
+    padding: 0.3rem 0 0.5rem;
+    p {
+      font-size: 0.470rem;
+      color: #fff;
+      padding: 0.2rem 0 0;
+      opacity:0.8;
+      span{
+        border-right: 1px solid #fff;
+        display: inline-block;
+        padding: 0 0.2rem;
+        cursor: pointer;
+      }
+      span:last-child{
+        border-right: none;
+      }
+    }
+  }
+  .shareCover{
+    width:100%;
+    height:100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 11;
+    background: rgba(0,0,0,0.5);
+  }
+  .upDataDiaplog{
+    width:11rem;
+    height:8rem;
+    background: #FAFAFA;
+    border-radius: 3px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin:auto;
+    z-index: 12;
+    padding:2rem 1rem 1rem;
+    p{
+      color:#333;
+      font-size:0.68rem;
+      line-height:1rem;
+      span{
+        font-weight:bold;
+      }
+    }
+    .up-p1{font-style:italic;}
+    .up-p2{
+      margin:1rem 0 0;
+      padding-bottom:1rem;
+      border-bottom:1px solid #999;
+    }
+    a{
+      color:#fff;
+      background:#ffad3d;
+      font-size:0.68rem;
+      width:8rem;
+      height:1.3rem;
+      line-height:1.3rem;
+      border-radius: 3px;
+      margin-top:0.5rem;
+    }
+  }
+}
+</style>

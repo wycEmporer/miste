@@ -1,0 +1,391 @@
+<template>
+  <div id="heg_mobile">
+    <head-top class="header" :operate="hiddenMobile" v-if="!showModify">
+      <i slot="left" class="prev iconfont icon-back"></i>
+      <div slot="title" class="title"> Mobile Number</div>
+      <i slot="right" class="sp iconfont "></i>
+    </head-top>
+    <div class="mobile_content" v-if="!showVerify && !showModify">
+      <h5 class="clear1">Mobile Number Status: <span :style="{color:userInfo.phoneConfirmed?'#0B9D78':'#999'}">{{userInfo.phoneConfirmed ?"Activated":"Inactivated"}}</span></h5>
+      <div class="search-cont save-mobile" v-show="!userInfo.phoneConfirmed">
+        <div class="phoneNumber flex space-between" :class="{'select-active':save.focus}">
+          <div class="select-group">
+            <select name="" id="" v-model="mobile0.code">
+              <option :value="item.regionCode" v-for="(item, key) in mobile0.phoneCode" :key="key">
+                {{item.countryName + ' (+' + item.regionCode + ')'}}
+              </option>
+            </select>
+            <span>
+              {{'+' + mobile0.code}}
+            </span>
+            <i class="iconfont icon-back"></i>
+          </div>
+          <input class="phone" type="number" v-model="save.phone" v-phone="save" placeholder="Mobile Number">
+        </div>
+        <!-- <p class="errCode" >{{save.error?"The phone number already exists.":""}}</p> -->
+        <div class="s-confirm">
+          <button @click="saveMobile">Save</button>
+        </div>
+      </div>
+      <div class="search-cont save-mobile2" v-show="userInfo.phoneConfirmed">
+        <div class="phoneNumber flex space-between">
+          <div class="select-group">
+            <span>
+              {{'+' + mobile0.code}}
+            </span>
+          </div>
+          <input class="phone" type="number" v-model="mobile0.phoneNo" placeholder="Mobile Number">
+          <button @click="modifyPhone">Modify</button>
+        </div>
+      </div>
+    </div>
+    <mobile-verify v-if="showVerify" :save="save" @hiddenVerify="hiddenVerify"></mobile-verify>
+    <mobile-modify v-if="showModify" :userInfo="info" :phoneCode="mobile0.phoneCode" @hiddenCheckPage="hiddenCheckPage" ></mobile-modify>
+  </div>
+</template>
+<script>
+import { Toast, Indicator,MessageBox } from "mint-ui";
+import headTop from "components/head/head.vue";
+import mobileModify from "./checkOld.vue";
+import mobileVerify from "./mobile-verify.vue";
+import { User } from 'models/user';
+import { Reg } from "models/utils/Reg";
+import { DomainManager } from "config/DomainManager.js";
+import { CookieUtil } from 'models/utils';
+export default {
+  components: {
+    headTop,
+    mobileModify,
+    mobileVerify
+  },
+  props:{
+    userInfo:{
+      type: Object,
+    },
+    phoneCode:{
+      type: Array,
+    }
+  },
+  data (){
+    return{
+      save:{
+        code:'',
+        phone:null,
+        focus:false,
+        error:false,
+      },
+      showModify:false,
+      showVerify:false,
+      info:{},
+      mobile0:{
+        type:1,
+				code:'91',
+				phoneNo:'',
+				otpCode:'',
+        phoneCode: [],
+        timer:null,
+				time:'OTP',
+        second:'',
+				active:false,
+				canClick:true,
+				errCode:false,
+			},
+    } 
+  },
+  watch:{
+    userInfo(curVal,oldVal){
+      if(curVal){
+        this.info = curVal;
+        if(curVal.cellphone && curVal.cellphone.indexOf(' ') > -1){
+          this.mobile0.code = curVal.cellphone.split(' ')[0];
+          this.mobile0.phoneNo = curVal.cellphone.split(' ')[1];
+          this.save.phone = curVal.cellphone.split(' ')[1];
+        }
+      }
+    },
+    phoneCode(curVal,oldVal){
+      if(curVal){
+        this.mobile0.phoneCode = curVal;
+      }
+    },
+    mobile0:{
+      handler:function(val,oldV){
+        if(this.mobile0.otpCode != '' && this.mobile0.phoneNo !=''){
+					this.mobile0.canClick = false;
+					this.mobile0.errCode = false;
+				}else{
+					this.mobile0.canClick = true;
+				}
+      },
+      deep:true
+    }
+  },
+  methods:{
+    hiddenMobile(){
+      this.$emit('hiddenMobile');
+    },
+    hiddenCheckPage(data){
+      this.showVerify = false;
+      this.showModify = false;
+      if(data){
+        this.mobile0.code = data.code;
+        this.mobile0.phoneNo = data.phone;
+        this.save.code = data.code;
+        this.save.phone = data.phone;
+        this.info.cellphone = data.code+' '+data.phone;
+      }
+    },
+    hiddenVerify(){
+      this.showVerify = false;
+      this.$emit('hiddenVerify', this.save.code+' '+this.save.phone);
+    },
+    saveMobile(){
+      if(!Reg.onlyNumber1.test(this.save.phone)){
+        Toast({
+          message:'Please enter a valid phone number.',
+          duration:1500
+        });
+        return;
+      }else{
+        if(this.mobile0.code == '91' && String(this.save.phone).length != 10){
+          Toast({
+            message:"Please enter a valid mobile number",
+            duration:1500
+          });
+          return false;
+        }else if( this.mobile0.code == '86' && String(this.save.phone).length != 11){
+          Toast({
+            message:"Please enter a valid mobile number",
+            duration:1500
+          });
+          return false;
+        }else {
+          let url = DomainManager.saveVerifyPhone();
+          let param = {
+            "userId":CookieUtil.getItem("uid"),
+            "userModify":this.mobile0.code+' '+this.save.phone
+          }
+          this.$axios.post(url, param, {"headers":{"ContentType":"application/json"}}).then(res =>{
+            if(res.code == 200){
+              this.save.error = false;
+              this.showVerify = true;
+              this.save.code = this.mobile0.code;
+            }else{
+              Toast(res.msg)
+              this.save.error = true;
+            }
+          }).catch(err=>{
+            this.save.error = true;
+            Toast(err.msg);
+          })
+        }
+      }
+    },
+    modifyPhone(){
+      this.showVerify = false;
+      this.showModify = true;
+    }
+  },
+  directives:{
+    "phone":{
+      bind(el,binding,vnode){
+        el.onfocus = function(){
+          binding.value.focus = true;
+          binding.value.error = false;
+        },
+        el.onblur = function(){
+          binding.value.focus = false;
+        }
+      }
+    }
+  }
+}
+</script>
+<style lang="less" scoped>
+#heg_mobile{
+  height:100%;
+  .checkError {
+    color: #f65858;
+    margin-top: 0.2rem;
+    font-size: 0.598rem;
+    text-align: left;
+  }
+  .mobile_content{
+    padding: 2.854rem 1rem 0.68rem;
+    h5{
+      font-size: 0.68rem;
+      color: #000000;
+      text-align:left;
+      font-weight: normal;
+      span{
+        float: right;
+        color:#999;
+      }
+    }
+  }
+  .search-cont {
+    margin-top: 1.28rem;
+    input::placeholder{
+      color:#999;
+    }
+    .tripId {
+      .search {
+        width: 100%;
+        padding: 0.5rem;
+        border: none;
+        font-size: 0.598rem;
+        border-radius: 2px;
+      }
+    }
+    .phoneNumber {
+      margin-bottom: 0.854rem;
+      .select-group {
+        position: relative;
+        border: 1px solid #ddd;
+        border-right: none;
+        box-sizing: border-box;
+        border-top-left-radius: 4px;
+        border-bottom-left-radius: 4px;
+        width: 20%;
+        height: 1.769rem;
+        // margin-right: 0.5rem;
+        select {
+          position: absolute;
+          top: 0;
+          left: 0;
+          opacity: 0;
+          z-index: 9;
+          display: block;
+          width: 100%;
+          height: 100%;
+        }
+        span {
+          width: 100%;
+          height: 100%;
+          position: absolute;
+          top: 0;
+          left: 0;
+          text-align: center;
+          height: 1.769rem;
+          line-height: 1.769rem;
+          font-size: 0.6rem; // color: #666;
+          font-weight: normal;
+        }
+        i{
+          color:#999;
+          position: absolute;
+          right: 0;
+          top: 50%;
+          float:right;
+          transform: rotate(-90deg) translate(50%);
+        }
+      }
+      .phone {
+        width: 70%;
+        padding: 0 0.5rem;
+        font-size: 0.6rem;
+        border-top-left-radius: 2px;
+        border-bottom-left-radius: 2px;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0; // background: #4fbc9f;
+        // color: #ddd;
+        border: 1px solid #ddd;
+        border-right: 0;
+        border-left: none;
+      }
+      button {
+        width: 30%;
+        height: 1.769rem; // background: url('../../../assets/images/search_ico.png') center no-repeat;
+        background-size: 0.769rem;
+        background: #4fbc9f;
+        font-size: 0.6rem;
+        color: #fff;
+        border-top-right-radius: 2px;
+        border-bottom-right-radius: 2px; // position: absolute;
+        box-sizing: border-box; // right: 0.4rem;
+        // top: 50%;
+        // -webkit-transform: translateY(-50%);
+        // transform: translateY(-50%);
+      }
+      .otpActive{
+        background: #ddd;
+      }
+    }
+    .s-confirm{
+      margin-top: 1.709rem;
+      button{
+        width: 100%;
+        height:1.495rem;
+        line-height: 1.495rem;
+        color:#fff;
+        background:#ffad3d;
+        border-radius: 2px;
+        cursor: pointer;
+        letter-spacing: 0.5px;
+      }
+      .btnActive{
+        background:#ddd;
+      }
+    }
+  }
+  .save-mobile{
+    .phoneNumber {
+      margin-bottom: 0;
+      border-bottom:1px solid #ddd;
+      .select-group {
+        width:20%;
+        border:0;
+        border-radius:0;
+        span{text-align:left;font-size: 0.68rem;}
+      }
+      .phone{
+        border:0;
+        border-radius:0;
+        font-size: 0.68rem;
+        padding:0 0 0 0.5rem;
+      }
+    }
+    .errCode{padding:0.427rem 0 0;height:11px;font-size: 11px;color: #CC4747;text-align:right;}
+    .select-active{border-bottom:1px solid #0B9D78;}
+    .s-confirm {
+      button{
+        height:1.7rem;
+        font-size: 0.726rem;
+        background:#ffad3d;
+      }
+    }
+  }
+  .save-mobile2{
+    .phoneNumber {
+      margin-bottom: 0;
+      .select-group {
+        width:auto;
+        border:0;
+        height:1.15rem;
+        border-radius:0;
+        span{
+          position: static;
+          text-align:left;
+          font-size: 0.68rem;
+          height:1.15rem;
+          line-height:1.15rem;
+        }
+      }
+      .phone{
+        width:auto;
+        border:0;
+        border-radius:0;
+        font-size: 0.68rem;
+        height:1.15rem;
+        padding:0 0 0 0.5rem;
+      }
+      button{
+        width:5.2rem;
+        height:1.15rem;
+        background: #FFAD3C;
+        border-radius: 2px;
+      }
+    }
+  }
+}
+</style>

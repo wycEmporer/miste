@@ -1,0 +1,206 @@
+<template>
+    <div class="container">
+      <div class="filter flex direction-column space-between">
+        <div class="flex space-between">
+          <div class="form-group">
+            <input type="search" class="fontSz14" v-model="filterName" placeholder="Hotel Name">
+          </div>
+          <div class="form-group">
+            <select class="fontSz14" v-model="filterState">
+              <option value="">ALL</option>
+              <option :value="key" v-for="key in orderStates" :key=key>{{keyToStatus[key]}}</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex content-center">
+          <a href="javascript:;" @click="filterList" class="search-btn">Search</a>
+        </div>
+      </div>
+      <div class="list">
+        <div class="list-item flex space-between" @click="$router.push(`/hotel/order/${v.bookingNo}`)"  v-for="v in newList" :key="v.id">
+          <div class="aleft flex direction-column">
+            <div class="fontSz14">
+              {{v.hotelName}}
+            </div>
+            <div class="dur">
+              {{v.checkIndateStr}} -- {{v.checkOutdateStr}} 
+            </div>
+          </div>
+          <div class="aright flex direction-column">
+            <p class="fontSz18 colorDan text-right"><i class="rs">Rs.</i> {{v.price | formatDate}}</p>
+            <p class="fontSz9 gray text-right">Booking Date: {{v.orderDateStr}}</p>
+            <p class="fontSz9 gray text-right">Order ID {{v.bookingNo}}</p>
+            <div class="status-btn fontSz14" :class="v.btnClass">
+              {{keyToStatus[v.status]}}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</template>
+<script>
+import { DomainManager } from "config/DomainManager";
+import { CookieUtil, TimeFormatUtil } from "models/utils";
+import { Indicator, Popup,Toast} from "mint-ui";
+const keyToStatus = {
+  1: "Pay",
+  2: "Confirm In",
+  3: "Upcoming",
+  4: "Completed",
+  5: "Canceled",
+  6: 'Canceled',
+  7: 'Canceled',
+  8: 'Canceled',
+};
+const btnClass = {
+  1: "bgWarn",
+  2: "",
+  3: "",
+  4: "bgGrey",
+  5: "bgGrey",
+  6: 'bgGrey',
+  7: 'bgGrey',
+  8: 'bgGrey',
+};
+export default {
+  data() {
+    return {
+      filterState: "",
+      filterName: "",
+      orderStates: [],
+      list: [],
+      keyToStatus:keyToStatus,
+      
+    };
+  },
+  created() {
+    if(!CookieUtil.hasItem("uuid")){
+      this.$router.push('/login');
+      return;
+    }
+    this.getList();
+  },
+  computed:{
+    newList(){
+      return  this.filterList();
+    }
+  },
+
+  methods: {
+    filterList(){
+      let reg= new RegExp(this.filterName, 'i');
+      return this.list.filter(val =>
+        (reg.test(val.hotelName) && (val.status == this.filterState || this.filterState == ''))
+      )
+    },
+    getList() {
+      Indicator.open({ spinnerType: "fading-circle" });
+      this.$axios.get(DomainManager.getHotelList()).then(res => {
+        Indicator.close();
+        if (res.length === 0) return;
+        res.forEach(val => {
+          if(this.orderStates.indexOf(val.status) < 0){
+            this.orderStates.push(val.status);
+          }
+          val.checkIndateStr = TimeFormatUtil.getBookDetailDate(new Date(val.checkInDate.replace(/-/g, '/')));
+          val.checkOutdateStr = TimeFormatUtil.getBookDetailDate(new Date(val.checkOutDate.replace(/-/g, '/')));
+          val.orderDateStr = TimeFormatUtil.dateWithoutYear(new Date(val.orderTimeStr.replace(/-/g, '/')));
+          val.btnClass = btnClass[val.status];
+          this.list.push(val);
+        });
+      });
+    }
+  }
+};
+</script>
+<style lang="less" scoped>
+@import "~assets/less/theme.less";
+
+@baseFontSize: 46.875;
+.px2rem(@name, @px) {
+  @{name}: @px / @baseFontSize * 1rem;
+}
+.text-right {
+  text-align: right;
+}
+.container {
+  padding: 0 30 / @baseFontSize * 1rem;
+}
+.fontSz9{
+  font-size: 9px;
+}
+.filter {
+  .px2rem(height,150);
+  margin-top: 2rem;
+  padding: 15px 0 15px;
+  align-content: space-around;
+  .form-group {
+    input[type=search] {
+      .px2rem(width, 420);
+      .px2rem(height, 60);
+      .px2rem(line-height, 60);
+      padding: 0 4px;
+      border: 1px solid #ccc;
+      border-radius: 0;
+      &::-webkit-search-cancel-button{
+        -webkit-appearance:none;
+        height: 12px;
+        width: 12px;
+        background:url('~assets/images/hotel/icon-cancel-normal.png') center/12px 12px;
+      }
+    }
+    select {
+      .px2rem(width, 240);
+      .px2rem(height, 60);
+      .px2rem(line-height,60);
+      padding: 0 0 1px 3px;
+
+      border-bottom: 1px solid #ccc;
+      border-radius: 0;
+      background: url('~assets/images/hotel/icon-down-selected.png') right center/16px 8px no-repeat;
+    }
+  }
+  .search-btn {
+    font-size: 16px;
+    .px2rem(width, 530);
+    .px2rem(height,60);
+    .px2rem(line-height,60);
+    background-color: @warning-color;
+    color: #fff;
+  }
+}
+.list-item {
+  height: 70px;
+  padding: 15px 0 10px;
+  border-bottom: 1px solid #ccc;
+  .dur{
+    .px2rem(font-size, 32);
+  }
+  .aleft {
+    .px2rem(width, 420);
+    // align-content: space-around;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-right: 1px dashed #ccc;
+  }
+  .aright {
+    align-items: flex-end;
+    justify-content: space-around;
+  }
+
+  .status-btn {
+    background-color: @primary-color;
+    .px2rem(width, 240);
+    .px2rem(height, 40);
+    .px2rem(line-height, 40);
+    text-align: center;
+    color: #fff;
+    &.bgGrey {
+      background-color: @gray;
+    }
+    &.bgWarn {
+      background-color: @warning-color;
+    }
+  }
+}
+</style>

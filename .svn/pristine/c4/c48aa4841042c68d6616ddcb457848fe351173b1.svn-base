@@ -1,0 +1,58 @@
+[
+  {
+  "iata": "DEL",
+  "city": "Delhi",
+  "airport": "Delhi Airport",
+  "mixn": "Delhi Airport , Indira Gandhi International Airport , New Delhi International Airport , IGI Airport , Delhi Airport , Delhi Airport , Delhi , Dilli , New Delhi",
+  "cc": "IN",
+  "cn": "India"
+  },
+  {
+    "iata": "BOM",
+    "city": "Mumbai",
+    "airport": "Chhatrapati Shivaji International Airport",
+    "mixn": "Chhatrapati Shivaji International Airport , Sahar International Airport , Mumbai International Airport , Bombay International Airport , Chhatrapati Shivaji Intl Airport , Mumbai Airport , Mumbai , Bombay",
+    "cc": "IN",
+    "cn": "India"
+  },
+  {
+    "iata": "BLR",
+    "city": "Bangalore",
+    "airport": "Kempegowda International Airport",
+    "mixn": "Kempegowda International Airport , Bangalore International Airport , Bangalore Airport , BLR Airport , Bengaluru Airport , Bengaluru International Airport , Kempegowda International Airport , kempegowda international airport , BIAL , Bangalore interntional aiport , Devanahalli , Kempegowda International Airport , Kempegowda International Airport , Kempegowda International Airport , Bangalore , Bengaluru , Bengluru , Bangaluru",
+    "cc": "IN",
+    "cn": "India"
+  },
+  {
+    "iata": "HYD",
+    "city": "Hyderabad",
+    "airport": "Rajiv Gandhi Intl Airport",
+    "mixn": "Rajiv Gandhi Intl Airport , Hyderabad Airport , Shamshabad Airport , Hyderabad International Airport , Rajiv Gandhi Intl Airport , Rajiv Gandhi Airport , Hyderabad",
+    "cc": "IN",
+    "cn": "India"
+  },
+  {
+    "iata": "CCU",
+    "city": "Kolkata",
+    "airport": "Nscbi Airport",
+    "mixn": "Nscbi Airport , Nscbi Airport , Kolkata , Calcutta",
+    "cc": "IN",
+    "cn": "India"
+  },
+  {
+    "iata": "AMD",
+    "city": "Ahmedabad",
+    "airport": "Sardar Vallabhbhai Patel International Airport",
+    "mixn": "Sardar Vallabhbhai Patel International Airport , SV Patel Intl Airport , Ahmedabad Airport , SVP Intl Airport , Ahmedabad International  Airport , SVP Airport , Sardar Vallabhbhai Patel International Airport , Ahmedabad International Airport , sardar vallabhbhai patel international airport , Sardar Vallabhbhai Patel International Airport , Sardar Vallabhbhai Patel International Airport , Sardar Vallabhbhai Patel International Airport , Ahmedabad",
+    "cc": "IN",
+    "cn": "India"
+  },
+  {
+    "iata": "MAA",
+    "city": "Chennai",
+    "airport": "Chennai International Airport",
+    "mixn": "Chennai International Airport , Meenambakkam Airport , Madras International Airport , Chennai Airport , Madras Airport , Anna International Airport , Chennai , Madras",
+    "cc": "IN",
+    "cn": "India"
+  }
+]

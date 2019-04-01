@@ -1,0 +1,638 @@
+<template>
+	<div id="t-wrapper">
+		<head-top class="header" :operate="routeWhere">
+			<i slot="left" class="iconfont icon-back"></i>
+			<span slot="title" class="title">Bookings</span>
+			<i slot="right" class="sp iconfont icon-back"></i>
+		</head-top>
+		<div class="container">
+      <div class="t-trip-control-btn flex space-between align-items-center">
+				<div class="t-btn-wrap flex align-items-center" v-for="item in titleList" :key="item.id" :class="{active:item.active}">
+					<a @click="showTypeOrders(item.id)">{{item.title}}</a>
+				</div>
+			</div>
+      <div class="trip-mark" >
+        <p ><span>Results of range:</span>create time within {{time}}</p>
+      </div>
+			<div class="trip-content"
+        v-infinite-scroll="loadMore"
+        infinite-scroll-disabled="isMoreLoading"
+        :infinite-scroll-immediate-check="true"
+        infinite-scroll-distance="10"
+        v-if="orderList.length != 0">
+				<div class="section flex" v-for="(item,idx) in orderList" :key="item.id">
+					<div class="dateTime flex" @click="searchOrderDetail(item,idx)">
+						<h2>{{new Date(item.departDateTime).getDate()}}</h2>
+						<h3>{{TimeFormatUtil.getMonthDescription(new Date(item.departDateTime).getMonth()).replace(/\./g,'')}}</h3>
+					</div>
+					<div class="bookInfo" @click="searchOrderDetail(item,idx)">
+						<div class="tripID">
+							<span>Trip Id:{{item.flightItineraryIdString}}</span>
+						</div>
+						<div class="city flex">
+							<span class="fromCity">{{item.departCity}}</span>
+							<span class="arive"></span>
+							<span class="toCity">{{item.arriveCity}}</span>
+						</div>
+						<div class="orderDate">
+							<span>Order date:{{TimeFormatUtil.getMonthDescription(new Date(item.bookOn).getMonth()).replace(/\./g,'')}} {{new Date(item.bookOn).getDate()}}</span>
+						</div>
+					</div>
+					<div class="orderType">
+						<span :class="statuClass(item.bookStatus)" @click="searchOrderDetail(item,idx)" >{{item.bookStatus}}</span>
+            <span v-if="item.bookStatus == 'To be paid' " @click="cancelOrderFn(item.flightOrderIdString)">Cancel</span>
+					</div>
+				</div>
+			</div>
+			<div class="noOrder" v-else>
+				<p>No relevent records</p>
+			</div>
+      <div class="loading-box tc" v-if="isLoading">
+        <mt-spinner type="fading-circle" class="loading-more"></mt-spinner>
+        <span class="loading-more-txt">loading</span>
+      </div>
+      <div class="no-more" v-if="noMore">No more orders.</div>
+		</div>
+    <mt-popup v-model="cancelOrder" popup-transition="popup-fade" modal="true" closeOnClickModal="false">
+      <cancel-dialog>
+        <div slot="head">Cancel Payment</div>
+        <div slot="content">
+          <p>We want to know why you cancel your payment so that we can improve our service.</p>
+          <mt-checklist
+            v-show="options.length > 0"
+            v-model="value"
+            :options="options">
+          </mt-checklist>
+        </div>
+        <mt-button slot="btn" @click="noCancel" class="btn btn1" type="default">Back</mt-button>
+        <mt-button slot="btn" @click="canceled" class="btn btn2" :class="{active:option}" :disabled="!option" type="default">Submit</mt-button>
+      </cancel-dialog>
+    </mt-popup>
+	</div>
+</template>
+<script>
+import { TimeFormatUtil, OrderStatusUtil } from "models/utils";
+import headTop from "components/head/head.vue";
+import cancelDialog from "pages/trip/dialog.vue";
+import { FlightOrder } from "models/flightorder";
+import { Toast, Indicator, InfiniteScroll, Spinner,Checklist } from "mint-ui";
+import { CookieUtil } from "models/utils";
+import {parseQueryStr} from 'models/utils/';
+import { DomainManager } from 'config/DomainManager';
+export default {
+  components: {
+    headTop,
+    cancelDialog,
+    "mt-spinner":Spinner,
+    "mt-checklist":Checklist ,
+  },
+  data() {
+    return {
+      TimeFormatUtil,
+      orderList: [],
+      orders: null,
+      orderFee: null,
+      needNo: false,
+      condition:{},
+      time:"30 min",
+      titleList: [
+        { id: 0, title: "To be paid", active: true,time:"30 min" },
+        { id: 1, title: "Upcoming", active: false ,time:"all the time"},
+        { id: 2, title: "Completed", active: false ,time:"all the time"},
+        { id: 3, title: "Canceled", active: false ,time:"7 days"}
+      ],
+      orderObj:{
+        status:'To be paid',
+        pageNum:1,
+        pageSize:8,
+      },
+      isLoading: false, 
+      isMoreLoading: true, 
+      noMore: false, 
+      pageInfo: {
+        page: 1,
+        page_size: 8,
+        total: 0, 
+        totalPage: 1
+      },
+      id:"",
+      cancelOrder:false,
+      value:[],
+      options:[],
+      option:false,
+      isGoBack:false,
+    };
+  },
+   beforeRouteEnter(to, from, next){
+    next(vm => {
+      vm.isGoBack = from.path == '/support';
+    })
+  },
+  beforeRouteLeave(to, from, next) {
+    
+    if (to.path.indexOf("/bridge") > -1) {
+      try {
+        window.heg.nativeBack();
+      } catch (e) {}
+    }
+    if(!CookieUtil.getItem("uuid")){
+      if(to.path.indexOf("/payment-state") > -1){
+        this.$router.push('/');
+      }
+    }else{
+      if(to.path.indexOf("/payment-state") > -1){
+        this.$router.push('/');
+      }
+    }
+    next();
+  },
+  watch:{
+    value:function(val,oldV){
+      let arr = [this.value[this.value.length - 1]];
+      if(this.value.length > 0){
+        this.option = true;
+      }else{
+        this.option = false;
+      }
+      if(this.value.length > 1){
+        this.value = arr;
+      }
+    }
+  },
+  methods: {
+    routeWhere() {
+      try {
+        window.heg.nativeBack();
+      } catch (e) {}
+      if(this.isGoBack){
+        this.$router.go(-1);
+        return;
+      }
+      this.$router.push("/");
+    },
+    loadReasons(){
+      let url = DomainManager.CancelReason();
+      this.$axios.get(url).then(res =>{
+        if(res.success){
+          res.data.forEach((e,i)=>{
+            this.$set(e,"label",e.desc);
+            this.$set(e,"value",e.causeValue);
+          });
+          this.options = res.data;
+        }else{
+          Toast(res.msg);
+        }
+      }).catch(err => {
+        console.log(err);
+      })
+    },
+    loadMore() {
+      
+      this.pageInfo.page += 1; 
+      this.isMoreLoading = true; 
+      this.isLoading = true; 
+      if (this.pageInfo.page > this.pageInfo.totalPage) {
+        this.noMore = true; 
+        this.isLoading = false; 
+        return false;
+      }
+      this.$set(this.orderObj,"pageNum",this.pageInfo.page);
+      setTimeout(() => {
+        this.searchOrder("loadMore",this.orderObj);
+      }, 100);
+    },
+    searchOrder(type,params){
+      if (type !== "loadMore") {
+        Indicator.open({
+          text:'Searching . . .',
+          spinnerType: "fading-circle"
+        });
+      }
+      let url = DomainManager.getOrderNew();
+      this.$axios.post(url,params).then(res =>{
+        if(res.succ){
+          Indicator.close();
+          if (type === "loadMore") {
+            this.orderList = this.orderList.concat(res.data.list);
+          } else {
+            this.orderList = res.data.list;
+          }
+          this.loadReasons();
+
+          this.pageInfo.total = res.data.totalSize;
+          this.pageInfo.totalPage = Math.ceil(
+            this.pageInfo.total / this.pageInfo.page_size
+          );
+        }else{
+          Indicator.close();
+          Toast({
+            message:res.msg,
+            duration:1200
+          });
+        }
+        this.isLoading = false;
+        this.isMoreLoading = false;
+      }).catch(err => {
+        console.log(err);
+        Indicator.close();
+      });
+    },
+    showTypeOrders(type) {
+      for (let val in this.titleList) {
+        this.titleList[val].active = false;
+      }
+      this.titleList[type].active = true;
+      this.$set(this.orderObj,'status',this.titleList[type].title);
+      this.$set(this.orderObj,'pageNum',1);
+      this.pageInfo.page = 1;
+      this.orderList = [];
+      this.noMore = false; 
+      this.isLoading = true; 
+      this.time = this.titleList[type].time;
+      this.searchOrder("",this.orderObj);
+    },
+    cancelOrderFn(which){
+      this.value = [];
+      this.cancelOrder = true;
+      this.id = which;
+    },
+    canceled(){
+      Indicator.open({
+        text:"cancelling...",
+        spinnerType: 'fading-circle'
+      });
+      let time = new Date().getFullYear()+""+(this.addZero(new Date().getMonth() + 1))+""+this.addZero(new Date().getDate());
+      let value = this.value[0];
+      let obj = {
+        id:this.id,
+        cancelReason:value,
+        date:time,
+        operatorType:2,
+        route:1,
+        userName:CookieUtil.getItem('email')?(CookieUtil.getItem('email').indexOf('"') == -1? CookieUtil.getItem('email')
+        : CookieUtil.getItem('email').split('"')[1]):"",
+      };
+      let url = DomainManager.cancelOrder();
+      this.$axios.post(url,obj).then(res =>{
+        Indicator.close();
+        if(res.success && res.data){
+          this.cancelOrder = false;
+          Toast({
+            message:"Cancel Successfully",
+            duration:1500
+          });
+          this.$router.replace({
+            path:"/tripback",
+          })
+        }else{
+          this.cancelOrder = false;
+          Toast({
+            message:res.msg,
+            duration:2500
+          });
+        }
+      }).catch(err => {
+        Indicator.close();
+        console.log(err);
+      })
+    },
+    noCancel(){
+      this.cancelOrder = false;
+    },
+    delCookie(name) {
+      var exp = new Date();
+      exp.setTime(exp.getTime() - 1);
+      var cval = this.getCookie(name);
+      if (cval != null)
+        document.cookie = name + "=" + cval + ";expires=" + exp.toGMTString();
+    },
+    setCookie: function(cname, cvalue, expiredays) {
+      var exdate = new Date();
+      exdate.setDate(exdate.getDate() + expiredays);
+      document.cookie =
+        cname +
+        "=" +
+        escape(cvalue) +
+        (expiredays == null ? "" : ";expires=" + exdate.toGMTString());
+
+      // document.cookie = cname + "=" + cvalue + "; ";
+      // console.log(document.cookie);
+    },
+    searchOrderDetail(item, index) {
+      sessionStorage.setItem("tripId",item.flightItineraryIdString);
+      Indicator.open({
+        spinnerType: "fading-circle"
+      });
+      let orderId = item.flightOrderIdString;
+      let url;
+      if (!CookieUtil.hasItem("uuid")) {
+        this.needNo = false;
+        url = DomainManager.getOrderDetailNew()+'?tripId='+item.flightItineraryIdString+'&token='+JSON.parse(sessionStorage.getItem('searchCondition')).token+'&emailOrPhone='+JSON.parse(sessionStorage.getItem('searchCondition')).emailOrPhone;
+      } else {
+        this.needNo = true;
+        url = DomainManager.getOrderDetailNew()+'?tripId='+item.flightItineraryIdString;
+      }
+      
+      this.$axios.get(url).then(json => {
+        Indicator.close();
+        if(json.code === 0){
+          this.orders = json.data.triplist;
+          this.orderFee = json.data.order;
+          sessionStorage.removeItem("orders");
+          sessionStorage.removeItem("orderFee");
+          sessionStorage.removeItem("orderId");
+          sessionStorage.removeItem("orderInsurance");
+
+          sessionStorage.setItem("orders", JSON.stringify(this.orders));
+          sessionStorage.setItem("orderFee", JSON.stringify(this.orderFee));
+          sessionStorage.setItem("orderId", orderId);
+          sessionStorage.setItem("orderInsurance",JSON.stringify(json.data.flightInsuranceDtos));
+          let status;
+          for (let obj in this.orders.ticketsinfo) {
+            status = this.orders[0].ticketsinfo[obj][0].status;
+          }
+          if (
+            status == 107 ||
+            this.orders[0].payStatus == 0 ||
+            this.orders[0].payStatus == 9 ||
+            this.orders[0].payStatus == 3 ||
+            this.orders[0].payStatus == 4
+          ) {
+            this.$router.push({path:"/order/nopay",query:{id:item.flightOrderIdString}});
+          } else if (status == 106) {
+            this.$router.push("/order/complete");
+          } else {
+            this.$router.push("/order/upcoming");
+          }
+        }else if(json.code == 5){
+          Toast({
+            message:res.message,
+            duration:1200
+          });
+        }
+      }).catch(err => {
+        console.log(err);
+        Indicator.close();
+      });
+    },
+    statuClass(item) {
+      return OrderStatusUtil.getOrderClass(item);
+    },
+    addZero(who){ 
+      if(who < 10 && who > 0){
+        who = "0"+who;
+      }else{
+        who = who;
+      }
+      return who;
+    },
+  },
+  created() {
+    try {
+      let uuid = window.heg.getNativeUuid();
+      if (uuid != null && uuid != "") {
+        this.setCookie("uuid", uuid, 1);
+      }
+    } catch (e) {}
+  },
+  mounted () {
+    this.condition = JSON.parse(sessionStorage.getItem('searchCondition'));
+    if(CookieUtil.getItem('uuid')){
+      this.searchOrder("",this.orderObj);
+    }else{
+      for(let i in this.condition){
+        this.$set(this.orderObj,i,this.condition[i]);
+      }
+      this.searchOrder("",this.orderObj);
+    }
+  }
+};
+</script>
+<style lang="less">
+#t-wrapper{
+  .mint-checklist{
+    text-align: left;
+    .mint-checklist-title{margin: 0;}
+    .mint-cell:last-child {background-repeat: repeat;}
+    .mint-cell{
+      min-height:1.5rem;
+      .mint-cell-wrapper{background-repeat: repeat;}
+      .mint-checklist-label{
+        display:flex;
+        padding: 0;
+      }
+      .mint-checkbox-input:checked + .mint-checkbox-core {
+        background-color: #0b9d78;
+        border-color: #0b9d78;
+      }
+      .mint-checkbox-label{
+        line-height: 19px;
+        height: 19px;
+        margin-left:10px;
+        font-size:0.6rem;
+      }
+      .mint-checkbox-core{
+        border-radius:0;
+        width: 16px;
+        height: 16px;
+      }
+      .mint-checkbox-core:after{
+        top: 1px;
+        left: 5px;
+      }
+    }
+  }
+}
+</style>
+<style lang="less" scoped>
+#t-wrapper {
+  .header {
+    background: #0b9d78;
+    z-index: 12;
+    .title {
+      color: #fff;
+      font-size: 0.768rem;
+    }
+    .sp {
+      opacity: 0;
+    }
+  }
+  .container {
+    .trip-content {
+      padding: 5.5rem 0.68rem 0.2rem;
+    }
+    .trip-mark {
+      width: 100%;
+      position: fixed;
+      padding-top:3.706rem;
+      z-index: 10;
+      background: #fff;
+      p {
+        color: #333;
+        font-size: 0.512rem;
+        padding: 0.534rem 0.68rem;
+        border-bottom: 1px solid #eff8f6;
+        text-align: left;
+      }
+      span {
+        color: #0b9d78;
+        margin-right: 0.3rem;
+      }
+    }
+    .t-trip-control-btn {
+      width: 100%;
+      height: 1.706rem;
+      padding-top: 2rem;
+      position: fixed;
+      z-index: 11;
+      .t-btn-wrap {
+        width: 50%;
+        height: 100%;
+        background: #ebebeb;
+        box-sizing: border-box;
+      }
+      a {
+        width: 100%;
+        padding: 0.52rem 0;
+        display: block;
+        flex: 1;
+        color: #999;
+        font-size: 0.597rem;
+        letter-spacing: 0.5px;
+        border-right: 1px solid #fff;
+      }
+      .active {
+        a {
+          color: #fff;
+          border-right: none;
+        }
+        background: #ffad3d;
+      }
+      .t-btn-wrap:last-child {
+        a {
+          border-right: none;
+        }
+      }
+    }
+    // 加载中。。。
+    .loading-box {
+      padding: 0.1rem 0 0.5rem;
+      .loading-more {
+        vertical-align: middle;
+      }
+      .loading-more-txt {
+        vertical-align: middle;
+        font-size: 0.18rem;
+      }
+      .loading-more-txt::after{
+        display: inline-block;
+        content:"...";
+        transform: translateY(-0.05rem);
+      }
+    }
+    .no-more {
+      color: #f00;
+      font-size: 0.16rem;
+      padding: 0.1rem 0 0.5rem;
+    }
+  }
+  .upcoming {
+    background-color: #d4efe8;
+  }
+
+  .paid {
+    background-color: #ffeac5;
+  }
+
+  .complete {
+    background-color: #ceebe4;
+  }
+  .canceled{
+    background-color: #ccc;
+  }
+  .section {
+    justify-content: flex-start;
+    background-color: #fff;
+    border-radius: 2px;
+    box-shadow: 0 0.2rem 0.3rem #ddd;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 0.4rem;
+    .dateTime {
+      width: 2.6rem;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      border-right: 1px solid #ddd;
+      h2 {
+        font-size: 1.02rem;
+      }
+      h3 {
+        font-size: 0.6rem;
+        color: #ccc;
+      }
+    }
+    .bookInfo {
+      .tripID {
+        font-size: 0.56rem;
+        color: #ccc;
+        text-align: left;
+        padding: 0.2rem;
+        border-bottom: 1px dashed #ddd;
+      }
+      .city {
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.2rem;
+        span {
+          font-size: 0.6rem;
+          color: #333;
+        }
+        .arive {
+          height: 0.4rem;
+          width: 1.2rem;
+          padding: 0 0.4rem;
+          background: url("../../assets/images/re-flight_07.png") center
+            no-repeat;
+          background-size: 1.2rem;
+        }
+      }
+      .orderDate {
+        font-size: 0.6rem;
+        color: #ccc;
+        text-align: left;
+        padding: 0 0.2rem 0.6rem;
+      }
+    }
+    .orderType {
+      flex:1;
+      font-size: 0.5rem;
+      span{
+        background-color: #bbb;
+        color: #fff;
+        cursor: pointer;
+        padding: 0.2rem 0.4rem;
+        float: right;
+      }
+      span:last-child{
+        position: absolute;
+        right: -1px;
+        bottom: -1px;
+        padding: 0.2rem 0.8rem;
+      }
+    }
+  }
+  .container .noOrder {
+    height: 7.2rem;
+    background: url("../../assets/images/pnr_03.jpg") center no-repeat;
+    background-size: 12.2rem;
+    margin-top: 7.2rem;
+    padding: 0;
+    p {
+      font-size: 0.6rem;
+      color: #666;
+      padding-top: 7.2rem;
+    }
+  }
+}
+</style>

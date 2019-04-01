@@ -1,0 +1,37 @@
+[
+  {
+    "ab": "G8",
+    "al": "GoAir",
+    "iconPath": "../../../../static/images/G8.png"
+  },
+  {
+    "ab": "SG",
+    "al":"SpiceJet",
+    "iconPath": "../../../../static/images/SG.png"
+  },
+  {
+    "ab": "UK",
+    "al":"Vistara",
+    "iconPath": "../../../../static/images/UK.png"
+  },
+  {
+    "ab": "AI",
+    "al": "Air India",
+    "iconPath": "../../../../static/images/IX.png"
+  },
+  {
+    "ab": "9W",
+    "al": "Jet Airways",
+    "iconPath": "../../../../static/images/9W.png"
+  },
+  {
+    "ab": "6E",
+    "al": "IndiGo",
+    "iconPath": "../../../../static/images/6E.png"
+  },
+  {
+    "ab":"I5",
+    "al":"AirAsia",
+    "iconPath":"../../../../static/images/I5.png"
+  }
+]

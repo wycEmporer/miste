@@ -1,0 +1,222 @@
+<template>
+	<div class="fareDetail">
+		<div class="fare">
+			<h2>Payment details</h2>
+			<div class="fare-cont">
+				<div class="list flex space-between">
+					<span>Base Fare</span>
+					<span>
+						<i class="rs">Rs.</i>{{base | formatDate}}</span>
+				</div>
+				<div class="list flex space-between">
+					<span>Taxes &amp; Fees</span>
+					<span>
+						<i class="rs">Rs.</i>{{taxes | formatDate}}</span>
+				</div>
+				<div class="list flex space-between">
+					<span>Convenience fee</span>
+					<span>
+
+						<i class="rs">Rs.</i>{{convenience | formatDate}}</span>
+				</div>
+				<div class="list flex space-between">
+					<span>Customer Prom.</span>
+					<span>
+
+						<i class="rs">Rs.</i>-{{-fee.dist | formatDate}}</span>
+				</div>
+				<div class="list flex space-between">
+					<span>Insurance</span>
+					<span>
+
+						<i class="rs">Rs.</i>{{fee.insp | formatDate}}</span>
+				</div>
+				<div class="list flex space-between">
+					<span>Cashback</span>
+					<span>
+
+						<i class="rs">Rs.</i>{{cashback | formatDate}}</span>
+				</div>
+			</div>
+			<div class="fare-cont-count">
+				<div class="list flex space-between">
+					<span>Grand Total</span>
+					<span>
+						<i class="rs">Rs.</i>{{fee.gt | formatDate}}</span>
+				</div>
+				<div class="list flex space-between">
+					<span>Coupon</span>
+					<span>
+
+						<i class="rs">Rs.</i>{{fee.cn | formatDate}}</span>
+				</div>
+				<div class="list flex space-between">
+					<span>HappySilver</span>
+					<span>
+
+						<i class="rs">Rs.</i>{{fee.hs | formatDate}}</span>
+				</div>
+				<div class="list flex space-between">
+					<span>HappyGold</span>
+					<span>
+						<i class="rs">Rs.</i>{{fee.hg | formatDate}}</span>
+				</div>
+			</div>
+			<div class="total flex space-between">
+				<span>Total</span>
+				<span>
+					<i class="rs">Rs.</i>{{fee.pp | formatDate}}</span>
+			</div>
+		</div>
+		<ul class="fareList">
+			<li class="flex space-between" @click="jumpInsurance">
+				<p>Inusrance</p>
+				<img :src="rightIcon" alt="">
+			</li>
+		</ul>
+	</div>
+</template>
+<script>
+export default {
+	props: {
+		orders: {
+			type: Array
+		},
+		fee: {
+			type: null
+		}
+	},
+	data() {
+		return {
+			rightIcon:require('../../../../assets/images/referralactivity/lg-arrow.png'),
+		}
+	},
+	computed: {
+		base() {
+			let base = 0;
+			for (let el of this.orders) {
+				base += el.fare["Base Fare"];
+			}
+			return base;
+		},
+		taxes() {
+			let taxes = 0;
+			for (let el of this.orders) {
+				taxes += el.fare["Taxes and Fees"];
+			}
+			return taxes;
+		},
+		convenience() {
+			let convenience = 0;
+			for (let el of this.orders) {
+				convenience += el.fare["Convenience Fee"];
+			}
+			return convenience;
+		},
+		discount() {
+			let discount = 0;
+			for (let el of this.orders) {
+				discount += el.fare["5"];
+			}
+			return discount;
+		},
+		total() {
+			return this.convenience + this.taxes + this.base + this.discount;
+		},
+		cashback() {
+			let cashback = 0;
+			if (this.orders[0].cashbackinfo) {
+				for (let el of this.orders) {
+					cashback += el.cashbackinfo["amount"];
+				}
+				return cashback;
+			} else {
+				return 0;
+			}
+
+		},
+		departCity() {
+			if (this.orders.length != 0) {
+				return this.orders[0].voyageinfo[0].dc
+			}
+		},
+		ariveCity() {
+			if (this.orders.length != 0) {
+				return this.orders[0].voyageinfo[this.orders[0].voyageinfo.length - 1].ac;
+			}
+		}
+	},
+	methods: {
+		jumpInsurance(){
+			this.$router.push('/order/insurancedetail');
+		}
+	}
+}
+</script>
+<style lang="less" scoped>
+.fareDetail {
+	background-color: #fff;
+	// border: 1px solid #ccc;
+	border-top: none;
+	border-radius: 2px; // margin-top: 0.4rem;
+	h2 {
+		font-size: 0.68rem;
+		color: #333;
+		text-align: left;
+		padding: 0.4rem 0.4rem 0;
+	}
+	.fare-cont,
+	.fare-cont-count {
+		background-color: #fff;
+		border-bottom: 1px solid #ccc;
+		margin: 0.4rem;
+		.list,
+		.total {
+			font-size: 0.6rem;
+			color: #333;
+			height: 1.4rem;
+			line-height: 1.4rem;
+			span {
+				text-align: left;
+				display: block;
+			}
+		}
+	}
+	.total {
+		font-size: 0.85rem;
+		color: #333;
+		padding: 0 0.4rem 0.8rem 0.4rem;
+		span:nth-child(2) {
+			color: red;
+		}
+	}
+
+	.fare{
+		border:1px solid #ccc;
+	}
+	.fareList{
+		padding:0.8rem 0.4rem;
+		text-align: left;
+		li{
+			font-size:0.6rem;
+      color:#333;
+			height: 1.4rem;
+			line-height: 1.4rem;
+      align-items: center;
+			padding:0.2rem 0.3rem;
+			border-bottom:1px solid #eee;
+      img{
+        width:0.3rem;
+      }
+    }
+	}
+}
+
+.fare-cont-count {
+	.list {
+		span:nth-child(2) {
+			color: red;
+		}
+	}
+}
+</style>

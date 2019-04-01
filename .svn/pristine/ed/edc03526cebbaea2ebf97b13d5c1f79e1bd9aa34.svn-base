@@ -1,0 +1,397 @@
+<template>
+  <div class="container">
+    <div class="orderInfo common marB15">
+      <h2 class="title">
+        Order Information
+      </h2>
+      <div class="wrap grayDark ">
+        <div class="flex space-between tr">
+          <span>OrderID</span>
+          <span>{{order.orderId}}</span>
+        </div>
+        <div class="flex space-between tr">
+          <span>Booking Date</span>
+          <span>{{order.bookDateStr}}</span>
+        </div>
+        <div class="flex space-between tr">
+          <span>Payment Method</span>
+          <span>{{order.payWayStr}}</span>
+        </div>
+        <div class="flex space-between price">
+          <div>
+            <p class="fontSz18 colorDan text-left"><i class="rs">Rs.</i> {{order.price | formatDate}}</p>
+            <p class="fontSz12">{{order.rooms}}{{order.rooms > 1 ? '(rooms)' : '(room)'}} &times; {{order.nights}} {{order.nights >1 ? '(nights)': '(night)'}}</p>
+          </div>
+          <a href="javascript:;" class="payBtn" :class="btnClass[order.status]">{{status[order.status]}}</a>
+        </div>
+      </div>
+
+    </div>
+    <div class="checkInfo common marB15">
+      <h2 class="title">
+        Check-In Information
+      </h2>
+      <div class="wrap">
+        <div class="hotel text-left ">
+          <p class="fontSz16 fontB">
+          {{order.hotelName}}
+          </p>
+          <p class="star">
+            <img :src="require('assets/images/hotel/icon-star-normal.png')" v-for="i in 3" alt="star" :key="i" width="10">
+          </p>
+          <p class="fontSz12 grayDark addr">
+           Area: {{order.addr}}
+          </p>
+        </div>
+        
+        <div class="room">
+          <h3 class="text-left">Standard Room {{order.breakfastStr}}</h3>
+          <p class="text-left gray" v-if="order.cancelObj && !order.cancelObj.cancelType">Non Refundable</p>
+          <div class="flex space-around dur" v-if="order.checkInObj">
+            <div class="checkIn">
+              <p class="marB10 grayDark">Check-In</p>
+              <div class="flex">
+                <span class="day">
+                  {{order.checkInObj.date}}
+                </span>
+                <div>
+                  <p class="date">{{order.checkInObj.month + ', '+ order.checkInObj.year}}</p>
+                  <p>{{order.checkInObj.week}}</p>
+                </div>
+              </div>
+            </div>
+            <div class="checkIn">
+              <p class="marB10 grayDark">Check-Out</p>
+              <div class="flex">
+                <span class="day">
+                  {{order.checkOutObj.date}}
+                </span>
+                <div>
+                  <p class="date">{{order.checkOutObj.month + ', '+ order.checkOutObj.year}}</p>
+                  <p>{{order.checkOutObj.week}}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="guestInfo common">
+      <h2 class="title">
+        Guest Details
+      </h2>
+      <div class="wrap">
+        <h3 class="text-left">Contact Info:</h3>
+        <div class="flex space-between tr">
+          <span>Name</span>
+          <span>{{order.contactName}}</span>
+        </div>
+        <div class="flex space-between tr">
+          <span>Email</span>
+          <span>{{order.contactObj && order.contactObj.email}}</span>
+        </div>
+        <div class="flex space-between tr marB10">
+          <span>Ph</span>
+          <span>+{{order.contactObj && order.contactObj.contactNumber}}</span>
+        </div>
+        <h3 class="text-left marB10">Guests Info:</h3>
+        <div class="flex space-between" v-for="val in order.guestArr" :key="val.id">
+          <span>Room{{val.id}}</span>
+          <span>{{val.adults ? `${val.adults}Adult(s)` : ''}}{{val.children ? `${val.children}children(ren)` : ''}}</span>
+        </div>
+      </div>
+    </div>
+    <div class="noteInfo">
+      <p class="fontSz12">If the information is incorrect, please inform the <br>
+      <span  class="colorPri de" @click="$router.push('/contact')">customer service</span> in time.</p>
+    </div>
+    <mt-popup v-model="failPop.show" popup-transition="popup-fade" modal="true" closeOnClickModal="true">
+      <failure>
+        <div slot="head">Order details Unavailable</div>
+        <p slot="content">{{failPop.msg}}</p>
+        <!-- <mt-button @click="failPop.show=false" slot="btn" class="btn" type="default">OK</mt-button> -->
+      </failure>
+    </mt-popup>
+  </div>
+</template>
+<script>
+import { DomainManager } from "config/DomainManager";
+import { Indicator, Popup, Toast } from "mint-ui";
+import { CookieUtil } from "models/utils";
+import failure from "pages/failure/failure.vue";
+
+const status = {
+  1: "Pay",
+  2: "Confirm In",
+  3: "Upcoming",
+  4: "Completed",
+  5: "Canceled",
+  6: 'Canceled',
+  7: 'Canceled',
+  8: 'Canceled',
+};
+const btnClass = {
+  1: "bgWarn",
+  2: "",
+  3: "",
+  4: "bgGrey",
+  5: "bgGrey",
+  6: 'bgGrey',
+  7: 'bgGrey',
+  8: 'bgGrey',
+};
+const payWay = {
+  1: "Credit card",
+  2: "Debit card",
+  3: "Net banking",
+  4: "Mobile Wallet",
+  5: "EMI",
+  6: "UPI",
+  7: "Paypal"
+};
+export default {
+  components:{
+    failure
+  },
+  props: {
+    orderId: [String, Number],
+    phoneNo: [String, Number]
+  },
+  data() {
+    return {
+      status: status,
+      btnClass: btnClass,
+      isLogin: CookieUtil.hasItem("uuid"),
+      failPop: {
+        show: false,
+        msg: ""
+      },
+      order: {
+        checkInObj: null,
+        checkOutObj: null,
+        guestArr: null,
+        contactName: "",
+        addr: "",
+        breakfastStr: "",
+        orderId: "",
+        dataKey: "",
+        payWayStr: "",
+        contactObj: null,
+        cancelObj: null,
+        statusStr: "",
+        bookDateStr: "",
+        price: "",
+        rooms: "",
+        nights: ""
+      }
+    };
+  },
+  created() {
+    if (!this.isLogin && !this.phoneNo) {
+      this.$router.push("/login");
+      return;
+    }
+    this.getDetail();
+  },
+  methods: {
+    formatDate(dateStr) {
+      if (!dateStr) return;
+      const weekArray = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday"
+      ];
+      const month = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+      ];
+      const obj = {};
+      const date = new Date(dateStr);
+      obj.year = date.getFullYear();
+      obj.month = month[date.getMonth()];
+      obj.date = (date.getDate() + 100).toString().slice(1);
+      obj.week = weekArray[date.getDay()];
+      return obj;
+    },
+    getDetail() {
+      Indicator.open({ spinnerType: "fading-circle" });
+      let url = this.phoneNo
+        ? `${DomainManager.getHotelDetailUnlogin()}?bookingNo=${
+            this.orderId
+          }&contactNumber=${this.phoneNo}`
+        : `${DomainManager.getHotelDetail()}?bookingNo=${this.orderId}`;
+      this.$axios.get(url).then(data => {
+        Indicator.close();
+        this.order.addr = data.address;
+        this.order.orderId = data.bookingNo;
+        this.order.contactObj = data.contactInfo;
+        this.order.contactName =
+          data.contactInfo.call +
+          " " +
+          data.contactInfo.firstName +
+          " " +
+          data.contactInfo.lastName;
+        this.order.guestArr = data.contactInfo.contacts.map(val => ({
+          id: val.id,
+          adults: val.contact.filter(v => !v.age).length,
+          children: val.contact.filter(v => v.age).length
+        }));
+        this.order.payWayStr = payWay[data.payWay] || "";
+        this.order.cancelObj = JSON.parse(data.cancel);
+        this.order.statusStr = status[data.status];
+        this.order.breakfastStr = data.withBreakfest ? "(With breakfast)" : "";
+        this.order.checkInObj = this.formatDate(
+          data.checkInDate.slice(0, 10).replace(/-/g, "/")
+        );
+        this.order.checkOutObj = this.formatDate(
+          data.checkOutDate.slice(0, 10).replace(/-/g, "/")
+        );
+        const bookDateObj = this.formatDate(
+          data.orderTimeStr.slice(0, 10).replace(/-/g, "/")
+        );
+        this.order.bookDateStr =
+          bookDateObj.date + " " + bookDateObj.month + ", " + bookDateObj.year;
+        this.order.price = data.price;
+        this.order.rooms = data.room;
+        this.order.nights = data.nights;
+        this.order.hotelName = data.hotelName;
+        this.order.status = data.status;
+        this.order.stayin = JSON.parse(data.stayin);
+
+      }).catch(err =>{
+        Indicator.close();
+        this.failPop.show = true;
+        this.failPop.msg = err.message;
+      })
+    }
+  }
+};
+</script>
+<style lang="less" scoped>
+@import "~assets/less/theme.less";
+@baseFontSize: 46.875;
+.px2rem(@name, @px) {
+  @{name}: @px / @baseFontSize * 1rem;
+}
+.text-left {
+  text-align: left;
+}
+.fontB {
+  font-weight: bold;
+}
+.marB10 {
+  margin-bottom: 10px;
+}
+.marB15 {
+  margin-bottom: 15px;
+}
+.container {
+  font-size: 14px;
+  background-color: #eee;
+}
+.de {
+  text-decoration: underline;
+}
+.common {
+  .title {
+    .px2rem(height, 60);
+    .px2rem(line-height, 60);
+    background-color: #f9f9f9;
+    color: @primary-color;
+    text-align: left;
+    padding: 0 30 / @baseFontSize*1rem;
+  }
+  .wrap {
+    background-color: #fff;
+    padding: 0 30 / @baseFontSize*1rem;
+    .tr {
+      padding: 10px 0 5px;
+      border-bottom: 1px solid #cdcdcd;
+    }
+  }
+}
+.orderInfo {
+  margin-top: 2rem;
+  .price {
+    padding: 15px 0;
+  }
+  .payBtn {
+    .px2rem(width, 220);
+    .px2rem(height, 60);
+    .px2rem(line-height, 60);
+    background-color: @warning-color;
+    color: #fff;
+    &.bgGrey {
+      background-color: @gray;
+    }
+    &.bgWarn {
+      background-color: @warning-color;
+    }
+  }
+}
+.checkInfo {
+  .wrap {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .hotel {
+    .star {
+      padding-top: 5px;
+      img {
+        margin-right: 5px;
+        width: 10px;
+      }
+    }
+    .addr {
+      .px2rem(width,520);
+      border-bottom: 1px solid #cdcdcd;
+      padding: 6px 0;
+    }
+  }
+  .room {
+    .dur {
+      padding-top: 15px;
+    }
+    .day {
+      // display: block;
+      // .px2rem(height, 75);
+      font-size: 26px;
+      padding-right: 4px;
+    }
+    .date {
+      padding: 2px 0;
+    }
+    h3 {
+      padding: 4px 0;
+    }
+  }
+}
+.guestInfo {
+  .wrap {
+    padding-top: 10px;
+    padding-bottom: 20px;
+  }
+}
+.noteInfo {
+  background-color: #f9f9f9;
+  padding: 15px 0;
+  p {
+    line-height: 16px;
+  }
+}
+</style>
+

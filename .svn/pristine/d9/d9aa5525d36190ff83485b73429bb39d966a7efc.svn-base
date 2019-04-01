@@ -1,0 +1,971 @@
+<template>
+  <div id="heg-autumnsale">
+    <head-top class="header">
+      <i slot="left" class="top_icon iconfont icon-back"></i>
+      <p slot="title" style="margin-left:-1.5rem;">Autumn Season Sale</p>
+    </head-top>
+    <div class="content">
+      <div class="appTop" v-show="isShowBtn"></div>
+      <div class="top-banner">
+        <img :src="mUrl" :alt="mAlt" :title="mTitle">
+        <div class="top-cover">
+          <p v-if="startOrEnd == 'start'"><span>Campaign Starts In :</span>{{saleTime}}</p>
+          <p v-else-if="startOrEnd == 'in'">Campaign is live !</p>
+          <p v-else-if="startOrEnd == 'end'"><span>Campaign Ends In :</span>{{saleTime}}</p>
+          <p v-else>Campaign is closed</p>
+          <p>Sept 13th,00:00:00 -- Sept 30th,23:59:59</p>
+        </div>
+      </div>
+      <div class="part-mobile flex space-between align-items-center">
+        <div class="part-left">
+          <img class="left-mobile" :src="icons.mobile" alt="">
+          <p class="left-p1">Discount on App</p>
+          <a v-if="isShowBtn" @click="emitCustomEvent('DownloadButton', 'AutumnSale')" href="https://app.adjust.com/s1vq100?deeplink=heg%3A%2F%2FAutumnS?campaign=M&adgroup=Download&creative=201809" target="_blank"><img class="left-google" :src="icons.google" alt=""></a>
+          <a v-if="isShowBtn" @click="emitCustomEvent('DownloadButton', 'AutumnSale')" href="https://app.adjust.com/s1vq100?deeplink=heg%3A%2F%2FAutumnS?campaign=M&adgroup=Download&creative=201809" target="_blank"><img class="left-app" :src="icons.app" alt=""></a>
+          <p v-if="isShowBtn" >Download</p>
+          <p v-if="isShowBtn" style="letter-spacing: -0.5px;">our mobile App</p>
+          <p v-if="!isShowBtn" class="app-p" >ON DOMESTIC &amp; INTERNATIONAL FLIGHTS</p>
+        </div>
+        <div class="part-right">
+          <ul>
+            <li class="item-li flex space-between align-items-center" v-for="(item,index) in coupons1" :key="index">
+              <div class="item-left">
+                <p>Save <span>RS.{{item.amount | formatDate}}</span></p>
+                <p>Order Amount <span v-show="index == 0">&lt;</span><span>{{item.min | formatDate}}</span><span v-show="index == 1 || index == 2">-</span><span v-show="index == 3">K+</span><span>{{item.max | formatDate}}</span></p>
+              </div>
+              <div class="item-middle">
+                <p>USE CODE:</p>
+                <p>{{item.code}}</p>
+              </div>
+              <div class="item-right">
+                <input v-model="item.code" style="width:1px;position:absolute;left:0;opacity:0;">
+                <button class="copy" :id="'copyUrl1'+[index]" @click="copyCode1(item.id)" >
+                  <img :src="icons.copy" alt="copy" title="copy the code">
+                </button>
+              </div>
+            </li>
+            <li class="item-text" v-if="isShowBtn">
+              <span class="line-left"></span>ON DOMESTIC &amp; INTERNATIONAL FLIGHTS<span class="line-right"></span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="part-pc flex space-between align-items-center">
+        <div class="part-left">
+          <img class="left-pc" :src="icons.pc" alt="">
+          <p class="left-p1">Discount on PC &amp; Mobile Site</p>
+          <button class="SignIn" v-if="isShowBtn" v-show="!isLogin" @click="SignIn" >Sign In</button>
+          <p class="left-p2" v-if="isShowBtn" v-show="!isLogin">Have no account?</p>
+          <button v-if="isShowBtn" class="SignUp" v-show="!isLogin" @click="SignUp" >Sign Up</button>
+          <p class="app-p" v-if="!isShowBtn" >ON DOMESTIC &amp; INTERNATIONAL FLIGHTS</p>
+        </div>
+        <div class="part-right">
+          <ul>
+            <li class="item-li flex space-between align-items-center" v-for="(item,index) in coupons2" :key="index">
+              <div class="item-left">
+                <p>Save <span>RS.{{item.amount | formatDate}}</span></p>
+                <p>Order Amount <span v-show="index == 0">&lt;</span><span>{{item.min | formatDate}}</span><span v-show="index == 1 || index == 2">-</span><span v-show="index == 3">K+</span><span>{{item.max | formatDate}}</span></p>
+              </div>
+              <div class="item-middle">
+                <p>USE CODE:</p>
+                <p>{{item.code}}</p>
+              </div>
+              <div class="item-right">
+                <input id="foo2" v-model="item.code" style="width:1px;position:absolute;left:0;opacity:0;">
+                <button class="copy" :id="'copyUrl2'+[index]" @click="copyCode2(item.id)" ><img :src="icons.copy" alt="copy" title="copy the code"></button>
+              </div>
+            </li>
+            <li class="item-text" v-if="isShowBtn">
+              <span class="line-left"></span>ON DOMESTIC &amp; INTERNATIONAL FLIGHTS<span class="line-right"></span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="part-book">
+        <button @click="jumpHome" >Book Now</button>
+      </div>
+      <div class="part-shake">
+        <div class="shake-top">
+          <img :src="icons.shake" alt="">
+          <span>Shake &amp; Win</span>
+        </div>
+        <p class="shake-p1"><span>SHAKE</span> your phone to win <span>AMAZING PRIZES!</span></p>
+        <mt-swipe class="s1-banner" :show-indicators="false" :auto="3000">
+          <mt-swipe-item v-for="(item,index) in s1Banners" :key="index">
+            <div class="banner-box">
+              <img :src="item.url" alt="" @click="jumpDetails">
+            </div>
+          </mt-swipe-item>
+        </mt-swipe>
+        <div class="part-book">
+          <button v-if="isShowBtn" @click="goForDetail">Go for Details</button>
+          <button v-else @click="goForDetail">Go to Shake</button>
+        </div>
+      </div>
+      <div class="part-share">
+        <p class="share-title">Invite your friends to play now</p>
+        <ul class="flex space-around align-items-center">
+          <li v-for="(item,index) in sharesApp" :key="index">
+            <a v-if="index == 0" :href="(isIos && index == 0)?item.href2:item.href" target="_blank" @click="shareToApp(index)">
+              <img :src="item.icon" alt="">
+              <p>{{item.name}}</p>
+            </a>
+            <a v-else :href="item.href" :data-action="index == 1?item.action:''" target="_blank" @click="shareToApp(index)">
+              <img :src="item.icon" alt="">
+              <p>{{item.name}}</p>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div class="s3-share" v-show="isShowBtn">
+        <p>Follow us on</p>
+        <ul class="share-icon flex">
+          <li v-for="(item,index) in s3Shares" :key="index">
+            <a :href="item.href" target="_blank" @click="shareTrack(index)">
+              <img :src="item.url" alt="">
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div class="foot-bottom" v-show="isShowBtn">
+        <p>
+          <span @click="$router.push('/agreement')">T &amp; C</span>
+          <span @click="$router.push('/privacy')">Privacy</span>
+          <span @click="$router.push('/about')">About Us</span>
+          <span @click="$router.push('/contact')">Contact Us</span>
+        </p>
+        <p>2016-2018© Happyeasygo Group. All rights reserved.</p>
+      </div>
+    </div>
+    <div class="shareCover" v-show="upDataDialog" @click="clickOut"></div>
+    <div class="upDataDiaplog" v-show="upDataDialog">
+      <p class="up-p1"><span>The Autumn Season Sale</span> is <span>LIVE</span> on the new version of HEG App!!! </p>
+      <p class="up-p2">Update Now and <span>shake</span> your phone to Win <span>EXCLUSIVE Prizes</span>!</p>
+      <a :href="device.href" target="_blank" @click="upDateApp">update</a>
+    </div>
+  </div>
+</template>
+<script>
+import Clipboard from 'clipboard';
+import headTop from '../../components/head/head.vue';
+import {Toast,Indicator, Swipe, SwipeItem} from 'mint-ui';
+import { CookieUtil } from 'models/utils';
+import { User } from "../../models/user";
+import { DomainManager } from "../../config/DomainManager.js";
+import {emitCustomEvent} from 'models/utils/adGAEvent';
+export default {
+  components:{
+    headTop,
+    "mt-swipe":Swipe,
+    "mt-swipe-item":SwipeItem
+  },
+  data(){
+    return {
+      emitCustomEvent:emitCustomEvent,
+      mUrl: "",
+      mAlt: "",
+      mTitle: "",
+      model:0,
+      flag:true,
+      timer:null,
+      isApp:false,
+      isIos:false,
+      isShowBtn:true,
+      saleTime:null,
+      upDataDialog:false,
+      startOrEnd:'satrt',
+      device:{href:'javascript:;'},
+      isLogin:CookieUtil.hasItem('uuid'),
+      icons:{
+        banner:require('../../assets/images/autumn/topbanner.png'),
+        pc:require('../../assets/images/autumn/icon_pc.png'),
+        copy:require('../../assets/images/autumn/icon_copy.png'),
+        app:require('../../assets/images/autumn/icon_appstore.png'),
+        google:require('../../assets/images/autumn/icon_google.png'),
+        mobile:require('../../assets/images/autumn/icon_mobile.png'),
+        shake:require('../../assets/images/autumn/icon_shake.png'),
+      },
+      coupons1:[
+        {id:0,amount:"300",min:5000,max:"",code:"HEGSEP1"},
+        {id:1,amount:"350",min:5000,max:6999,code:"HEGSEP2"},
+        {id:2,amount:"550",min:7000,max:9999,code:"HEGSEP3"},
+        {id:3,amount:"800",min:10,max:"",code:"HEGSEP4"},
+      ],
+      coupons2:[
+        {id:0,amount:"250",min:5000,max:"",code:"HEGAUT1"},
+        {id:1,amount:"300",min:5000,max:6999,code:"HEGAUT2"},
+        {id:2,amount:"500",min:7000,max:9999,code:"HEGAUT3"},
+        {id:3,amount:"700",min:10,max:"",code:"HEGAUT4"},
+      ],
+      s1Banners:[
+        {prizeName:"ticket",url:require('../../assets/images/autumn/banner-flight-ticket.png')},
+        {prizeName:"GAANA",url:require('../../assets/images/autumn/banner-gaana.png')},
+        {prizeName:"sliver",url:require('../../assets/images/autumn/banner-happy-sliver.png')},
+        {prizeName:"NETMED",url:require('../../assets/images/autumn/banner-netmeds.png')},
+        {prizeName:"TREEBO",url:require('../../assets/images/autumn/banner-Treebo.png')},
+        {prizeName:"XOXODAY",url:require('../../assets/images/autumn/banner-Xoxoday.png')},
+        {prizeName:"ZOOMCAR",url:require('../../assets/images/autumn/banner-zoomcar.png')},
+        {prizeName:"ZOOMCAR",url:require('../../assets/images/autumn/banner-beardo.png')},
+        {prizeName:"ZOOMCAR",url:require('../../assets/images/autumn/banner-Ferns-N-Petals.png')},
+        {prizeName:"ZOOMCAR",url:require('../../assets/images/autumn/banner-floweraura.png')},
+        {prizeName:"ZOOMCAR",url:require('../../assets/images/autumn/banner-freshmeun.png')},
+        {prizeName:"ZOOMCAR",url:require('../../assets/images/autumn/banner-MedLife.png')},
+        {prizeName:"ZOOMCAR",url:require('../../assets/images/autumn/banner-tata-cliq.png')},
+        {prizeName:"ZOOMCAR",url:require('../../assets/images/autumn/banner-zomato.png')},
+      ],
+      s3Shares:[
+        {href:'https://www.facebook.com/happyeasygo/',url:require('../../assets/images/anniversarysale/share-f.png')},
+        {href:'https://twitter.com/happyeasygo',url:require('../../assets/images/anniversarysale/share-b.png')},
+        {href:'https://www.instagram.com/happyeasygo_india/',url:require('../../assets/images/anniversarysale/share-c.png')},
+        {href:'https://www.youtube.com/channel/UCBlph2534GSN1PDJH9E5ylg',url:require('../../assets/images/anniversarysale/share-s.png')},
+        {href:'https://plus.google.com/+HappyEasyGoIndia',url:require('../../assets/images/anniversarysale/share-g.png')},
+      ],
+      sharesApp:[
+        {id:0,name:"SMS",href:"javascript:;",href2:"javascript:;",icon:require('../../assets/images/autumn/share_sms.png')},
+        {id:1,name:"WhatsApp",href:"javascript:;",action:'share/whatsapp/share',icon:require('../../assets/images/autumn/share_whatsapp.png')},
+        {id:2,name:"Messenger",href:"javascript:;",icon:require('../../assets/images/autumn/share_msg.png')},
+        {id:3,name:"More",href:'javascript:;',icon:require('../../assets/images/autumn/share_more.png')},
+      ]
+    }
+  },
+  methods:{
+    clickOut(){
+      this.upDataDialog = false;
+    },
+    upDateApp(){
+      this.upDataDialog = false;
+    },
+    jumpHome(){
+      try {
+        window.heg.goHomePage();
+        window.heg.trackEvent("AC_Autmn_BookNow");
+      } catch (error) {
+        this.$router.push('/');
+        emitCustomEvent('BookNow', 'AutumnSale');
+      }
+    },
+    SignIn(){
+      if(!this.isLogin){
+        try {
+          window.heg.nativeSignIn();
+        } catch (error) {
+          emitCustomEvent('SignIn', 'AutumnSale');
+          this.$router.push('/login');}
+      }
+    },
+    SignUp(){
+      try {
+        window.heg.nativeSignIn();
+      } catch (error) {
+        emitCustomEvent('SignUp', 'AutumnSale');
+        this.$router.push('/register');}
+    },
+    shareTrack(who){
+      switch (who) {
+        case 0:
+          try {
+            // window.heg.trackEvent("Ac_App_1stanniversary_facebook");
+          } catch (error) {}
+          break;
+        case 1:
+          try {
+            // window.heg.trackEvent("Ac_App_1stanniversary_Twitter");
+          } catch (error) {}
+          break;
+        case 2:
+          try {
+            // window.heg.trackEvent("Ac_App_1stanniversary_Instagram");
+          } catch (error) {}
+          break;
+        case 3:
+          try {
+            // window.heg.trackEvent("Ac_App_1stanniversary_youtube");
+          } catch (error) {}
+          break;
+        case 4:
+          try {
+            // window.heg.trackEvent("Ac_App_1stanniversary_google+");
+          } catch (error) {}
+          break;
+        default:
+          break;
+      }
+    },
+    shareToApp(who){
+      emitCustomEvent('Invite_'+who, 'AutumnSale');
+      if(!this.isShowBtn){     
+        switch (who) {
+          case 0:
+            try {
+              if(window.heg.goSMSPage){
+                window.heg.trackEvent("AC_Autmn_Invite_SMS");
+                window.heg.goSMSPage();
+              }else{
+                this.upDataDialog = true;
+              }
+            } catch (error) {}
+            break;
+          case 1:
+            try {
+              if(window.heg.goWhatsAppPage){
+                window.heg.trackEvent("AC_Autmn_Invite_WhatsApp");
+                window.heg.goWhatsAppPage();
+              }else{
+                this.upDataDialog = true;
+              }
+            } catch (error) {}
+            break;
+          case 2:
+            try {
+              if(window.heg.goMessengerPage){
+                window.heg.trackEvent("AC_Autmn_Invite_Messenger");
+                window.heg.goMessengerPage();
+              }else{
+                this.upDataDialog = true;
+              }
+              
+            } catch (error) {}
+            break;
+          case 3:
+            try { 
+              if(window.heg.goMorePage){
+                window.heg.trackEvent("AC_Autmn_Invite_More");
+                window.heg.goMorePage();
+              }else{
+                this.upDataDialog = true;
+              } 
+            } catch (error) {}
+            break;
+          default:
+            break;
+        }
+      }else{
+        Toast({
+          message:"Please operate on app",
+          duration:1500,
+        });
+      }
+    },
+    jumpDetails(){
+      try {
+        if(window.heg.goShakePage){
+          window.heg.goShakePage();
+          window.heg.trackEvent("AC_Autmn_Go_to_Shake");
+        }else{
+          this.upDataDialog = true;
+        }
+      } catch (error) {
+        this.$router.push('/shake');
+      }
+    },
+    goForDetail(){
+      try {
+       if(window.heg.goShakePage){
+          window.heg.goShakePage();
+          window.heg.trackEvent("AC_Autmn_Go_to_Shake");
+        }else{
+          this.upDataDialog = true;
+        }
+      } catch (error) {
+        emitCustomEvent('goForDetail', 'AutumnSale')
+        this.$router.push('/shake');
+      }
+    },
+    copyCode1(who){
+      try {
+        window.heg.trackEvent("AC_Autmn_CouponCopy");
+      } catch (error) {}
+      emitCustomEvent('CouponCopy', 'AutumnSale');
+      let that = this,clipboard;
+      if(this.flag){
+        this.flag = false;
+        clipboard = new Clipboard('#copyUrl1'+who,{
+          text: function() {
+            return that.coupons1[who].code;
+          }
+        });
+        clipboard.on('success', function(e) {
+          Toast({
+            message:"Successfully copied to the Clipboard! ",
+            duration:1200
+          });
+          e.clearSelection();
+          clipboard.destroy();
+        });
+        clipboard.on('error', function(e) {
+          Toast({
+            message:"Copy failed, please input manually! ",
+            duration:1200
+          });
+          e.clearSelection();
+          clipboard.destroy();
+        });
+        setTimeout(function(){
+          that.flag = true;
+        },1200);
+      }
+    },
+    copyCode2(who){
+      try {
+        window.heg.trackEvent("AC_Autmn_CouponCopy");
+      } catch (error) {}
+      let that = this,clipboard;
+      if(this.flag){
+        this.flag = false;
+        clipboard = new Clipboard('#copyUrl2'+who,{
+          text: function() {
+            return that.coupons2[who].code;
+          }
+        });
+        clipboard.on('success', function(e) {
+          Toast({
+            message:"Successfully copied to the Clipboard! ",
+            duration:1200
+          });
+          e.clearSelection();
+          clipboard.destroy();
+        });
+        clipboard.on('error', function(e) {
+          Toast({
+            message:"Copy failed, please input manually! ",
+            duration:1200
+          });
+          e.clearSelection();
+          clipboard.destroy();
+        });
+        setTimeout(function(){
+          that.flag = true;
+        },1200);
+      }
+    },
+    datetime_to_unix(who){
+      let date = new Date(Date.parse(who.replace(/-/g, '/')));
+      date = date.getTime();
+      return parseInt(date/1000);
+    },
+    getGMTtime(){
+      let d = new Date();
+      let loaclTime = d.getTime();
+      let localOffset = d.getTimezoneOffset() * 60000;
+      let utc = loaclTime + localOffset;
+      let offset = 5.5;
+      let bombay = utc + (3600000*offset);
+      return parseInt(bombay/1000);
+    },
+    GetRTime(){
+      let cha_timestamp;
+      let timestamp = this.getGMTtime();
+      let timestamp_set0 = this.datetime_to_unix('2018-09-13 00:00:00');
+      let timestamp_set2 = this.datetime_to_unix('2018-09-26 00:00:00');
+      let timestamp_set3 = this.datetime_to_unix('2018-09-30 23:59:59');
+      let cha_timestamp0 = timestamp_set0-timestamp;
+      let cha_timestamp2 = timestamp_set2-timestamp;
+      let cha_timestamp3 = timestamp_set3-timestamp;
+      if(cha_timestamp0 <= 0){
+        this.startOrEnd = 'in';
+        if( cha_timestamp2 <= 0){
+          this.startOrEnd = 'end';
+          cha_timestamp = cha_timestamp3;
+          if(cha_timestamp3 <= 0){
+            cha_timestamp = 0;
+            clearTimeout(this.timer);
+          }
+        }
+      }else{
+        this.startOrEnd = 'start';
+        cha_timestamp = cha_timestamp0;
+      }
+      
+      var sy_day = parseInt(cha_timestamp/(3600*24));
+      var sy_day2 = sy_day > 9?sy_day:'0' + sy_day;
+      var sy_hour = parseInt((cha_timestamp-sy_day*3600*24)/3600);
+      var sy2_hour = sy_hour > 9 ? sy_hour : '0' + sy_hour;
+      var sy_min = parseInt((cha_timestamp-sy_hour*3600-sy_day*24*3600)/60);
+      var sy2_min = sy_min > 9 ? sy_min : '0' + sy_min;
+      var sy_miao = cha_timestamp-sy_day*3600*24-sy_hour*3600-sy_min*60;
+      var sy2_miao = sy_miao > 9 ? sy_miao : '0' + sy_miao;
+
+      this.saleTime = sy_day2+'d:'+sy2_hour+'h:'+sy2_min+'m:'+sy2_miao+'s';
+      this.timer = setTimeout(this.GetRTime, 1000);
+    },
+    checkType() {
+       try {
+        let typeA = typeof window.heg.getNativeSource() === "string"
+          ? JSON.parse(window.heg.getNativeSource())
+          : window.heg.getNativeSource();
+        this.model = Number(typeA.deviceType) + 1;
+      } catch (e) {
+        this.model = 0;
+      }
+      this.getImg();
+    },
+    getImg() {
+      let parmTop = "type=13&device=" + this.model + "&addr=autumnsale";
+      User.advList(this, parmTop).then(res => {
+        if (res.success) {
+          this.mUrl =
+            res.list[0].landingPageUrl == null
+              ? ""
+              : res.list[0].landingPageUrl;
+          this.mAlt =
+            res.list[0].landingPageAlt == null
+              ? ""
+              : res.list[0].landingPageAlt;
+          this.mTitle =
+            res.list[0].landingPageTitle == null
+              ? ""
+              : res.list[0].landingPageTitle;
+        }
+      })
+      .catch(err => {
+        console.log(err.msg);
+      });
+    },
+  },
+  created() {
+    var u = navigator.userAgent;
+    var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1;
+    var isiOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); 
+    if(isiOS){
+      this.isIos = true;
+    }else{
+      this.isIos = false;
+    }
+    this.checkType();
+    this.GetRTime();
+    try {
+      let deviceObj =
+        typeof window.heg.getNativeSource() === "string"
+          ? JSON.parse(window.heg.getNativeSource())
+          : window.heg.getNativeSource();
+      this.contentMargin =
+        Number(deviceObj.deviceType) == 1 && !deviceObj.deviceNative;
+      this.isShowBtn = false;
+      if(Number(deviceObj.deviceType) == 1){
+        this.device.href = "https://play.google.com/store/apps/details?id=com.india.happyeasygo";
+      }else if(Number(deviceObj.deviceType) == 2){
+        this.device.href = "https://itunes.apple.com/app/id1390426818?mt=8";
+      }
+    }catch(err){
+      if(window.WebViewJavascriptBridge){
+        this.$bridge.callhandler('getNativeSource',null,(data)=>{
+          this.isShowBtn = false;
+        });
+      }else{
+        this.sharesApp[0].href = CookieUtil.hasItem('uuid')?'sms:?body='+CookieUtil.getItem('username')+encodeURIComponent(encodeURIComponent(' invites you to book flight during HappyEasyGo Autumn Sale. Get upto Rs.800 off & win FREE TICKET, ecash & voucher.https://goo.gl/gPVynt')):'sms:?body='+encodeURIComponent(encodeURIComponent('HappyEasyGo invites you to book flight during HEG Autumn Sale. Get upto Rs.800 off & win FREE TICKET, ecash & voucher. https://goo.gl/gPVynt'));
+        this.sharesApp[0].href2 = CookieUtil.hasItem('uuid')?'sms:&body='+CookieUtil.getItem('username')+encodeURIComponent(' invites you to book flight during HappyEasyGo Autumn Sale. Get upto Rs.800 off & win FREE TICKET, ecash & voucher.https://goo.gl/gPVynt'):'sms:&body='+encodeURIComponent('HappyEasyGo invites you to book flight during HEG Autumn Sale. Get upto Rs.800 off & win FREE TICKET, ecash & voucher. https://goo.gl/gPVynt');
+        this.sharesApp[1].href = CookieUtil.hasItem('uuid')?'whatsapp://send?text='+CookieUtil.getItem('username')+encodeURIComponent(encodeURIComponent(' invites you to grab flights at up to Rs.800 off & win FREE TICKET, ecash & HEG voucher during HappyEasyGo Autumn Sale.https://goo.gl/tX7kqG')):'whatsapp://send?text='+encodeURIComponent(encodeURIComponent('HappyEasyGo invites you to grab flights at up to Rs.800 off & win FREE TICKET, ecash & HEG voucher during Autumn Sale. https://goo.gl/tX7kqG'));
+        this.sharesApp[2].href = 'fb-messenger://share/?link='+encodeURIComponent('https://goo.gl/UrQBEq')+'&app_id=123456789';
+      }
+    }
+  },
+}
+</script>
+<style lang="less">
+#heg-autumnsale{
+  .s1-banner{
+    padding:0 0 0.5rem;
+    height:16rem;
+    .mint-swipe-items-wrap{
+      width:100%;
+      div{
+        .banner-box{
+          width: 12rem;
+          left: 0;
+          right: 0;
+          margin:auto;
+          box-shadow:0 2px 10px 1px #666;
+          border-radius:4px;
+        }
+        img{
+          width:12rem;
+          vertical-align: top;
+        }
+      }
+    }
+  }
+}
+</style>
+<style lang="less" scoped>
+#heg-autumnsale{
+  height:auto;
+  position: relative;
+  img{vertical-align: top}
+  a,button{cursor: pointer;}
+  .appTop{padding-top:2.04rem;}
+  .content{
+    background:#eee;
+    .top-banner{
+      min-height:3rem;
+      position: relative;
+      background:#fff;
+      img{width: 100%;}
+      .top-cover{
+        width: 100%;
+        position: absolute;
+        bottom: 0;
+        background:rgba(0,0,0,0.65);
+        padding:0.726rem 0 0.641rem;
+        p:first-child{
+          margin-bottom:0.32rem;
+          color:#fff;
+          font-size:0.9rem;
+          font-weight: bold;
+          span{
+            font-size:0.598rem;
+            color:#fefdfc;
+            font-weight: normal;
+            opacity:0.8;
+          }
+        }
+        p:last-child{
+          font-size:0.427rem;
+          color:#fefdfc;
+          opacity:0.6;
+        }
+      }
+    }
+  }
+  .app-p{font-weight:700;}
+  .part-mobile{
+    margin:0.47rem 0.64rem;
+    background:#fff;
+    padding:0.3rem 0;
+    border-radius:3px;
+    .part-left{
+      width:25%;
+      padding:0 0.4rem 0 0.541rem;
+      .left-mobile{
+        width:2.094rem;
+      }
+      .left-app,.left-google{
+        display:block;
+        width:2.7rem;
+        margin:auto;
+      }
+      p{
+        color:#333;
+        font-size: 0.47rem;
+        line-height:0.641rem;
+      }
+      .left-app{margin:0.32rem auto 0.47rem;}
+      .left-p1{margin:0.47rem 0 0.54rem;letter-spacing: -0.5px;}
+    }
+    .part-right{
+      padding-right:0.5rem;
+      ul{padding:0 0 0.641rem;}
+      .item-li{
+        padding:0.534rem 0 0;
+        border-bottom:1px solid #999;
+      }
+      .item-left{
+        width:56%;
+        text-align:left;
+        p:first-child{
+          font-size:0.669rem;
+          color:#333;
+          font-weight: bold;
+          span{color:#ed8649;}
+        }
+        p:last-child{
+          font-size:10px;
+          color:#999;
+          span{
+            color:#0b9d78;
+            font-weight: bold;
+            vertical-align: middle;
+          }
+          margin:0.2rem 0;
+          letter-spacing: -0.5px;
+        }
+      }
+      .item-middle{
+        width:30%;
+        font-size:0.427rem;
+        color:#333;
+        p:last-child{
+          font-weight: bold;
+          margin:0.2rem 0;
+        }
+      }
+      .item-right{
+        .copy{padding:0 0;}
+        img{
+          width:0.962rem;
+          height:0.854rem;
+          cursor: pointer;
+          vertical-align:baseline;
+        } 
+      }
+      .item-text{
+        font-size:7px;
+        color:#333;
+        padding:0.641rem 0 0;
+        line-height:0.6rem;
+        position: relative;
+        letter-spacing: -0.5px;
+        span{
+          width:0.85rem;
+          border-top:1px solid #333;
+          vertical-align:middle;
+        }
+        .line-left{margin-right: 5px;}
+        .line-right{margin-left: 5px;}
+      }
+    }
+  }
+  .part-pc{
+    margin:0.47rem 0.64rem;
+    background:#fff;
+    padding:0.3rem 0;
+    border-radius:3px;
+    .part-left{
+      width:25%;
+      padding:0 0.4rem 0 0.541rem;
+      .left-pc{
+        width:2.52rem;
+      }
+      p{
+        color:#333;
+        line-height:0.641rem;
+        font-size:11px;
+      }
+      .left-p1{
+        margin:0.47rem 0 0.54rem;
+        letter-spacing: -0.5px;
+      }
+      button{display:block;cursor: pointer;}
+      .left-p2{
+        color:#999;
+        padding:0.3rem 0 0rem;
+        letter-spacing: -1px;
+      }
+      .SignIn{
+        color:#fff;
+        width:100%;
+        background:#ffad3d;
+        padding:0.15rem 0;
+        border-radius:2px;
+        font-size:11px;
+      }
+      .SignUp{
+        width:100%;
+        padding:0 0;
+        color:#0b9d78;
+        text-align:right;
+        font-size:11px;
+        font-weight:bold;
+      }
+    }
+    .part-right{
+      padding-right:0.5rem;
+      ul{padding:0 0 0.641rem;}
+      .item-li{
+        padding:0.534rem 0 0;
+        border-bottom:1px solid #999;
+      }
+      .item-left{
+        width:56%;
+        text-align:left;
+        p:first-child{
+          font-size:0.669rem;
+          color:#333;
+          font-weight: bold;
+          span{color:#ed8649;}
+        }
+        p:last-child{
+          font-size:10px;
+          color:#999;
+          span{
+            color:#0b9d78;
+            font-weight: bold;
+            vertical-align: middle;
+          }
+          margin:0.2rem 0;
+          letter-spacing: -0.5px;
+        }
+      }
+      .item-middle{
+        width:30%;
+        font-size:0.427rem;
+        color:#333;
+        p:last-child{
+          font-weight: bold;
+          margin:0.2rem 0;
+        }
+      }
+      .item-right{
+        .copy{padding:0 0;}
+        img{
+          width:0.962rem;
+          height:0.854rem;
+          cursor: pointer;
+          vertical-align:baseline;
+        } 
+      }
+      .item-text{
+        font-size:7px;
+        color:#333;
+        padding:0.641rem 0 0;
+        line-height:0.6rem;
+        position: relative;
+        letter-spacing: -0.5px;
+        span{
+          width:0.85rem;
+          border-top:1px solid #333;
+          vertical-align:middle;
+        }
+        .line-left{margin-right: 5px;}
+        .line-right{margin-left: 5px;}
+      }
+    }
+  }
+  .part-book{
+    margin:0.747rem 0 1.3rem;
+    button{
+      width:8.9rem;
+      height:1.6rem;
+      line-height:1.6rem;
+      font-size:0.641rem;
+      color:#fff;
+      background:#ffad3d;
+      border-radius:3px;
+    }
+  }
+  .part-shake{
+    background:#fff;
+    padding:0.4rem 0;
+    .shake-top{
+      img{
+        width:1.49rem;
+        vertical-align: text-bottom;
+      }
+      span{
+        font-size:1.068rem ;
+        color:#ffad3d;
+        font-style:italic;
+        font-weight:700;
+      }
+    }
+    .shake-p1{
+      font-size: 0.641rem;
+      padding:0.641rem 0 1.282rem;
+      span{
+        font-weight: bold;
+      }
+    }
+    .part-book{
+      margin:0.747 0rem;
+    }
+  }
+  .part-share{
+    background:#fff;
+    padding:0 0.64rem;
+    .share-title{
+      font-size:0.598rem;
+      color:#333;
+    }
+    ul{
+      padding-bottom:1.7rem;
+      border-bottom:1px solid #999;
+      li{
+        flex:1;
+        a{color:#333;width:100%;}
+        font-size:0.598rem;
+        img{
+          width:1.282rem;
+          height:1.282rem;
+          border-radius:3px;
+          margin:0.854rem 0 0.5rem;
+        }
+      }
+    }
+  }
+  .s3-share{
+    background:#fff;
+    padding:1.7rem 2rem;
+    p{font-size:0.512rem;padding-bottom:0.854rem;color:#112645;}
+    .share-icon{
+      justify-content:space-around;
+      li{
+        width: 1.709rem;
+        height: 1.709rem;
+        img{
+          width: 100%;
+          height:100%;
+          border-radius:50%;
+          cursor: pointer;
+          border:1px solid #eee;
+        }
+      }
+    }
+  }
+  .foot-bottom {
+    vertical-align: middle;
+    background:#0b9d78;
+    padding: 0.3rem 0 0.5rem;
+    p {
+      font-size: 0.470rem;
+      color: #fff;
+      padding: 0.2rem 0 0;
+      opacity:0.8;
+      span{
+        border-right: 1px solid #fff;
+        display: inline-block;
+        padding: 0 0.2rem;
+        cursor: pointer;
+      }
+      span:last-child{
+        border-right: none;
+      }
+    }
+  }
+  .shareCover{
+    width:100%;
+    height:100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 11;
+    background: rgba(0,0,0,0.5);
+  }
+  .upDataDiaplog{
+    width:11rem;
+    height:8rem;
+    background: #FAFAFA;
+    border-radius: 3px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin:auto;
+    z-index: 12;
+    padding:2rem 1rem 1rem;
+    p{
+      color:#333;
+      font-size:0.68rem;
+      line-height:1rem;
+      span{
+        font-weight:bold;
+      }
+    }
+    .up-p1{font-style:italic;}
+    .up-p2{
+      margin:1rem 0 0;
+      padding-bottom:1rem;
+      border-bottom:1px solid #999;
+    }
+    a{
+      color:#fff;
+      background:#ffad3d;
+      font-size:0.68rem;
+      width:8rem;
+      height:1.3rem;
+      line-height:1.3rem;
+      border-radius: 3px;
+      margin-top:0.5rem;
+    }
+  }
+}
+</style>

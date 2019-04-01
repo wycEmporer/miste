@@ -1,0 +1,82 @@
+import { DomainManager } from "../../config/DomainManager.js";
+import { hegTrack } from "models/utils";
+
+export class Register {
+  constructor(email, otp, phoneNumber, password, password2, deviceNo) {
+    // this.firstname = firstname;
+    // this.lastname = lastname;
+    this.email = email;
+    this.otp = otp;
+    this.phoneNumber = phoneNumber;
+    this.password = password;
+    this.password2 = password2;
+    this.deviceNo = deviceNo;
+  }
+
+  register(vueComp) {
+    let paramMap = this.getRegisterMap();
+    let queryParams = this.queryString(paramMap);
+    let url = this.getRegisterUrl(queryParams);
+
+    // return vueComp.$http.post(url, {
+    //   headers: { "x-Device": "mobile" }
+    // });
+    var device = ["mobile", "Android", "ios"];
+
+    return new Promise((resolve,reject) => {
+       vueComp.$http
+        .get(url, {headers: { "x-Device": device[vueComp.deviceType] }})
+        .then(res => {
+          try{
+            let trackObj = {
+              apiMethodName: 'registerByPhone',
+              apiRequestParamter: queryParams,
+              apiHttpStatus: '200',
+              apiResponseStatus: res.success,
+              elementId: ''
+            };
+            hegTrack(vueComp, trackObj);
+          }catch(e){}
+          resolve(res);
+        })
+        .catch(err => {
+          try{
+            let trackObj = {
+              apiMethodName: 'registerByPhone',
+              apiRequestParamter: queryParams,
+              apiHttpStatus: (err.response && err.response.status) ||  '200',
+              apiResponseStatus: false,
+              elementId: ''
+            };
+            hegTrack(vueComp, trackObj);
+          }catch(e){}
+          reject(err);
+        });
+    })
+  }
+
+  getRegisterMap() {
+    let params = new Map();
+    // let $action = "register";
+    // params.set("action", $action);
+    // params.set("firstName", this.firstname);
+    // params.set("lastName", this.lastname);
+    params.set("email", this.email);
+    params.set("otp", this.otp);
+    params.set("cellphone", this.phoneNumber);
+    params.set("password", this.password);
+    params.set("password2", this.password2);
+    params.set("deviceNo", this.deviceNo);
+    return params;
+  }
+
+  queryString(paramMap) {
+    return DomainManager.getQueryString(paramMap);
+  }
+
+  getRegisterUrl(queryParams) {
+    return DomainManager.getRegisterUrl(queryParams);
+  }
+
+  logout() {}
+}

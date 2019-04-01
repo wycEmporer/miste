@@ -1,0 +1,465 @@
+<template>
+  <div class="container" id="payment-book">
+    <head-top>
+			<i slot="left" class="prev iconfont icon-back"></i>
+			<div slot="title" class="title">Payment</div>
+			<img slot="right" :src="require('assets/images/flight-prev.png')" class="placeholder">
+		</head-top>
+    <div class="content" v-if="fee">
+      <div class="ticketInfo">
+        <div class="ticketInfo-top flex space-between">
+          <h4 class="title">{{ticketInfo.dc}} <span class="iconfont " :class="flightType == 'one'?'icon-arrow':'icon-roundtrip' "></span> {{ticketInfo.ac}}</h4>
+        </div>
+        <div class="tTop ticketInfo-bottom flex space-between">
+          <div class="t-bottom t-bottom-left">
+            <p>Depart: <span >{{ticketInfo.fn}}</span> <span class="f-time">{{ticketInfo.dt}}</span></p>
+            <p v-if=" flightType != 'one'">Return: <span >{{ticketInfo.lastFn}}</span> <span class="f-time">{{ticketInfo.at}}</span></p>
+          </div>
+          <div class="t-bottom t-bottom-right">
+            <p v-if=" flightType != 'one'" style="height:1rem;"></p>
+            <p>Grand: <span class="rs">Rs.</span><span>{{totalPrice}}</span></p>
+          </div>
+        </div>
+      </div>
+      <div class="passengerInfo">
+        <div class="pas-top flex space-between">
+          <h4 class="title">{{adults.length}} Adult<span v-if="adults.length > 1">s</span>
+            <span class="span1" v-show="children.length > 0">{{children.length}} Child</span><span v-if="children.length > 1">ren</span>
+            <span class="span1" v-show="infants.length > 0">{{infants.length}} Infant</span><span v-if="infants.length > 1">s</span>
+          </h4>
+          <span class="title title-right iconfont" :class="{'icon-emptydown':down,'icon-go':!down}" @click="slideDown"></span>
+        </div>
+        <div class="pas-bottom" :class="{defaultFold:down}">
+          <p v-for="(item,index) in passengerInfo" :key="index">
+            <span class="firstName">{{item.name?item.name.split("/")[0]:""}}</span>
+            <span>{{item.name?item.name.split("/")[1]:""}}</span>
+            ( <span v-if="(item.sex != null)">{{item.sex == 0?"male":"female"}}</span>
+            <span class="infoClass" v-if="item.birthDate">{{item.birthDate}}</span>
+            <span class="infoClass" v-if="item.cardNo">{{item.cardNo}}</span>)
+          </p>
+        </div>
+      </div>
+      <div class="contactInfo">
+        <h4 class="title">Contact Info</h4>
+        <div v-if="contactInfo != {}">
+          <p>{{contactInfo.contactEmail}}</p>
+          <p>+ {{contactInfo.contactPhoneCode}} <span>{{contactInfo.contactPhone}}</span></p>
+          <p v-if="contactInfo.gst">GST: {{contactInfo.gst}}</p>
+        </div>
+      </div>
+      <div class="fare">
+        <h2 class="title">Fare break up</h2>
+        <div class="list-wrapper">
+          <div class="fare-cont">
+            <div class="list flex space-between">
+              <span>Base Fare</span>
+              <span>
+                <i class="rs">Rs.</i>{{fee.bf | formatDate}}
+              </span>
+            </div>
+            <div class="list flex space-between">
+              <span>Taxes&amp;Fees</span>
+              <span>
+                <i class="rs">Rs.</i> {{fee.gst| formatDate}}</span>
+            </div>
+            <div class="list flex space-between">
+              <span>Customer Prom</span>
+              <span>
+                <i class="rs">Rs.</i>{{fee.dist || 0 | formatDate}}
+              </span>
+            </div>
+            <div class="list flex space-between" v-if="fee.cn != 0">
+              <span>Coupon</span>
+              <span>
+                <i class="rs">Rs.</i>{{fee.cn | formatDate}}
+              </span>
+            </div>
+            <div class="list flex space-between" v-if="!(fee.insp == 0)">
+              <span>Insurance</span>
+              <span>
+                <i class="rs">Rs.</i> {{fee.insp | formatDate}}</span>
+            </div>
+            <div class="list flex space-between">
+              <span>Convenience Fee</span>
+              <span>
+                <i class="rs">Rs.</i> {{fee.cf | formatDate}}</span>
+            </div>
+            <div class="list flex space-between" v-if="fee.hs != 0">
+              <span>Happy Silver</span>
+              <span>
+                <i class="rs">Rs.</i> {{fee.hs | formatDate}}</span>
+            </div>
+            <div class="total flex space-between">
+              <span>Grand Total</span>
+
+              <span class="price">
+                <i class="rs">Rs.</i> {{fee.pp | formatDate}}
+              </span>
+            </div>
+          </div>
+          <p>By booking with Happy Easy go,you agreen to our
+            <span @click="$router.push('/agreement')">T&amp;C</span>
+          </p>
+          <div class="cashback-tips" v-if="ifCashback">
+            <div class="top-line">
+              <div class="line">
+                <img src="~assets/images/roundtrip/cashback.png" alt="cashback-icon">
+              </div>
+            </div>
+            <p>
+              1.Invoice will be issued as per the displayed price of
+              <span class="rs">Rs.</span>
+              <span>{{fee.cf | formatDate}}</span> for your convenience.</p>
+            <p>2.Cashback amount will be transferred to your wallet instantly.</p>
+            <p>3.Cashback amount will be deducted if you cancel your order.</p>
+            <p>4.Cashback validity is limitless and can be used any time during purchase of your tickets.</p>
+          </div>
+
+          <div class="done">
+            <button class="btn" id="creditPay" @click="toPay">Make payment</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import { Toast, Indicator } from "mint-ui";
+import headTop from "components/head/head.vue";
+import { DomainManager } from "config/DomainManager";
+import { GetFlightOrderUtil, CookieUtil } from "models/utils";
+
+export default {
+  components: {
+    headTop
+  },
+  data() {
+    return {
+      loading: false,
+      post: null,
+      error: null,
+      // hasUseGold: 0,
+      fee: null,
+      down:true,
+      adults:[],
+      children:[],
+      infants:[],
+      totalPrice:null,
+      ticketInfo:{},
+      passengerInfo:[],
+      contactInfo:{},
+      flightType:sessionStorage.getItem("flightType"),
+      months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      flightOrder: GetFlightOrderUtil.getOrderFromSession(this, sessionStorage),
+    };
+  },
+  computed: {
+    isLogin() {
+      return CookieUtil.hasItem("uuid");
+    },
+    ifCashback() {
+      return JSON.parse(sessionStorage.returnCash) ? true : false;
+    }
+  },
+  methods: {
+    dataLayer(orderDetail) {
+      let dataLayer = {
+        transactionId: orderDetail.order.orderid,
+        transactionAffiliation: "",
+        transactionTotal: orderDetail.order.payamount,
+        transactionTax: orderDetail.order.fee.gst,
+        transactionProducts: [],
+        transactionShipping: orderDetail.order.fee.hg
+      };
+      for (let value of orderDetail.triplist) {
+        let cityCodes = value.voyageinfo[0].ds;
+        let category = "";
+        for (let val of value.voyageinfo) {
+          cityCodes += "-" + val.as;
+          category += val.fn.slice(0, 2) + "/";
+        }
+        let productsObj = {
+          sku: value.voyageinfo[0].fn + "-" + value.voyageinfo[0].dt,
+          category,
+          name: cityCodes,
+          price: parseInt(value.price / value.travellerinfo.length),
+          quantity: value.travellerinfo.length
+        };
+
+        dataLayer.transactionProducts.push(productsObj);
+      }
+      try {
+        window.dataLayer.push(dataLayer);
+      } catch (e) {
+        console.log("dataLayer is undefined");
+      }
+      window.uetq = window.uetq || [];
+      window.uetq.push ('event', 'click', {
+      'event_category': 'Payment', 'event_label': 'CreditPay', 'event_value': ''
+      }); 
+    },
+    toPay() {
+      let params = {
+        orderId: this.flightOrder.orderNumber,
+        phoneNo: this.flightOrder.contactInfo.cellphone
+      };
+      this.$router.push({ name: "choosepay", params });
+    },
+    slideDown(){
+      this.down = !this.down;
+    },
+    fetchOrderDetail() {
+      let _this = this;
+      this.loading = true;
+      this.error = this.post = null;
+      Indicator.open({ spinnerType: "fading-circle" });
+      let queryData =
+        "orderId=" +
+        this.flightOrder.orderNumber +
+        "&phoneNo=" +
+        encodeURIComponent(this.flightOrder.contactInfo.cellphone);
+      this.$axios({
+        url: DomainManager.searchFlightOrderUrlString(queryData),
+        method: "get"
+      }).then(res => {
+          this.loading = false;
+          Indicator.close();
+          if (res.code == 0) {
+            this.totalPrice = res.data.order.payamount;
+            // 修改日期显示格式为 27 Jul'2018 14:30
+            this.ticketInfo = res.data.triplist[0].voyageinfo[0];
+            
+            if(this.flightType == "one"){
+              let first = res.data.triplist[0].voyageinfo[0];
+              let last = res.data.triplist[0].voyageinfo[res.data.triplist[0].voyageinfo.length -1];
+              let dt = first.dt.split("/")[1]+" "+ this.months[Number(first.dt.split("/")[0])-1]+"'"+first.dt.split("/")[2];
+              let ac = last.ac;
+              this.ticketInfo = Object.assign({},this.ticketInfo,{
+                dt:dt,
+                ac:ac,
+              });
+            }else{
+              let first = res.data.triplist[0].voyageinfo[0];
+              let last = res.data.triplist[1].voyageinfo[0];
+              let dt = first.dt.split("/")[1]+" "+ this.months[Number(first.dt.split("/")[0])-1]+"'"+first.dt.split("/")[2];
+              let at = last.dt.split("/")[1]+" "+ this.months[Number(last.dt.split("/")[0])-1]+"'"+last.dt.split("/")[2];
+              let lastFn = last.fn;
+              let ac = last.dc;
+              this.ticketInfo = Object.assign({},this.ticketInfo,{
+                dt:dt,
+                at:at,
+                ac:ac,
+                lastFn:lastFn,
+              });
+            }
+
+            this.passengerInfo = res.data.triplist[0].travellerinfo;
+            this.passengerInfo.forEach((e,i)=>{
+              if(e.passengerType == 1){
+                this.adults.push(this.passengerInfo[i]);
+              }else if(e.passengerType == 2){
+                this.children.push(this.passengerInfo[i]);
+              }else if(e.passengerType == 3){
+                this.infants.push(this.passengerInfo[i]);
+              }
+            });
+            this.contactInfo = Object.assign({}, this.contactInfo, {// 添加多个属性方法
+                contactEmail: res.data.triplist[0].contactEmail,
+                contactPhoneCode: res.data.triplist[0].contactMob.split(" ")[0],
+                contactPhone: res.data.triplist[0].contactMob.split(" ")[1],
+                gst:res.data.gstInfo?res.data.gstInfo.registrationNumber:"",
+            });
+
+            this.fee = res.data.order.fee;
+            sessionStorage.setItem("orderFee", JSON.stringify(res.data.order));
+            sessionStorage.setItem(
+              "orderInsurance",
+              JSON.stringify(res.data.flightInsuranceDtos)
+            );
+            this.dataLayer(res.data);
+          }
+        })
+        .catch(res => {
+          Indicator.close();
+        });
+    }
+  },
+  created() {
+    this.fetchOrderDetail();
+  }
+};
+</script>
+<style lang="less" scoped>
+@import "~assets/less/theme.less";
+#payment-book {
+  .header {
+    .placeholder {
+      opacity: 0;
+    }
+    .title{
+      color:#fff;
+      padding:0;
+    }
+  }
+  .content {
+    padding-top: 2.04rem;
+    .list-wrapper {
+      padding: 0 0.64rem;
+    }
+    .title {
+      font-size: 0.768rem;
+      color: #666;
+      text-align: left;
+      padding: 0.64rem;
+      font-weight: normal;
+      border-top: 1px solid #ccc;
+    }
+  }
+  p {
+    font-size: 0.5rem;
+    color: #666;
+    line-height: 1rem;
+    span {
+      color: #0bb78f;
+    }
+  }
+  .tTop{padding:0 0.64rem;}
+  .title-right{cursor: pointer;}
+  .ticketInfo,.contactInfo{padding-bottom:0.5rem;}
+  .ticketInfo{
+    border-bottom: 1px solid #ccc;
+    text-align: left;
+    .ticketInfo-top {
+      .title{
+        border:none;
+        .icon-arrow{transform:rotate(90deg);}
+        .icon-roundtrip{
+          transform:rotate(180deg);
+        }
+      }
+    }
+    .ticketInfo-bottom {
+      .t-bottom-left{
+        p {
+          color:#999;
+          span{color:#999;}
+          span.f-time{letter-spacing: 0.5px;margin-left: 0.2rem;}
+        }
+      }
+      .t-bottom-right{
+        p{
+          color:#333;
+          font-size:0.641rem;
+          span{color:#ff1c1c;}
+        }
+      }
+    }
+  }
+  .passengerInfo{
+    .title{
+      border:none;
+      font-size: 0.768rem;
+      .span1{margin-left:0.5rem;}
+    }
+    .pas-top{
+      span.icon-go{
+        transform: rotate(-90deg);
+      }
+    }
+    .pas-bottom{
+      padding:0 0.64rem;
+      overflow: hidden;
+      text-align:left;
+      p{
+        font-size: 0.6rem;
+        span{color:#333;}
+        span.firstName{margin-right:0.3rem;}
+        span.infoClass{margin-left:0.3rem;}
+      }
+      p:last-child{padding-bottom: 0.5rem;}
+    }
+    .defaultFold{
+      height:0;
+    }
+  }
+  .contactInfo{
+    div{
+      padding: 0 0.64rem;
+      text-align: left;
+      p{font-size: 0.6rem;}
+      span{color:#333;margin-right:0.3rem;}
+    }
+  }
+
+  .fare {
+    padding-bottom: 1.5rem;
+    .fare-cont {
+      background-color: #fff;
+      border-radius: 0.4rem;
+      padding:0 0.4rem;
+      .list {
+        border-bottom: 1px solid #ccc;
+      }
+      .list,
+      .total {
+        font-size: 0.6rem;
+        color: #666;
+        height: 1.4rem;
+        line-height: 1.4rem;
+        span {
+          display: block;
+          text-align: left;
+        }
+      }
+      .total {
+        font-size: 0.85rem;
+        color: #333;
+        padding: 0.2rem 0rem;
+        .price {
+          color: red;
+          font-size: 0.85rem;
+        }
+      }
+    }
+  }
+  .cashback-tips {
+    text-align: left;
+    margin-top: 0.5rem;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 0.5rem;
+    .top-line {
+      margin: 0.7rem 0;
+      .line {
+        border-top: 1px solid #ccc;
+        position: relative;
+        width: 100%;
+        img {
+          display: block;
+          position: absolute;
+          top: -0.52rem;
+          height: 1rem;
+          right: 50%;
+          margin-right: -1.65rem;
+        }
+      }
+    }
+    .co {
+      color: #ffad3d;
+    }
+  }
+
+  .done {
+    .btn {
+      width: 100%;
+      font-size: 0.768rem;
+      color: #fff;
+      line-height: 1.87rem;
+      border-radius: 4px;
+      background-color: #ffad3d;
+      display: block;
+      box-sizing: border-box;
+      margin: 0.3rem 0;
+    }
+  }
+}
+</style>

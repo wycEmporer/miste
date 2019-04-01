@@ -1,0 +1,395 @@
+<template>
+  <div id="grab-cashback">
+    <head-top class="header">
+      <i slot="left" class="prev iconfont icon-back"></i>
+      <div slot="title" class="head-title">Grab Additional Cashback</div>
+      <i slot="right" class="sp iconfont icon-back"></i>
+    </head-top>
+    <div class="content">
+      <div class="appTop" v-show="isShowBtn"></div>
+      <div class="top-banner">
+        <img :src="mUrl" :alt="mAlt" :title="mTitle">
+      </div>
+      <div class="part-total">
+        <div class="total-box">
+          <h5>Grand Total</h5>
+          <ul class="flex space-between">
+            <li>
+              <!-- <p>{{String(total.allCount?total.allCount:'0') | formatDate}}</p> -->
+              <p><number-scroll :time="1" :value="allCount"></number-scroll></p>
+              <p>Participation</p>
+            </li>
+            <li>
+              <!-- <p><span class="rs">Rs</span>{{String(total.allAmount?total.allAmount:'0') | formatDate}}</p> -->
+              <p class="flex"><span class="rs">Rs</span><number-scroll :time="3" :value="allAmount"></number-scroll></p>
+              <p>Extra Cashback</p>
+            </li>
+            <li>
+              <!-- <p>{{String(total.AllUser?total.AllUser:'0') | formatDate}}</p> -->
+              <p><number-scroll :time="1" :value="AllUser"></number-scroll></p>
+              <p>Helps Received</p>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="part-bottom">
+      <div class="book-des">Book To Get Cashback or Check Your Ongoing Rewards</div>
+      <div class="book-btns">
+        <button class="b-btn-1" @click="bookNow">Book Now</button>
+        <a :href="href" target="_blank" @click="checkNow"><button >Check Now</button></a>
+      </div>
+    </div>
+    <div class="part-terms">
+      <h3>Grab Additional Cashback On Your Booking</h3>
+      <p class="p-content" style="margin:0.534rem 0 0.769rem ; ">Download the latest version of HappyEasyGo Android or iOS app and invite your friends and family to help you earn additional cashback on every booking you make.</p>
+      <h3>Terms &amp; Conditions</h3>
+      <p></p>
+      <ul>
+        <li>
+          <p class="p-title">1.Qualification Criteria :</p>
+          <p class="p-content">After the payment for a booking has been successfully made, the system will randomly decide whether a user is eligible to invite friends and earn cashback or not. If selected, a user can start inviting.</p>
+        </li>
+        <li>
+          <p class="p-title">2.Validity Period :</p>
+          <p class="p-content">A user can invite friends to help earn cashback for upto 24 hours. The invitations are closed at the end of this time window or when the maximum number of invitations is reached. The invitations are also closed in case the user cancels the order or when the flight ticket cannot be issued.</p>
+        </li>
+        <li>
+          <p class="p-title">3.Cashback Amount :</p>
+          <p class="p-content">The amount of cashback a user can win and the number of people that can be invited varies with the booking amount. The cashback offer is independent of other offers, deals and rewards being offered on the HappyEasyGo website or mobile app.</p>
+          <p class="p-content">A random cashback amount is credited every single time a friend helps. The total cashback amount will be credited to the account when all invited friends have helped.</p>
+        </li>
+        <li>
+          <p class="p-title">4.Cashback Credit :</p>
+          <p class="p-content">A random cashback amount will be credited instantly when a friend helps. The cashback amount will reflect in the account only after the order has been issued.</p>
+        </li>
+        <li>
+          <p class="p-title">5.Invitations :</p>
+          <p class="p-content">A user can only invite people who are not already registered with HappyEasyGo. An invite is considered successful only after the mobile number of the invitee has been verified. The invitee can view the booking information of the user, including the itinerary and the amount of the booking.</p>
+          <p class="p-content">Please note that friends invited to register with HappyEasyGo under the cashback offer are not considered successful referrals under the Refer & Earn programme.</p>
+        </li>
+        <li>
+          <p class="p-title">6.How to Use the Cashback(HappyGold) :</p>
+          <p class="p-content">Happy Gold received as cashback can be used to pay for flight tickets on HappyEasyGo. 1 Happy Gold = 1 Rupee. Thus, a user can use 500 Happy Gold to pay Rs.500 less for flight tickets from the bank account.</p>
+          <p class="p-content">Kindly note that Happy Gold received through this offer cannot be transferred to the bank account. </p>
+        </li>
+        <li>
+          <p class="p-title">7.Order Cancellation :</p>
+          <p class="p-content">In case the order cannot be issued, the cashback will be cancelled. However, the offer shall have no effect on the refund process. </p>
+        </li>
+        <li>
+          <p class="p-title">8.Participating in this programme and inviting friends to help earn cashback indicates the agreement to all the terms and conditions.</p>
+        </li>
+        <li>
+          <p class="p-title">9.The right of final interpretation of this offer is reserved with HappyEasyGo.</p>
+        </li>
+      </ul>
+    </div>
+    <div class="shareCover" v-show="upDataDialog" @click="clickOut"></div>
+    <div class="upDataDiaplog" v-show="upDataDialog">
+      <p class="up-p1">This program is effective on the latest version of APP.</p>
+      <p class="up-p2" v-show="isAndriod">Please Update in Google Play</p>
+      <p class="up-p2" v-show="isIos">Please Update in APP Store</p>
+      <a :href="href" target="_blank" @click="upDateApp">OK</a>
+    </div>
+  </div>
+</template>
+<script>
+import headTop from "../../components/head/head.vue";
+import numberScroll from "../../components/number-scroll/number-scroll.vue";
+import { CookieUtil } from "../../models/utils";
+import { User } from "../../models/user";
+import { DomainManager } from "../../config/DomainManager.js";
+import { Toast,Indicator } from 'mint-ui';
+import { AppBridge } from '../../models/appbridge/appbridge.js';
+import { Activity } from "../../models/activity";
+export default {
+  components:{
+    headTop,
+    numberScroll,
+  },
+  data(){
+    return {
+      total:{},
+      model:0,
+      mUrl: "",
+      mAlt: "",
+      mTitle: "",
+      href:'javascript:;',
+      isIos:false,
+      isAndriod:false,
+      isShowBtn: false,
+      upDataDialog:false,
+    }
+  },
+  computed: {
+    allCount(){
+      return Number(this.total != {}?this.total.allCount:0);
+    },
+    allAmount(){
+      return Number(this.total != {}?this.total.allAmount:0);
+    },
+    AllUser(){
+      return Number(this.total != {}?this.total.AllUser:0);
+    },
+  },
+  methods:{
+    clickOut(){
+      this.upDataDialog = false;
+      this.href = "javascript:;";
+    },
+    upDateApp(){
+      this.upDataDialog = false;
+      // this.$bridge.callhandler('openURL',this.href);
+      this.href = "javascript:;";
+    },
+    bookNow(){
+      try {
+        window.heg.trackEvent("AC_Grab_Offer_Booknow");
+      } catch (error) {
+        if(window.WebViewJavascriptBridge){
+          this.$bridge.callhandler("trackEvent","AC_Grab_Offer_Booknow");
+        }
+      }
+      AppBridge.goHomePage(this);
+    },
+    checkNow(){
+      if(this.isShowBtn){
+        this.href = ('https://app.adjust.com/for04bk?campaign=offer&adgroup=Msite&creative=Online');
+      }else{
+        try{
+          if(window.heg.showShareView){
+            window.heg.trackEvent("AC_Grab_Offer_Checknow");
+            this.$router.push('/grab-app-share');
+          }else{
+            this.upDataDialog = true;
+          }
+        }catch(error){
+          if(this.$bridge.WebViewBridge.indexOf('showShareView') > -1){
+            this.$router.push('/grab-app-share');
+            this.$bridge.callhandler("trackEvent","AC_Grab_Offer_Checknow");
+          }else{
+            this.upDataDialog = true;
+          }
+        }
+      }
+    },
+    checkType() {
+      let type = AppBridge.device;
+      if(type == 1){
+        this.model = 2;
+        this.isAndriod = true;
+      }else if(type == 2){
+        this.model = 3;
+        this.isIos = true;
+      }else{
+        this.model = 0;
+      }
+      this.getImg();
+    },
+    getImg() {
+      let parmTop = "type=13&device=" + this.model + "&addr=grab-cashback&businessType=1";
+      User.advList(this, parmTop).then(res => {
+        if (res.success) {
+          this.mUrl =
+            res.list[0].landingPageUrl == null
+              ? ""
+              : res.list[0].landingPageUrl;
+          this.mAlt =
+            res.list[0].landingPageAlt == null
+              ? ""
+              : res.list[0].landingPageAlt;
+          this.mTitle =
+            res.list[0].landingPageTitle == null
+              ? ""
+              : res.list[0].landingPageTitle;
+        }
+      }).catch(err => {
+        console.log(err.msg);
+      });
+    },
+  },
+  async created() {
+    this.isShowBtn = await AppBridge.getNativeSource(this);
+    this.checkType();
+    Activity.grabCashbackSale(this).then(res => {
+      if(res.succ && res.data.status){
+        this.total = res.data;
+      }else{
+        Toast(res.msg);
+      }
+    }).catch(err => {
+      console.log(err);
+    })
+    if(this.isShowBtn){
+      this.href = ('https://app.adjust.com/for04bk?campaign=offer&adgroup=Msite&creative=Online');
+    }else{
+      if(this.$bridge.WebViewJavascriptBridge){
+        if(this.$bridge.WebViewBridge.indexOf('showShareView') == -1){
+          this.href = ('https://app.adjust.com/for04bk?campaign=offer&adgroup=Msite&creative=Online');
+        }
+      }
+    }
+  }
+
+}
+</script>
+<style lang="less" scoped>
+#grab-cashback{
+  position: relative;
+  // z-index: 11;
+  height:auto;
+  .sp {
+    opacity: 0;
+  }
+  .head-title{font-size:0.7rem;}
+  .content{
+    img{
+      width:100%;
+      vertical-align: top;
+    }
+    .appTop{
+      padding-top:2.04rem;
+    }
+    .top-banner{
+      width:100%;
+    }
+  }
+  .part-total{
+    position: relative;
+  }
+  .total-box{
+    position: absolute;
+    width:92%;
+    top:-0.641rem;
+    margin:0 0.64rem;
+    border-radius:3px;
+    border:1px solid #eee;
+    box-shadow:0 3px 5px #eee;
+    h5{
+      color:#0b9d78;
+      font-size: 0.512rem;
+      line-height:0.982rem;
+      background:#fff;
+    }
+    ul{
+      background:#f3faf8;
+      padding:0.3rem 0;
+    }
+    li{
+      flex:1;
+      p{
+        justify-content: center;
+        line-height:0.982rem;
+        border-right:1px solid #c5e7de ;
+      }
+      p:first-child{
+        font-size: 0.641rem;
+        color:#f02f58;
+        font-weight: bold;
+      } 
+      p:last-child{
+        color:#bcbcbc;
+        font-size: 0.512rem;
+      } 
+    }
+    li:last-child p{
+      border:0;
+    }
+  }
+  .part-bottom{
+    margin-top:4rem;
+  }
+  .book-des{
+    font-size:0.512rem;
+    color:#000;
+  }
+  .book-btns{
+    margin: 0.854rem 0 1.23rem;
+    button{
+      font-size: 0.598rem;
+      width:5.98rem;
+      height:1.495rem;
+      line-height:1.495rem;
+      color:#fff;
+      border-radius:3px;
+      cursor: pointer;
+    }
+    .b-btn-1{background:#ffad3d;margin-right:0.641rem;}
+    button:last-child{background:#0b9d78;}
+  }
+  .part-terms{
+    margin:0 0.64rem 0;
+    padding-bottom: 1.495rem;
+    text-align: left;
+    h3{
+      font-size: 0.598rem;
+      color:#333;
+      font-weight: bold;
+    }
+    p{
+      letter-spacing:0.3px;
+      font-family: "Helvetical TPro Light";
+    }
+    .p-title{
+      font-size: 0.598rem;
+      line-height:0.769rem;
+      color:#666;
+      margin:0.769rem 0 0.534rem; 
+    }
+    .p-content{
+      font-size: 0.512rem;
+      line-height:0.769rem;
+      color:#999;
+    }
+  }
+
+  .shareCover{
+    width:100%;
+    height:100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 11;
+    background: rgba(0,0,0,0.5);
+  }
+  .upDataDiaplog{
+    width:11rem;
+    height:8rem;
+    background: #FAFAFA;
+    border-radius: 3px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin:auto;
+    z-index: 12;
+    padding:2rem 1rem 1rem;
+    p{
+      color:#333;
+      font-size:0.68rem;
+      line-height:1rem;
+      text-align: left;
+      span{
+        font-weight:bold;
+      }
+    }
+    .up-p2{
+      margin:1rem 0 0;
+      padding-bottom:1rem;
+      border-bottom:1px solid #999;
+    }
+    a{
+      color:#fff;
+      background:#ffad3d;
+      font-size:0.68rem;
+      width:8rem;
+      height:1.3rem;
+      line-height:1.3rem;
+      border-radius: 3px;
+      margin-top:1.2rem;
+    }
+  }
+}
+</style>

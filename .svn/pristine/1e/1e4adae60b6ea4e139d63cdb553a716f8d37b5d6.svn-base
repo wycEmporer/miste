@@ -1,0 +1,313 @@
+<template>
+    <div id="d_dialog" v-if="showSearch">
+        <div id="select_dialog" v-show="selectShow">
+			<head-top class="header" :operate="close">
+				<i slot="left" class="prev iconfont icon-back"></i>
+				<div slot="title" class="title">Passengers</div>
+				<i slot="right" class="sp iconfont icon-back"></i>
+			</head-top>
+            <div style="padding:0.2rem 0.5rem 0.5rem;">
+				<div class="d_adult d_passenger">
+					<p>adults</p>
+					<img class="d_imgs" :src="require('../../../../assets/images/home-img/adults.png')" alt="adult" name="adult">
+					<input class="d_input" v-blur="blur" @blur='ad' type="text" autocomplete="off" v-model="passengersNum.adults">
+					<div class="d_calc">
+						<img class="d_img_minus" @click='minus(passengersNum.adults,"adults")' :src="require('../../../../assets/images/home-img/minus.png')" alt="adult" name="adult">
+						<img class="d_img_plus" @click='plus(passengersNum.adults,"adults")' :src="require('../../../../assets/images/home-img/plus.png')" alt="adult" name="adult">
+					</div>
+				</div>
+				<div class="d_children d_passenger">
+					<p>children</p>
+					<img class="d_imgs" :src="require('../../../../assets/images/home-img/children.png')" alt="adult" name="adult">
+					<input class="d_input" @blur='ch' type="text" autocomplete="off" v-model="passengersNum.children">
+					<div class="d_calc">
+						<img class="d_img_minus" @click='minus(passengersNum.children,"children")' :src="require('../../../../assets/images/home-img/minus.png')" alt="adult" name="adult">
+						<img class="d_img_plus" @click='plus(passengersNum.children,"children")' :src="require('../../../../assets/images/home-img/plus.png')" alt="adult" name="adult">
+					</div>
+				</div>
+				<div class="d_infants d_passenger">
+					<p>infants</p>
+					<img class="d_imgs" :src="require('../../../../assets/images/home-img/infants.png')" alt="adult" name="adult">
+					<input class="d_input" @blur='inf' type="text" autocomplete="off" v-model="passengersNum.infants">
+					<div class="d_calc">
+						<img class="d_img_minus" @click='minus(passengersNum.infants,"infants")' :src="require('../../../../assets/images/home-img/minus.png')" alt="adult" name="adult">
+						<img class="d_img_plus" @click='plus(passengersNum.infants,"infants")' :src="require('../../../../assets/images/home-img/plus.png')" alt="adult" name="adult">
+					</div>
+				</div>
+				<div class="d_seat">
+					<label v-for="item in seatType" :key="item.id" :for="item.type" @click="selectType(item.id,$event)">
+						<input type="radio" :id="item.type" name="cabinClass" :checked="item.ischeck">{{item.type}}</label>
+				</div>
+				<div class="d_btn">
+					<button @click="commitBox">Confirm</button>
+				</div>
+			</div>
+        </div>
+    </div>
+</template>
+<script>
+import headTop from '../../../../components/head/head.vue';
+import { CookieUtil, SHA2Util, GetFlightOrderUtil } from '../../../../models/utils';
+import{Toast} from 'mint-ui';
+
+export default {
+	props:{
+		showSearch: {
+			type: Boolean
+		},
+		selectShow:{
+			type: Boolean
+		}
+	},
+	components: {
+		headTop
+	},
+    data(){
+        return{
+			blur:true,
+			message:'hello',
+      passengersNum: {
+				adults:1,
+				children:0,
+				infants:0,
+				type:'Economy',
+			},
+			seatType:[
+				{id:0,type:'Economy',ischeck:'checked'},
+				{id:1,type:'Business',ischeck:''},
+				{id:2,type:'First',ischeck:''},
+				{id:3,type:'Premium Economy',ischeck:''}
+			]
+        }
+	},
+	created(){
+		this.loadSearchInfo();
+	},
+  methods:{
+		close() {
+			this.$emit('closeS');
+		},
+		ad(){
+			if(Number(this.passengersNum.adults) + Number(this.passengersNum.children) >= 9){
+				this.passengersNum.adults = 9 - this.passengersNum.children;
+			}else if(Number(this.passengersNum.adults) < 1){
+				this.passengersNum.adults = 1;
+			}else{
+				this.clearZero(this.passengersNum.adults,0);
+			}
+		},
+		ch(){
+			if(Number(this.passengersNum.adults) + Number(this.passengersNum.children) >= 9){
+				this.passengersNum.children = 9 - this.passengersNum.adults;
+			}else{
+				this.clearZero(this.passengersNum.children,1);
+			}
+		},
+		inf(){
+			if(Number(this.passengersNum.infants) >= Number(this.passengersNum.adults)){
+				this.passengersNum.infants = this.passengersNum.adults;
+			}else{
+				this.clearZero(this.passengersNum.infants,2);
+			}
+		},
+    minus(num,who){
+			num--;
+			if(who == 'adults'){
+				this.passengersNum.adults = num;
+				if(num < 1){
+					num = 1;
+					this.passengersNum.adults = num;
+				}
+				if(this.passengersNum.infants > this.passengersNum.adults){
+					this.passengersNum.infants = this.passengersNum.adults;
+				}
+			}else if(who == 'children'){
+				this.passengersNum.children = num;
+				if(num < 1){
+					num = 0;
+					this.passengersNum.children = num;
+				}	
+			}else if(who == 'infants'){
+				this.passengersNum.infants = num;
+				if(num < 1){
+					num = 0;
+					this.passengersNum.infants = num;
+				}
+			}
+		},
+		plus(num,who){
+			num++;
+			if(who == 'adults'){
+				this.passengersNum.adults = num;
+				if(num + this.passengersNum.children > 9){
+					num = 9 - this.passengersNum.children;
+					this.passengersNum.adults = num;
+				}
+			}else if(who == 'children'){
+				this.passengersNum.children = num;
+				if(num > 9 - this.passengersNum.adults){
+					num = 9 - this.passengersNum.adults;
+					this.passengersNum.children = num;
+				}
+			}else if(who == 'infants'){
+				this.passengersNum.infants = num;
+				if(num > this.passengersNum.adults){
+					num = this.passengersNum.adults;
+					this.passengersNum.infants = num;
+				}
+			}
+		},
+		selectType(i,event){
+			this.seatType.forEach((e,i)=>{
+				e.ischeck = "";
+			})
+			this.passengersNum.type = this.seatType[i].type;
+			this.seatType[i].ischeck = 'checked';
+			// this.$root.$emit('select',this.passengersNum.type);
+		},
+		commitBox(){
+			let numbers = this.passengersNum.adults + this.passengersNum.children + this.passengersNum.infants
+			this.$emit('getPassenger',false,this.passengersNum,this.passengersNum.type,numbers)
+		},
+		clearZero(val,who){
+			let v = String(val).split('');
+			if(v[0] == '0' && v[1]){
+				if(who == 0){
+					this.passengersNum.adults = v[1]
+				}else if(who == 1){
+					this.passengersNum.children = v[1]
+				}else if(who == 2){
+					this.passengersNum.infants = v[1]
+				}			
+			}
+		},
+		loadSearchInfo() {
+			if (sessionStorage.searchInfo) {
+				let info = JSON.parse(sessionStorage.searchInfo);
+				this.passengersNum.adults = info.passengersNum.adults;
+				this.passengersNum.children = info.passengersNum.children;
+				this.passengersNum.infants = info.passengersNum.infants;
+				this.passengersNum.type = info.defaultCabinClass;
+				if(info.defaultCabinClass == "Economy"){
+					this.seatType[0].ischeck = 'checked';
+				}else if(info.defaultCabinClass == "Business"){
+					this.seatType[1].ischeck = 'checked';
+				}else if(info.defaultCabinClass == "First"){
+					this.seatType[2].ischeck = 'checked';
+				}else if(info.defaultCabinClass == "Premium Economy"){
+					this.seatType[3].ischeck = 'checked';
+				}
+			}
+		}
+	},
+	directives: {
+		blur: {
+			inserted: function(el,binding) {
+				el.focus()
+			}
+		},
+	}
+}
+</script>
+<style lang="less" scoped>
+.header {
+	background: #0b9d78;
+	.title {
+		line-height: 2.04rem;
+		font-size: 0.768rem;
+		color: #fff;
+	}
+	.sp {
+		opacity: 0;
+	}
+}
+#d_dialog{
+    #select_dialog{
+		top: 2.4rem;
+		position: relative;
+		.d_Top{
+			position: relative;
+			.d_close{
+				position: absolute;
+				display:inline-block;
+				font-size: 1.2rem;
+				color:#999;
+				top: -0.3rem;
+				right: 0;
+				width: 0.8rem;
+				height: 0.8rem;
+				z-index:2;
+			}
+			.d_close:hover{
+				color:#000;
+			}
+		}
+		.d_passenger{
+			border-bottom:1px solid #ddd;
+			padding:0.3rem 0 0.1rem;
+			position: relative;
+		}
+		.d_imgs{
+			display: inline-block;
+			width: 0.rem;
+			vertical-align: text-bottom;
+			margin-right: 0.6rem;
+		}
+		.d_input{
+			width: 2rem;
+			height:1rem;
+			font-size:0.7rem;
+		}
+		.d_calc{
+			width: 2.3rem;
+			position: absolute;
+			top: 1.2rem;
+			right: 0;
+			display: flex;
+			justify-content: space-between;
+			.d_img_minus,.d_img_plus{
+				display:block;
+				width: 0.9rem;
+				height: 0.9rem;
+				cursor: pointer;
+			}
+		}
+		.d_adult,.d_children,.d_infants{
+			text-align: left;
+			font-size: 0.7rem;
+			p{
+				margin-bottom: 0.2rem;
+			}
+		}
+		.d_infants{
+			margin-bottom:0.5rem;
+		}
+		.d_seat{
+			padding: 0.3rem 0 0;
+			text-align: left;
+			font-size: 0.7rem;
+			label{
+				display:block;
+				padding:0.1rem 0;
+				input{
+					vertical-align: text-top;
+					margin-right: 0.3rem;
+				}
+			}
+		}
+		.d_btn{
+			button{
+				width: 80%;
+				padding:0.5rem 0;
+				background:#ffad3d;
+				font-size: 0.7rem;
+				color:#fff;
+				border-radius:0.2rem;
+				margin: 0.6rem 0 0;
+			}
+		}
+	}
+}
+</style>
+
+

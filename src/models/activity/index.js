@@ -1,0 +1,125 @@
+import { DomainManager } from "../../config/DomainManager";
+export const Activity =  class Activity {
+
+  constructor(
+
+  ){
+
+  }
+
+  static grabCashbackSale(vueComp){ // grab-cashback page url 
+    let url = DomainManager.grabActivity();
+    return new Promise((resolve, reject) => {
+      vueComp.$axios.get(url).then(res => {
+        resolve(res);
+      }).catch(err => {
+        reject(err);
+      });
+    });
+  }
+
+  static grabActivityDetail(vueComp,queryString){ // grab-activity page the page you have shared ,its process url 
+    let url = DomainManager.grabActivityDetail()+'?orderId='+queryString;
+    return new Promise((resolve, reject) => {
+      vueComp.$axios.get(url).then(res => {
+        resolve(res);
+      }).catch(err => {
+        reject(err);
+      });
+    });
+  }
+
+  static grabOrderDetail(vueComp,queryString){// orderdetail page url
+    let url = DomainManager.grabOrderInfo()+'?orderId='+queryString;
+    return new Promise((resolve, reject) => {
+      vueComp.$axios.get(url).then(res => {
+        resolve(res);
+      }).catch(err => {
+        reject(err);
+      });
+    });
+  }
+
+  static grabInviteRegisterRecord(vueComp,queryString){// be invited to register successfully record url
+    let url = DomainManager.grabInviteRegisterRecord()+'?orderId='+queryString;
+    return new Promise((resolve, reject) => {
+      vueComp.$axios.get(url).then(res => {
+        resolve(res);
+      }).catch(err => {
+        reject(err);
+      });
+    });
+  }
+
+  static grabShareList(vueComp){// order share list url
+    let url = DomainManager.grabShareList();
+    return new Promise((resolve, reject) => {
+      vueComp.$axios.get(url).then(res => {
+        resolve(res);
+      }).catch(err => {
+        reject(err);
+      });
+    });
+  }
+
+  static grabShareListHeader(vueComp){// order share list url
+    let url = DomainManager.grabShareListHeader();
+    return new Promise((resolve, reject) => {
+      vueComp.$axios.get(url).then(res => {
+        resolve(res);
+      }).catch(err => {
+        reject(err);
+      });
+    });
+  }
+
+  static grabInviteRegisterByPhone(vueComp,queryDate){//
+    let url = DomainManager.grabInviteRegisterByPhone();
+    return new Promise((resolve, reject) => {
+      vueComp.$axios({
+        method:'post',
+        url:url,
+        data:queryDate,
+        headers: {'x-Device': 'mobile'},
+        // withCredentials: true,  // promise JAVA use the cookie
+      }).then(res => {
+        resolve(res);
+      }).catch(err => {
+        reject(err);
+      });
+    });
+  }
+
+  static getRegisterCouponAndCashback(vueComp){//
+    let url = DomainManager.getRegisterCouponAndCashback();
+    return new Promise((resolve, reject) => {
+      vueComp.$axios(url).then(res => {
+        resolve(res);
+      }).catch(err => {
+        reject(err);
+      });
+    });
+  }
+
+  static getDiwaliReward(vueComp){//
+    let url = DomainManager.getDiwaliReward();
+    return new Promise((resolve, reject) => {
+      vueComp.$axios(url).then(res => {
+        resolve(res);
+      }).catch(err => {
+        reject(err);
+      });
+    });
+  }
+
+  static getDiwaliAmount(vueComp){//
+    let url = DomainManager.getDiwaliAmount();
+    return new Promise((resolve, reject) => {
+      vueComp.$axios(url).then(res => {
+        resolve(res);
+      }).catch(err => {
+        reject(err);
+      });
+    });
+  }
+}

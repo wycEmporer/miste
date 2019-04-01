@@ -1,0 +1,242 @@
+<template>
+  <div id="joinus-detail">
+    <head-top class="header">
+			<i slot="left" class="iconfont icon-back"></i>
+			<span slot="title" class="title">Join Us</span>
+			<i slot="right" class="sp iconfont icon-back"></i>
+		</head-top>
+    <div class="content">
+      <div class="section1"><img :src='require("../../assets/images/joinus/join.jpg")' alt=""></div>
+      <div class="section2" v-if='info !={}'>
+        <p class="s2-title" ><span class="span1">All jobs</span> &gt; <span class="span2">{{info.position}}</span></p>
+        <div class="s2-text">
+          <h2>{{info.position}}</h2>
+          <div class="s2-div s2-map flex"><img :src='require("../../assets/images/joinus/join-map.png")' alt=""><span>{{info.workPlace}}</span></div>
+          <div class="s2-div s2-email flex">
+            <div class="flex"><img :src='require("../../assets/images/joinus/join-email.png")' alt=""><a href="javascript:;">{{info.contactEmail}}</a></div>
+            <span>Posted: {{info.startTime}}</span>
+          </div>
+        </div>
+      </div>
+      <div class="section3 flex">
+        <a target="_blank" :href="shareHref[0]"><img :src='shareList[0]' alt=""></a>
+        <a target="_blank" :href="shareHref[1]" ><img :src='shareList[1]' alt=""></a>
+        <a target="_blank" :href="shareHref[2]"><img :src='shareList[2]' alt=""></a>
+        <a target="_blank" :href="shareHref" data-action="share/whatsapp/share"><img :src='shareList[3]' alt=""></a>
+        <div>
+          <img :src='shareList[4]' alt="Copy to clipboard">
+          <input id="foo" v-model="text" style="position:absolute;opacity:0;">
+          <button id="copyUrl" @click="shareUrl" data-clipboard-target="#foo"></button>
+        </div>
+      </div>
+      <ul class="section4" v-if='info !={}'>
+        <li v-html="info.jobDescription">
+          {{info.jobDescription}}
+        </li>
+        <li v-html="info.workRequirements">
+          {{info.workRequirements}}
+        </li>
+      </ul>
+      <div class="section5">
+        <a :href='contactEmail' >APPLY NOW</a>
+        <!-- <a @click="applyOnline" >APPLY NOW</a> -->
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import headTop from "../../components/head/head.vue";
+import { Toast, Indicator } from "mint-ui";
+import { CookieUtil } from "../../models/utils";
+import { DomainManager } from '../../config/DomainManager';
+import Clipboard from 'clipboard';
+export default {
+  components: {
+    headTop
+  },
+  data(){
+    return {
+      info:{},
+      text:'',
+      lists:[],
+      contactEmail:'',
+      months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      shareList:[
+        require("../../assets/images/joinus/share-f.png"),
+        require("../../assets/images/joinus/share-b.png"),
+        require("../../assets/images/joinus/share-in.png"),
+        require("../../assets/images/joinus/share-w.png"),
+        require("../../assets/images/joinus/share-l.png")
+      ],
+      shareHref:[
+        'https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(location.href)+'&t='+encodeURIComponent('HappyEasyGo is recruiting now. Lots of positions await for you.'),
+        'https://twitter.com/home?status='.concat(encodeURIComponent(location.href)).concat(' ') .concat(encodeURIComponent('title=HappyEasyGo is recruiting now. Lots of positions await for you.')),
+        'http://www.linkedin.com/shareArticle?mini=true&url='+encodeURIComponent(location.href)+'&title=HappyEasyGo is recruiting now. Lots of positions await for you.',
+        'whatsapp://send?url='+location.href+'&text=HappyEasyGo is recruiting now. Lots of positions await for you.',
+      ],
+    }
+  },
+  created() {
+    this.getListsInfo();
+  },
+  mounted() {
+    this.text = location.href;
+  },
+  methods:{
+    // applyOnline(){
+    //   let params = {
+    //     id:this.info.id,
+    //     departmentId:this.info.departmentId,
+    //   };
+    //   this.$router.push({path:"/applyonline",query:params});
+    // },
+    shareUrl(){
+      let clipboard = new Clipboard('#copyUrl');
+      clipboard.on('success', function(e) {
+          Toast({
+            message:"Successfully copied to the Clipboard! ",
+            duration:1200
+          });
+          e.clearSelection();
+      });
+      clipboard.on('error', function(e) {
+          Toast({
+            message:"Copy failed, please select Copy manually! ",
+            duration:1200
+          });
+      });
+    },
+    getListsInfo(){
+      Indicator.open({spinnerType: "fading-circle"});
+      let id = this.$route.query.id;
+      let url = DomainManager.getCareerDetail() +'?id='+ id;
+      this.$axios.get(url).then(res=>{
+        if(res.succ){
+          Indicator.close();
+          this.info = res.data;
+          this.contactEmail = 'mailto:'+res.data.contactEmail;
+          let timer1 = new Date(res.data.createTime);
+          let startTime = this.addZero(timer1.getDate())+' '+ this.months[timer1.getMonth()]+','+ timer1.getFullYear();
+          this.$set(this.info,'startTime',startTime);
+        }
+      }).catch(err =>{
+        console.log(err)
+      })
+    },
+    addZero(time){
+      if(time < 10){
+        return '0'+time;
+      }else{
+        return time;
+      }
+    }
+  }
+}
+</script>
+<style lang="less" scoped>
+#joinus-detail{
+  .header {
+    background: #0b9d78;
+    .title {
+      color: #fff;
+      font-size: 0.768rem;
+    }
+    .sp {
+      opacity: 0;
+    }
+  }
+  .content{
+    padding:2rem 0 1rem;
+    .section1{
+      img{
+        width: 100%;
+        height:100%;
+      }
+    }
+    .section2{
+      padding:0 0.68rem;
+      text-align: left;
+      .s2-title{
+        padding:0.5rem 0 1rem;
+        color:#333;
+        font-size:0.598rem;
+        .span1{color:#0b9d78;}
+      }
+      .s2-text{padding-bottom:0.5rem;}
+      .s2-text h2{font-size:0.769rem;color:#333;padding-bottom:0.5rem;}
+      .s2-div{
+        align-items: center;
+        font-size:0.598rem;
+        color:#999;
+        padding-bottom:0.3rem;
+        img{vertical-align: middle;}
+      }
+      .s2-map img{
+        width: 0.598rem;
+        height:0.747rem;
+        margin-right:0.576rem;
+      }
+      .s2-email{
+        justify-content: space-between;
+        div a{color:#0c9d77;}
+        span{color:#333;}
+      }
+      .s2-email img{
+        width:0.747rem;
+        height: 0.598rem;
+        margin-right: 0.427rem;
+      }
+    }
+    .section3{
+      padding:1.068rem 0;
+      margin:0 0.68rem;
+      border-top: 1px solid #ddd;
+      border-bottom: 1px solid #ddd;
+      a{
+        margin-right:0.641rem;
+        font-size: 0;
+        img{
+          width:1.602rem;
+          height:1.709rem;
+        }
+      }
+      div{
+        position: relative;
+        font-size: 0;
+        img{
+          width:1.602rem;
+          height:1.709rem;
+        }
+        button{
+          width:1.602rem;
+          height:1.709rem;
+          position: absolute;
+          left: 0;
+          top: 0;
+          opacity: 0;
+          z-index: 5;
+        }
+      }
+    }
+    .section4{
+      padding:0 0.68rem;
+      li{
+        padding:1rem 0 0.25rem;
+        text-align: left;
+      }
+      li:nth-child(2){padding-top:0.5rem;}
+    }
+    .section5{
+      a{
+        width:12.4rem;
+        padding:0.427rem 0;
+        font-size:0.769rem;
+        background:#0c9d77;
+        color:#fff;
+        margin:1rem auto 0;
+        border-radius:3px;
+      }
+    }
+  }
+}
+</style>

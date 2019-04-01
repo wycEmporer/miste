@@ -1,0 +1,65 @@
+<template>
+	<div class="load-fail">
+		<div class="head">
+			<img src="../../assets/images/warning.jpg" alt="">
+			<slot name="head"></slot>
+		</div>
+		<div class="content">
+			<slot name="content"></slot>
+		</div>
+		<div class="sure">
+			<slot name="btn"></slot>
+		</div>
+	</div>
+</template>
+<script>
+import { Indicator } from 'mint-ui'
+	export default{
+		methods:{
+			goBack(){
+				
+				this.$router.go(-2);
+				Indicator.close();
+			}
+		}
+	}
+</script>
+<style lang="less" scoped>
+	.load-fail{
+		width:12rem;
+		background-color:#fff;
+		border-radius:0.4rem;
+		padding-top:0.68rem;
+		.head{
+			img{
+				width:1.8rem;
+				margin-bottom:0.4rem;
+			}
+			font-size:0.68rem;
+			color:#ffad3d;
+			padding-bottom:0.4rem;
+		}
+		.content{
+			font-size:0.52rem;
+			color:#333;
+			line-height:0.8rem;
+			padding:0 0.68rem;
+			text-align:center;
+		}
+		.sure{
+			font-size:0.8rem;
+			color:#007aff;
+			width:100%;
+			border-top:1px solid #eee;
+			margin-top:0.6rem;
+			line-height:1rem;
+			border:none;
+			background-color:#fff;
+		}
+		.btn{
+			width:100%;
+			line-height:1rem;
+		}
+	}
+	
+</style>

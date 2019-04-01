@@ -1,0 +1,51 @@
+<template>
+	<div class="payment">
+		<div class="content flex">
+			<div class="total">
+				<span>Total booking amount</span>
+				<h2><span class="rs">Rs.</span>6854</h2>
+			</div>
+			<div class="makePayment">
+				<a class="btn">Make a payment</a>
+			</div>
+		</div>	
+	</div>
+</template>
+<style lang="less" scoped>
+	.payment{
+		width:100%;
+		height:2.56rem;
+		background-color:#ffad3d;
+		.content{
+			padding:0 0.4rem;
+			height:2.56rem;
+			justify-content:space-between;
+			align-items:center;
+		}
+		.total{
+			text-align:left;
+			span{
+				font-size:0.52rem;
+				color:#fff;
+			}
+			h2{
+				font-size:0.68rem;
+				font-weight:bold;
+				color:#fff;
+				text-align:left;
+				margin-top:0.1rem;
+			}
+		}
+		.makePayment{
+			.btn{
+				display:block;
+				font-size:0.6rem;
+				color:#fff;
+				padding:0.4rem 0.4rem 0.4rem 1.2rem;
+				border-radius:0.2rem;
+				background:#fb8c00 url('../../assets/images/order/paid_07.png') 0.4rem center no-repeat;
+				background-size:0.68rem;
+			}
+		}
+	}
+</style>

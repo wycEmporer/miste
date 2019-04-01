@@ -1,0 +1,86 @@
+<template>
+	<div class="golda">
+		<div class="content">
+			<h2>Happy Gold</h2>
+			<p>
+				Happy Gold can be earned by Cancellation & Refund, Promotional activities and Cashback.
+			</p>
+			<p>
+				* It has no usage limits or expiry date.
+			</p>
+			<p>* Open from 2nd Feb: Transfer-to-bank option will be available to Cashback amount from your Wallet.</p>
+			<!-- <p>
+					* It can be recharged or withdrawn at any time.
+				</p> -->
+		</div>
+		<!-- <div class="content">
+							<h2>Happy Gold Usage Rules</h2>
+							<p>
+								Happy Gold can be used for flight booking under the following rules:
+							</p>
+							<p>
+								1. Happy Gold can be used for flight bookings as real cash, without any restrictions.
+							</p>
+							<p>
+								2. In case of bookings paid with Happy Gold, some benefits provided by banks may not be availed.
+							</p>
+							<p>
+								3. Happy Gold can be recharged and withdrawn at any time.
+							</p>
+						</div> -->
+		<div class="content">
+			<h2>Happy Gold Usage Rules</h2>
+			<p>
+				Happy Gold can be used for flight booking under the following rules:
+			</p>
+			<p>
+				1. Happy Gold can be used for flight bookings as real cash, without any restrictions.
+			</p>
+			<p>
+				2. In case of bookings paid with Happy Gold, some benefits provided by banks may not be availed.
+			</p>
+			<!-- <p>
+						3. Happy Gold can be recharged and withdrawn at any time.
+					</p> -->
+		</div>
+		<div class="content">
+			<h2>How to use Happy Gold</h2>
+			<p>
+				1. Login and click on Book button of your selected flights.
+			</p>
+			<p>
+				2. Choose any kind of price and finish your booking process.
+			</p>
+			<p>
+				3. Choose Happy Gold as your payment method and enter your amount accordingly. Happy Gold will be deducted from your Happy Wallet Account after your payment.
+			</p>
+			<p>
+				4. Check your Happy Wallet Account Balance.
+			</p>
+		</div>
+	</div>
+</template>
+<style lang='less' scoped>
+.golda {
+	.content {
+		font-size: 0.52rem;
+		color: #666;
+		border-bottom: 1px solid #eee;
+		padding-top: 0.4rem;
+		h2 {
+			font-size: 0.64rem;
+			color: #0b9d78;
+			text-align: left;
+			line-height: 1.2rem;
+		}
+		p {
+			text-align: left;
+			margin: 0.4rem 0;
+			line-height: 0.769rem;
+		}
+		.gray {
+			color: #b0b0b0;
+		}
+	}
+}
+</style>

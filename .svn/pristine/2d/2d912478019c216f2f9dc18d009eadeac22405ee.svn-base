@@ -1,0 +1,193 @@
+<template>
+	<div class="wrapper" id="wrap" ref="wrapper">
+		<home @hideOffer="hideOffer" @showOffer="showOffer"></home>
+		<div class="st1Cover" v-if="show1stCover">
+			<img class="st1Cancel" :src="img" alt="" @click="close">
+			<div class="st1Content" @click="jump1st">
+				<img :src="mUrl" alt="mAlt" :title="mTitle">
+			</div>
+		</div>
+	</div>
+</template>
+<script>
+import home from "./child/main.vue";
+import { User } from "../../models/user";
+import { CookieUtil } from '../../models/utils';
+import { loginUserInfo } from '../../vuex/models/user/XUser.js';
+import {HomeBanner, emitCustomEvent} from 'models/utils/adGAEvent';
+
+export default {
+  components: {
+    home
+  },
+  data() {
+    return {
+      user:'', 
+      mUrl:'',
+      mAlt:'',
+      mTitle:'',
+      timer: null,
+      showOff: true,
+      show1stCover: false,
+      img: require("../../assets/images/anniversarysale/cancel.png"),
+    };
+  },
+  computed: {
+    scrollTop() {
+      return window.innerHeight;
+    }
+  },
+  created() {
+    this.getImg();
+  },
+	activated () {
+    this.getImg();
+    this.timer = setTimeout(()=>{
+      this.show1stCover = false;
+    },5000);
+  },
+  methods: {
+    datetime_to_unix(){
+      var date='2018-10-19 23:59:59';
+      date = new Date(Date.parse(date.replace(/-/g, '/')));
+      date = date.getTime();
+      var timestamp_set = parseInt(date/1000);
+      var timestamp = this.getGMTtime();
+      var cha_timestamp = timestamp_set-timestamp;
+      if(cha_timestamp <= 0){
+        clearTimeout(this.timer);
+        this.show1stCover = false;
+      }else{
+        this.show1stCover = true;
+      }
+    },
+    getGMTtime(){
+      let d = new Date();
+      let loaclTime = d.getTime();
+      let localOffset = d.getTimezoneOffset() * 60000;
+      let utc = loaclTime + localOffset;
+      let offset = 5.5;
+      let bombay = utc + (3600000*offset);
+      return parseInt(bombay/1000);
+    },
+    hideOffer() {
+      this.showOff = false;
+    },
+    showOffer() {
+      this.showOff = true;
+    },
+    close() {
+      this.show1stCover = false;
+      clearTimeout(this.timer);
+    },
+    jump1st() {
+      emitCustomEvent(HomeBanner);
+      this.$router.push("/autumnsale");
+      clearTimeout(this.timer);
+    },
+    getImg() {
+      let parmTop = "type=21&device=0";
+      User.advList(this, parmTop).then(res => {
+        if (res.success) {
+          if(res.list.length <= 0){
+            this.show1stCover = false;
+            clearTimeout(this.timer);
+          }else{
+            this.show1stCover = true;
+            this.mUrl =
+            res.list[0].landingPageUrl == null
+              ? ""
+              : res.list[0].landingPageUrl;
+          this.mAlt =
+            res.list[0].landingPageAlt == null
+              ? ""
+              : res.list[0].landingPageAlt;
+          this.mTitle =
+            res.list[0].landingPageTitle == null
+              ? ""
+              : res.list[0].landingPageTitle;
+            this.datetime_to_unix();
+          }
+        }
+      })
+      .catch(err => {
+        console.log(err.msg);
+      });
+    },
+  }
+};
+</script>
+<style lang="less" scoped>
+.wrapper {
+  height: 100%;
+  overflow: auto;
+  .st1Cover {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: rgba(37,43,103,0.80);
+    top: 0;
+    left: 0;
+    z-index: 22;
+    .st1Cancel {
+      width: 1.2rem;
+      position: absolute;
+      right: 2rem;
+			top: 10%;
+    }
+    .st1Content {
+			width: 100%;
+      position: absolute;
+      z-index: 22;
+      left: 0;
+      right: 0;
+			top: 20%;
+			bottom:0;
+      margin: auto;
+      img {
+        width: 11rem;
+      }
+    }
+  }
+  .mask {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 100%;
+	width: 100%;
+	background: #000;
+	opacity: 0.7;
+}
+
+.tips {
+	width: 10rem;
+	height: 7rem;
+	background: #fff;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin-top: -3.5rem;
+	margin-left: -5rem;
+	.tips-group {
+		padding: 0.64rem;
+		text-align: left;
+		p {
+			font-size: 0.64rem;
+			line-height: 1.3;
+		}
+	}
+	.tips-btn {
+		// width: 100%;
+		height: 1rem;
+		line-height: 1rem;
+		font-size: 0.64rem;
+		margin: 0.64rem;
+		box-sizing: border-box;
+		background: #ffad3d;
+		color: #fff;
+	}
+}
+}
+</style>

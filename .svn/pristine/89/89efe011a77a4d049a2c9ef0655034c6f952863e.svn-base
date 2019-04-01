@@ -1,0 +1,238 @@
+<template>
+  <div id="joinus">
+    <head-top class="header">
+			<i slot="left" class="iconfont icon-back"></i>
+			<span slot="title" class="title">Join Us</span>
+			<i slot="right" class="sp iconfont icon-back"></i>
+		</head-top>
+    <div class="content">
+      <div class="section1"><img :src='require("../../assets/images/joinus/join.jpg")' alt=""></div>
+      <div class="section2" v-for="item in text" :key="item.cid">
+        <h2>{{item.class}}</h2>
+        <p v-for="(i,j) in item.content" :key="j" v-html="i.content">{{i.content}}</p>
+      </div>
+      <div class="section3 ">
+        <div class="s3-box" ref="s3Box" @touchstart='touchStart' @touchmove='touchMove' @touchend='touchEnd' >
+          <div><img :src='require("../../assets/images/joinus/heg-1.png")' alt=""></div>
+          <div><img :src='require("../../assets/images/joinus/heg-2.png")' alt=""></div>
+          <div><img :src='require("../../assets/images/joinus/heg-3.png")' alt=""></div>
+        </div>
+      </div>
+      <div class="p-count flex align-items-center">{{title}}</div>
+      <div class="section4">
+        <div v-for="item in lists" :key="item.id">
+          <h3>{{item.departmentName}}</h3>
+          <div v-for="i in item.joinUsMessages" :key="i.id" @click="jumpDetail(i.position,i.id)">
+            <p>{{i.position}}</p>
+            <p>{{i.workPlace}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import headTop from "../../components/head/head.vue";
+import { Toast, Indicator } from "mint-ui";
+import { DomainManager } from "../../config/DomainManager";
+import careersDetail from "./joinusdetail.vue";
+export default {
+  components: {
+    headTop
+    // careersDetail,
+  },
+  data() {
+    return {
+      count:0,
+      title:"",
+      text: [],
+      lists: [],
+      startX: 0, //开始触摸的位置
+      moveX: 0, //滑动时的位置
+      endX: 0, //结束触摸的位置
+      disX: 0,//移动距离
+      left:30,
+    };
+  },
+  created() {
+    this.getTextInfo().then(res => {
+      this.getDeptCounts();
+    });
+  },
+  methods: {
+    touchStart: function(ev) {
+      ev = ev || event;
+      // ev.preventDefault();
+      if (ev.touches.length == 1) {
+        //tounches类数组，等于1时表示此时有只有一只手指在触摸屏幕
+        this.startX = ev.touches[0].clientX; // 记录开始位置
+      }
+    },
+    touchMove(ev) {
+      ev = ev || event;
+      if (ev.touches.length == 1) {
+        //滑动时距离浏览器左侧的距离
+        this.moveX = ev.touches[0].clientX;
+        //实时的滑动的距离-起始位置=实时移动的位置
+        this.disX = this.moveX - this.startX;
+        if(this.disX > 0 ){
+          this.left -= 4;
+          if(this.left <= 0){
+            this.left = 0;
+          }
+          this.$refs.s3Box.style.left = -this.left+'%';
+        }
+      }
+    },
+    touchEnd: function(ev) {
+      ev = ev || event;
+    },
+    jumpDetail(type, id) {
+      this.$router.push({ path: "/careersdetail", query: { id: id } });
+    },
+    getDeptCounts(){
+      let url = DomainManager.getDeptCount();
+      this.$axios.get(url).then(res=>{
+        if(res.succ){
+          this.count = res.data,
+          this.title = this.count == 0?"None":this.count +" Open Positions";
+          this.getListsInfo();
+        }else{
+          console.log(res)
+        }
+      }).catch(err=>{
+        console.log(err);
+      })
+    },
+    getListsInfo() {
+      let url = DomainManager.getCareerList();
+      this.$axios
+        .get(url)
+        .then(res => {
+          if (res.succ) {
+            this.lists = res.data;
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    async getTextInfo() {
+      await new Promise((resolve, reject) => {
+        let url = DomainManager.getFlightFAQS() + "?cId=117";
+        this.$axios
+          .get(url)
+          .then(res => {
+            if (res.success) {
+              this.text = res.list[0].node;
+              resolve(res.success);
+            } else {
+              reject(res.success);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      });
+      return;
+    }
+  }
+};
+</script>
+<style lang="less" scoped>
+#joinus {
+  .header {
+    background: #0b9d78;
+    .title {
+      color: #fff;
+      font-size: 0.768rem;
+    }
+    .sp {
+      opacity: 0;
+    }
+  }
+  .content {
+    padding: 2rem 0 1rem;
+    .section1 {
+      img {
+        width: 100%;
+        height: 100%;
+      }
+    }
+    .section2 {
+      padding: 0 0.68rem;
+      h2 {
+        padding: 1.06rem 0;
+        color: #333;
+        font-size: 0.769rem;
+      }
+      p {
+        text-align: left;
+        color: #666;
+        font-size: 0.598rem;
+        line-height: 1.02rem;
+      }
+      p:last-child {
+        padding: 1rem 0;
+      }
+    }
+    .section3 {
+      width: 100%;
+      height: 4.91rem;
+      position: relative;
+      overflow-x:scroll;
+      .s3-box {
+        width: 25.46rem;
+        height: 4.91rem;
+        position: absolute;
+        display: flex;
+        left: -30%;
+        div {
+          width: 7.82rem;
+          height: 4.91rem;
+          font-size: 0;
+          img {
+            width: 100%;
+            height: 100%;
+            border-radius: 3px;
+          }
+        }
+        div:nth-child(1) {
+          margin: 0 0.5rem;
+        }
+        div:nth-child(3) {
+          margin: 0 0.5rem;
+        }
+      }
+    }
+    .p-count{
+      margin-top:1rem;
+      padding:0 0.68rem;
+    }
+    .p-count::before,.p-count::after{
+      content:"";
+      display:block;
+      flex:1;
+      border-top:1px solid #ddd;
+    }
+    .section4 {
+      text-align: left;
+      padding: 0 0.68rem;
+      h3 {
+        font-size: 0.769rem;
+        color: #333;
+        padding: 1rem 0 0.5rem;
+        border-bottom: 1px solid #ddd;
+      }
+      p:nth-of-type(n + 1) {
+        padding-top: 0.64rem;
+        font-size: 0.64rem;
+        color: #666;
+      }
+      p:nth-of-type(odd) {
+        color: #0b9d78;
+      }
+    }
+  }
+}
+</style>

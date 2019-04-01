@@ -1,0 +1,339 @@
+import { DomainManager } from "../../config/DomainManager.js";
+import { Airline } from "../airline";
+import { SerializableObject } from "../serializable/serializableObject.js";
+import { FlightStop } from "./FlightStop.js";
+
+export class Flight extends SerializableObject {
+  constructor(
+    departDate,
+    returnDate,
+    airline,
+    flightNumber,
+    stops,
+    commonDiscount,
+    price,
+    refundable,
+    departTimeStamp,
+    policyId,
+    startAirportName,
+    endAirportName,
+    dtTime,
+    atTime,
+    obfp,
+    bfp,
+    gst,
+    ogst,
+    flightInfoBack,
+    minPriceObj
+  ) {
+    super();
+    this.departDate = departDate;
+    this.returnDate = returnDate;
+    this.flightNumber = flightNumber;
+    this.refundable = refundable;
+    this.stops = stops;
+    this.ogst = ogst;
+    this.airlineDIS = 0;
+    this.price = price;
+    this.airline = airline;
+    this.policyId = policyId;
+    this.departTimeStamp = departTimeStamp;
+    // this is the real discount of this flight
+    this.realDiscount = 0;
+    //this is the commom discount of this flight normally it is just for displaying
+    this.commonDiscount = commonDiscount;
+    this.startAirportName = startAirportName;
+    this.endAirportName = endAirportName;
+    this.dtTime = dtTime;
+    this.atTime = atTime;
+    this.obfp = obfp;
+    this.bfp = bfp;
+    this.gst = gst;
+    this.flightInfoBack = flightInfoBack;
+    this.minPriceObj = minPriceObj;
+    try {
+      this.stringsArr = flightInfoBack.feee.feeStrings;
+    } catch (error) {}
+
+    this.rebookFee = "...";
+    this.refoundFee = "...";
+    //this.realPrice = 0
+    this.durationDays = 0;
+    this.couponDiscount = 0;
+  }
+
+  getDurationDays() {
+    let d = this.departDate;
+    let r = this.returnDate;
+    if (r != d) {
+      return r - d;
+    }
+  }
+
+  // contains tax
+  get realPrice() {
+    return this.bfp + this.gst;
+  }
+
+  // get showPrice() {
+  //   return this.price - this.commonDiscount - this.couponDiscount;
+  // }
+  get showPrice() {
+    return this.obfp + this.ogst - this.couponDiscount;
+  }
+
+  get showCashbackPrice() {
+    return this.obfp + this.ogst - this.couponDiscount;
+  }
+  //this.moreInfor alway null until we invoke this method
+  loadMoreInformations(vueComp) {
+    let parms = new Map();
+    let self = this;
+
+    parms.set("flightNo", this.flightNumber);
+    parms.set("discountPrice", this.price);
+    parms.set("departDateTime", this.departTimeStamp);
+
+    let qS = DomainManager.getQueryString(parms);
+    let urlStr = DomainManager.getLoadMoreInfoUrlString(qS);
+
+    var promise = new Promise(function(resolve, reject) {
+      vueComp.$http
+        .jsonp(urlStr)
+        .then(res => {
+          res
+            .json()
+            .then(json => {
+              self.rebookFee = json.rebookinfo;
+              self.refoundFee = json.refundinfo;
+              self.baggageInfos = json.baggageInfo;
+              resolve();
+            })
+            .catch(e => {
+              reject(e);
+            });
+        })
+        .catch(e => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+	* return the duration which in minute
+	*/
+  getDurationInMinute() {
+    return (
+      (this.returnDate.getTime() - this.departDate.getTime()) / (1000 * 60)
+    );
+  }
+
+  getStops() {
+    return this.stops;
+  }
+
+  getPrice() {
+    return this.bfp + this.gst;
+  }
+
+  isRefoundable() {
+    return this.isRefoundable;
+  }
+
+  getStopFlight(
+    selectedStopOptions,
+    priceRange,
+    selectedOneTimeOptions,
+    selectedAirlines
+  ) {
+    let res = false;
+    let stopRes =
+      selectedStopOptions.length == 0
+        ? true
+        : this.getSelectedStopOptions(selectedStopOptions);
+    let priceRangeRes = this.getPriceRange(priceRange);
+    let selectedOneTimeOptionsRes =
+      selectedOneTimeOptions.length == 0
+        ? true
+        : this.getSelectedOneTimeOptions(selectedOneTimeOptions);
+    let selectedAirlinesRes =
+      selectedAirlines.length == 0
+        ? true
+        : this.getSelectedAirlines(selectedAirlines);
+
+    if (
+      stopRes &&
+      priceRangeRes &&
+      selectedOneTimeOptionsRes &&
+      selectedAirlinesRes
+    ) {
+      res = true;
+    }
+
+    return res;
+  }
+
+  getSelectedStopOptions(selectedStopOptions) {
+    let res = false;
+    for (let i = 0; i < selectedStopOptions.length; i++) {
+      if (
+        (selectedStopOptions[i].count == "0" && this.stops.length == 1) ||
+        (selectedStopOptions[i].count == "1+" && this.stops.length > 1)
+      ) {
+        res = true;
+      }
+    }
+    return res;
+  }
+
+  getPriceRange(priceRange) {
+    let res = false;
+    if (this.realPrice <= priceRange.max && this.realPrice >= priceRange.min) {
+      res = true;
+    }
+    return res;
+  }
+
+  getSelectedOneTimeOptions(selectedOneTimeOptions) {
+    let res = false;
+    let departTime = new Date(this.dtTime).getHours();
+    for (let i = 0; i < selectedOneTimeOptions.length; i++) {
+      if (
+        departTime < selectedOneTimeOptions[i].timeRange.endTimeItem.hour &&
+        departTime >= selectedOneTimeOptions[i].timeRange.stratTimeItem.hour
+      ) {
+        res = true;
+      }
+    }
+    return res;
+  }
+  getSelectedAirlines(selectedAirlines) {
+    let res = false;
+
+    for (let i = 0; i < selectedAirlines.length; i++) {
+      if (selectedAirlines[i].shortname == this.airline.shortname) {
+        res = true;
+      }
+    }
+    return res;
+  }
+
+  //departDate, returnDate, airline, flightNumber, stops, taxFee, commonDiscount, price, refundable, departTimeStamp, policyId,startAirportName,endAirportName,dtTime,atTime
+  getJsonPropertis(i, object) {
+    if (i == "departDate") {
+      object.departDate = Date.parse(this.departDate);
+    } else if (i == "returnDate") {
+      object.returnDate = Date.parse(this.returnDate);
+    } else if (i == "airline") {
+      object.airline = this.airline.toJSON();
+    } else if (i == "flightNumber") {
+      object.flightNumber = this.flightNumber;
+    } else if (i == "stops") {
+      let stopsArr = [];
+      this.getStopsJson(stopsArr);
+      object.stops = stopsArr;
+    } else if (i == "taxFee") {
+      object.taxFee = this.taxFee;
+    } else if (i == "commonDiscount") {
+      object.commonDiscount = this.commonDiscount;
+    } else if (i == "price") {
+      object.price = this.price;
+    } else if (i == "refundable") {
+      object.refundable = this.refundable;
+    } else if (i == "departTimeStamp") {
+      object.departTimeStamp = this.departTimeStamp;
+    } else if (i == "policyId") {
+      object.policyId = this.policyId;
+    } else if (i == "startAirportName") {
+      object.startAirportName = this.startAirportName;
+    } else if (i == "endAirportName") {
+      object.endAirportName = this.endAirportName;
+    } else if (i == "dtTime") {
+      object.dtTime = this.dtTime;
+    } else if (i == "atTime") {
+      object.atTime = this.atTime;
+    } else if (i == "realDiscount") {
+      object.realDiscount = this.realDiscount;
+    } else if (i == "durationDays") {
+      object.durationDays = this.durationDays;
+    } else if (i == "rebookFee") {
+      object.rebookFee = this.rebookFee;
+    } else if (i == "realPrice") {
+      object.realPrice = this.realPrice;
+    } else if (i == "flightInfoBack") {
+      object.flightInfoBack = this.flightInfoBack;
+    } else if (i == "stringsArr") {
+      object.stringsArr = this.stringsArr;
+    } else if(i == 'minPriceObj') {
+      object.minPriceObj = this.minPriceObj;
+    }
+  }
+
+  getStopsJson(stopsArr) {
+    let stop = this.stops;
+
+    for (let i = 0; i < stop.length; i++) {
+      let stopObj = stop[i].toJSON();
+      stopsArr.push(stopObj);
+    }
+  }
+
+  setJsonToObjPropertis(i, object) {
+    if (i == "departDate") {
+      this.departDate = new Date(object.departDate);
+    } else if (i == "returnDate") {
+      this.returnDate = new Date(object.returnDate);
+    } else if (i == "airline") {
+      let airline = new Airline();
+
+      airline.toObject(object.airline);
+
+      this.airline = airline;
+    } else if (i == "flightNumber") {
+      this.flightNumber = object.flightNumber;
+    } else if (i == "stops") {
+      let stopsArr = [];
+
+      this.setStopsObject(stopsArr, object.stops);
+      this.stops = stopsArr;
+    } else if (i == "taxFee") {
+      this.taxFee = object.taxFee;
+    } else if (i == "commonDiscount") {
+      this.commonDiscount = object.commonDiscount;
+    } else if (i == "price") {
+      this.price = object.price;
+    } else if (i == "refundable") {
+      this.refundable = object.refundable;
+    } else if (i == "departTimeStamp") {
+      this.departTimeStamp = object.departTimeStamp;
+    } else if (i == "policyId") {
+      this.policyId = object.policyId;
+    } else if (i == "startAirportName") {
+      this.startAirportName = object.startAirportName;
+    } else if (i == "endAirportName") {
+      this.endAirportName = object.endAirportName;
+    } else if (i == "dtTime") {
+      this.dtTime = object.dtTime;
+    } else if (i == "atTime") {
+      this.atTime = object.atTime;
+    } else if (i == "realDiscount") {
+      this.realDiscount = object.realDiscount;
+    } else if (i == "durationDays") {
+      this.durationDays = object.durationDays;
+    } else if (i == "rebookFee") {
+      this.rebookFee = object.rebookFee;
+    }else if (i == 'minPriceObj'){
+      this.minPriceObj = object.minPriceObj;
+    }
+  }
+
+  setStopsObject(stopsArr, jsonArr) {
+    for (let i = 0; i < jsonArr.length; i++) {
+      let flightstops = new FlightStop();
+
+      flightstops.toObject(jsonArr[i]);
+
+      stopsArr.push(flightstops);
+    }
+  }
+}

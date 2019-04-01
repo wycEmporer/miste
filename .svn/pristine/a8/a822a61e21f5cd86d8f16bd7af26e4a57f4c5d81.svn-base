@@ -1,0 +1,304 @@
+<template>
+  <div class="main">
+    <div class="area form-group">
+      <!-- <label class="gray">City/Hotel</label> -->
+      <input type="text" :value="searchInfo.name" @click='openSearchCity'>
+    </div>
+    <div class="datepicker form-group">
+      <div class="checkIn">
+        <!-- <label class="gray">Check-In</label> -->
+        <input type="text" readonly
+          @click="openPickerFrom('START')"
+          :class="{active:isActive&&targetStatus=='START'}"
+          :value="TimeFormatUtil.getOrderDetailDate(startDate, 1)"
+        >
+      </div>
+      <div class="keepOnTime flex align-items-center content-center ">
+        <img :src="require('assets/images/home-new/icon_moon.png')" alt="">
+        <p>{{keepOnTime}}</p>
+      </div>
+      <div class="checkOut">
+        <!-- <label class="gray">Check-Out</label> -->
+        <input type="text" readonly
+          @click="openPickerFrom('END')"
+          :class="{active:isActive&&targetStatus=='END'}"
+          :value="TimeFormatUtil.getOrderDetailDate(endDate, 1)"
+        >
+      </div>
+    </div>
+
+    <transition enter-active-class="fadeInUp" leave-active-class="fadeOutDown">
+      <calendar v-if="isShowCalendar" :limit='limit' class="animated" @getVal="getVal"></calendar>
+    </transition>
+    <guests @guestsInfo="getGuestsInfo" :guests="guests"/>
+    <div class="searchBtn">
+      <button @click="search">Search</button>
+    </div>
+    <hotelSearchCity v-if="isShow" @getCity="getCity" @close="closeSearchCity" />
+
+    <transition enter-active-class="fadeIn" leave-active-class="fadeOut">
+			<div class="mark" style="top: 0; left:0" v-show="isShowmark"></div>
+		</transition>
+  </div>
+</template>
+<script>
+import {TimeFormatUtil, CookieUtil} from 'models/utils';
+import {emitCustomEvent} from 'models/utils/adGAEvent';
+
+
+export default {
+  name: 'HotelSearch',
+  components: {
+    guests:() => import('./guests'),
+    calendar: () => import('components/calendar/calendar.vue'),
+    hotelSearchCity: () => import('./base/hotelSearchCity'),
+  },
+  created(){
+    let hotelSearch = CookieUtil.getItem('_hotelSearch') && JSON.parse(CookieUtil.getItem('_hotelSearch'));
+    if(hotelSearch){
+      let checkIn = new Date(hotelSearch.checkIn.replace(/-/g, '/'));
+      let checkOut = new Date(hotelSearch.checkOut.replace(/-/g, '/'));
+
+      this.startDate = checkIn > this.startDate ? checkIn :  this.startDate;
+      this.endDate = checkOut > this.endDate ? checkOut : this.endDate;
+
+      this.searchInfo = {
+        name: hotelSearch.name || hotelSearch.area,
+        code: hotelSearch.code,
+        cityName: hotelSearch.cityName,
+        cityId: hotelSearch.cityId,
+        flag: hotelSearch.flag,
+      };
+    }else{
+      this.searchInfo = {
+        name: 'Bangalore',
+        code: '1734',
+        cityName: 'Bangalore',
+        cityId: '1734',
+        flag: 'city',
+      };
+    }
+    
+    this.guests = (hotelSearch && hotelSearch.guests) ? hotelSearch.guests : [
+      {
+        id: 1,
+        age: [],
+        active: true,
+        adult: 2,
+        child: 0,
+      }
+    ]
+  },
+  data(){
+    return{
+      TimeFormatUtil,
+      isActive: false,
+      limit:{},
+      isShow: false,
+      isShowCalendar: false,
+      isShowmark: false,
+      currentCalendarTarget: '',
+      searchInfo: null,
+      guests: null,
+      startDate: new Date(),
+      endDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
+    }
+  },
+  computed: {
+    keepOnTime(){
+      let time1 = new Date(this.startDate.setHours(0, 0, 0, 0)).getTime() / 1000;
+      let time2 = new Date(this.endDate.setHours(0, 0, 0, 0)).getTime() / 1000;
+      let abs = parseInt((time2 - time1) / (3600 * 24));
+      return abs > 1 ? abs + " Nights":"1 Night";
+    }
+  },
+  methods:{
+    getGuestsInfo(playload){
+      this.guests = playload;
+    },
+    search() {
+      emitCustomEvent('hotelSearch', 'FlightAndHotel');
+      let param = {
+        name: this.searchInfo.name,
+        checkIn: TimeFormatUtil.getYearMonthDateString(this.startDate),
+        checkOut: TimeFormatUtil.getYearMonthDateString(this.endDate),
+        guests: this.guests,
+      }
+      if (this.searchInfo.flag === 'city') {
+        window.location.href ='https://m.happyeasygo.com/hotel/cities/' + this.searchInfo.cityId + '/hotelList?p=' + JSON.stringify(param);
+      } else if (this.searchInfo.flag === 'hotel') {
+        window.location.href ='https://m.happyeasygo.com/hotel/hotels/' + this.searchInfo.code + '/hotelStatus?p=' + JSON.stringify(param);
+      }else if(this.searchInfo.flag === 'area'){
+        param.area = param.name;
+        delete param.name;
+         window.location.href ='https://m.happyeasygo.com/hotel/cities/' + this.searchInfo.code + '/hotelList?p=' + JSON.stringify(param);
+      }
+    },
+    closeSearchCity(){
+      this.isShow = false;
+    },
+    openSearchCity(){
+      this.isShow = true;
+    },
+    getCity(playload){
+      this.searchInfo = playload;
+      this.isShow = false;
+    },
+    openPickerFrom(current){
+      this.currentCalendarTarget = current;
+      let maxDate = new Date();
+      maxDate.setFullYear(maxDate.getFullYear() +1);
+      if(this.currentCalendarTarget === 'START'){
+        this.limit = {
+          minYear: new Date().getFullYear(),
+          minMonth: new Date().getMonth() + 1,
+          minDay: new Date().getDate(),
+          maxYear: maxDate.getFullYear(),
+          maxMonth: maxDate.getMonth() +1,
+          maxDay: maxDate.getDate() -1,
+        };
+      }else{
+        this.limit = {
+          minYear: this.startDate.getFullYear(),
+          minMonth: this.startDate.getMonth() + 1,
+          minDay: this.startDate.getDate() + 1,
+          maxYear: maxDate.getFullYear(),
+          maxMonth: maxDate.getMonth() +1,
+          maxDay: maxDate.getDate(),
+        };
+      }
+      this.isShowCalendar = true;
+      this.isShowmark = true;
+    },
+    getVal(date){
+      this.isShowCalendar = false;
+      this.isShowmark = false;
+      if(this.currentCalendarTarget === 'START'){
+        this.startDate = date;
+      }else{
+        this.endDate = date;
+      }
+    },
+  },
+  watch:{
+    startDate(newVal, oldVal){
+      if(new Date(newVal.getTime() + 24*60*60*1000) > this.endDate){
+        this.endDate = new Date(newVal.getTime() + 24*60*60*1000);
+      }
+    }
+  }
+}
+</script>
+<style lang="less" scoped>
+*{
+  box-sizing: border-box;
+}
+.calendar-wrapper{
+  top:0;
+  left:0;
+}
+.main {
+  width: 100%;
+  padding: 0.854rem 0.64rem 0;
+  .area {
+    input {
+      color:#000 !important;
+      background: url("~assets/images/home-new/icon_hotel2.png") 12px center / 15px 15px no-repeat #FAFAFA;
+    }
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 0.854rem;
+    label {
+      font-size: 0.48rem;
+      text-align: left;
+      line-height: 0.64rem;
+      margin-bottom: 0.2rem;
+      width: 100%;
+    }
+    input {
+      width: 100%;
+      height: 1.709rem;
+      padding: 0 42px;
+      color:#787878;
+      font-size: 12px;
+      border-radius: 2px;
+      &.active {
+        border-color: #0B9D78;
+      }
+    }
+    &.datepicker {
+      flex-direction: row;
+      justify-content: space-between;
+      input {
+        background-origin:content-box;
+        font-size: 0.56rem;
+      }
+      div {
+        width: 37%;
+        display: flex;
+        // flex-direction: column;
+        position: relative;
+      }
+      i {
+        position: absolute;
+        width: 0.68rem;
+        height: 0.68rem;
+        // background: url("../../../assets/images/home/icon-calendar-normal.png") no-repeat center/contain;
+        right: 0.2rem;
+        top: 1.4rem
+      }
+      .keepOnTime{
+        width:20%;
+        height:.64rem;
+        background: #12355D;
+        border: 1px solid #12355D;
+        border-radius: 15px;
+        box-sizing: content-box;
+        img{
+          width:10px;
+          height:10px;
+          vertical-align:middle;
+          margin-top: -1px;
+          margin-right: 2px;
+        }
+        p{
+          transform: scale(0.9);
+          font-size: 11px;
+          color: #FFFFFF;
+          text-align: left;
+        }
+      }
+    }
+  }
+  .datepicker{
+    .checkIn, .checkOut{
+      input{
+        padding:0 0 0 42px;
+        background: url("~assets/images/home-new/icon_calendar.png") 12px center / 15px 15px no-repeat #FAFAFA;
+      }
+    }
+  }
+  .searchBtn {
+    padding-bottom: 0.64rem;
+    button {
+      width: 100%;
+      font-size: 0.769rem;
+      color: #fff;
+      height:1.8rem;
+      line-height: 1.8rem;
+      background-color: #E3A428;
+      border-radius: 2px;
+      display: block;
+      letter-spacing:1px;
+    }
+  }
+  .calendar {
+    margin-bottom: 0.6rem;
+  }
+}
+</style>
+
+

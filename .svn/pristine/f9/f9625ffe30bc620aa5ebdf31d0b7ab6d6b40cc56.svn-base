@@ -1,0 +1,605 @@
+<template>
+  <div id="anni-landing">
+    <head-top class="header">
+      <i slot="left" class="prev iconfont icon-back"></i>
+      <div slot="title" class="title">Anniversary</div>
+      <i slot="right" class="sp iconfont icon-back"></i>
+    </head-top>
+    <div class="container">
+      <div class="top" :class="{marTop: contentMargin}"></div>
+      <div class="section1" :style="bgImg">
+        <div class="s1-top">
+          <img :src="imgUrls[0]" alt="">
+          <p style="color:#fff;padding:0.3rem 0 0;">Thank You All for being a Part of the HappyEasyGo Anniversary Sale</p>
+          <p style="padding:0 0 0.3rem;">Starting from July 31st, 00:00:00 to August 31st, 23:59:59</p>
+        </div>
+        <div class="s1-rectangle">
+          <img :src="imgUrls[1]" alt="">
+          <div class="s1-p-box">
+            <p>We are offering fares as</p>
+            <p>low as <span ><i class="rs">Rs.</i>611</span> for select routes!</p>
+          </div>
+        </div>
+        <p class="s1-advertise-p">Grab Our Unbelievable Flight Deals And Fly At The Lowest Possible Airfares.</p>
+        <div class="s1-advertise">
+          <input id="foo1" v-model="code1" style="position:absolute;opacity:0;">
+          <input id="foo2" v-model="code2" style="position:absolute;opacity:0;">
+          <button class="copy copy1" :class="{ipad1:ipad768}" id="copyUrl1" @click="copyCode(1)" ><img :src="imgUrls[4]" alt="copy" title="copy the code"></button>
+          <button class="copy copy2" :class="{ipad2:ipad768}" id="copyUrl2" @click="copyCode(2)" data-clipboard-action="copy" data-clipboard-target="#foo2"><img :src="imgUrls[4]" alt="copy" title="copy the code"></button>
+          <img class="bg" :class="{ipad768:ipad768}" :src="imgUrls[2]" alt="">
+          <button class="BookNow" :class="{ipadBtn:ipad768}" @click="jumpHome" >Book Now</button>
+        </div>
+        <div class="s1-title">
+          <p>That’s Not All We Are Bringing You.</p>
+          <p>You Can Also Take Part In The Lottery And Stand A Chance to Win Amazing Prizes.</p>
+          <p>Below is what you can win:</p>
+        </div>
+        <mt-swipe class="s1-banner" :show-indicators="false" :auto="4000">
+          <mt-swipe-item v-for="(item,index) in s1Banners" :key="index">
+            <div class="banner-box">
+              <img :src="item.url" alt="" @click="jumpDetails(item.prizeName)">
+            </div>
+          </mt-swipe-item>
+        </mt-swipe>
+        <button class="s2-button" @click="jumpToLottery">Hurry Up ! Draw A Prize Now !</button>
+        <div class="s2-title">
+          <p>We Are Also Bringing A Plethora Of Gifts For Our Loyal Customers.</p>
+          <p>If you have been A loyal HappyEasyGo customer, you can get:</p>
+        </div>
+        <ul class="s2-banner">
+          <li>
+            <p class="s2-ban-top">Anniversary gift package.</p>
+            <div class="s2-ban-middle"><img :src="s2Banners[0]" alt=""></div>
+            <p class="s2-ban-bottom">Those who registered with HEG before 30th June, 2018 can win special vouchers for discounts on flight ticket bookings. Check your gifts in <a href="javascript:;" @click="jumpCoupon">My Coupons’ Page</a> now.</p>
+          </li>
+          <li>
+            <p class="s2-ban-top">Regular campaign rewards &amp; discounts on HappyEasyGo Facebook.</p>
+            <div class="s2-ban-middle"><img :src="s2Banners[1]" alt=""></div>
+            <p class="s2-ban-bottom">Visit HappyEasyGo facebook account: <a :href="s3Shares[0].href" target="_blank">https://www.facebook.com/happyeasygo/</a> and find exclusive offers from our social channels.</p>
+          </li>
+        </ul>
+        <div class="s3-title">
+          <p>Hurry, Plan Your Vacation To Enjoy Our Offer Now</p>
+          <p>And Grab The Opportunity To Win These Exciting Prizes!</p>
+        </div>
+        <div class="s3-share">
+          <p>Follow us on</p>
+          <ul class="share-icon flex">
+            <li v-for="(item,index) in s3Shares" :key="index">
+              <a :href="item.href" target="_blank" @click="shareTrack(index)">
+                <img :src="item.url" alt="">
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div class="s3-down" v-show="isShowBtn">
+          <p>Download our mobile App</p>
+          <a href="https://app.adjust.com/k34dypu?campaign=Anniversary&adgroup=LandingPage&creative=20180726" target="_blank"><img :src="imgUrls[3]" alt=""></a>
+        </div>
+        <div class="foot-bottom" v-show="isShowBtn">
+					<p>
+						<span @click="$router.push('/agreement')">T &amp; C</span>
+						<span @click="$router.push('/privacy')">Privacy</span>
+						<span @click="$router.push('/about')">About Us</span>
+						<span @click="$router.push('/contact')">Contact Us</span>
+					</p>
+					<p>2016-2018© Happyeasygo Group. All rights reserved.</p>
+				</div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import headTop from "../../components/head/head.vue";
+import { CookieUtil } from "../../models/utils";
+import { Swipe, SwipeItem,Toast } from 'mint-ui';
+import Clipboard from 'clipboard';
+import {Anniv_book, Anniv_draw_prize, emitCustomEvent} from 'models/utils/adGAEvent';
+
+export default {
+  components:{
+    headTop,
+    "mt-swipe":Swipe,
+    "mt-swipe-item":SwipeItem
+  },
+  data(){
+    return{
+      model: 0,
+      ipad768:false,
+      code1:"HEGSEP",
+      code2:"HEGAPP",
+      isShowBtn:true,
+      contentMargin: true,
+      bgImg:'background-image:url('+require('../../assets/images/anniversarysale/bg11.png')+');background-size:100% 100%;background-position:top center;background-repeat:no-repeat;',
+      imgUrls:[
+        require('../../assets/images/anniversarysale/top.png'),
+        require('../../assets/images/anniversarysale/s1-square.png'),
+        require('../../assets/images/anniversarysale/s1-coupon.png'),
+        require('../../assets/images/anniversarysale/s4-downLoad.png'),
+        require('../../assets/images/anniversarysale/copy.png'),
+      ],
+      s1Banners:[
+        {prizeName:"Air",url:require('../../assets/images/anniversarysale/s1-banner1.png')},
+        {prizeName:"Samsung",url:require('../../assets/images/anniversarysale/s1-banner2.png')},
+        {prizeName:"NETMED",url:require('../../assets/images/anniversarysale/s1-banner3.png')},
+        {prizeName:"MYNTRA",url:require('../../assets/images/anniversarysale/s1-banner4.png')},
+        {prizeName:"TREEBO",url:require('../../assets/images/anniversarysale/s1-banner5.png')},
+        {prizeName:"ZOOMCAR",url:require('../../assets/images/anniversarysale/s1-banner6.png')},
+        {prizeName:"XOXODAY",url:require('../../assets/images/anniversarysale/s1-banner7.png')},
+        {prizeName:"GAANA",url:require('../../assets/images/anniversarysale/s1-banner8.png')},
+      ],
+      s2Banners:[
+        require('../../assets/images/anniversarysale/s2-banner1.png'),
+        require('../../assets/images/anniversarysale/s2-banner2.png'),
+      ],
+      s3Shares:[
+        {href:'https://www.facebook.com/happyeasygo/',url:require('../../assets/images/anniversarysale/share-f.png')},
+        {href:'https://twitter.com/happyeasygo',url:require('../../assets/images/anniversarysale/share-b.png')},
+        {href:'https://www.instagram.com/happyeasygo_india/',url:require('../../assets/images/anniversarysale/share-c.png')},
+        {href:'https://plus.google.com/+HappyEasyGoIndia',url:require('../../assets/images/anniversarysale/share-g.png')},
+        {href:'https://www.youtube.com/channel/UCBlph2534GSN1PDJH9E5ylg',url:require('../../assets/images/anniversarysale/share-s.png')},
+      ],
+      ifLogin:CookieUtil.hasItem("uuid"),
+      flag:true,
+    }
+  },
+  methods:{
+    checkType() {
+       try {
+        let typeA = typeof window.heg.getNativeSource() === "string"
+          ? JSON.parse(window.heg.getNativeSource())
+          : window.heg.getNativeSource();
+        this.model = Number(typeA.deviceType) + 1;
+      } catch (e) {
+        this.model = 0;
+      }
+    },
+    jumpHome(){
+      try {
+        window.heg.goHomePage();
+        window.heg.trackEvent("Ac_App_1stanniversary_book");
+      } catch (error) {
+        emitCustomEvent(Anniv_book);
+        this.$router.push('/');
+      }
+    },
+    jumpDetails(who){
+      emitCustomEvent(who);
+      switch (who) {
+        case "Air":
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_hegcoupons");
+          } catch (error) {}
+          break;
+        case "Samsung":
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_pics8phone");
+          } catch (error) {}
+          break;
+        case "NETMED":
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_netmeds");
+          } catch (error) {}
+          break;
+        case "MYNTRA":
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_mytnra");
+          } catch (error) {}
+          break;
+        case "TREEBO":
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_treebo");
+          } catch (error) {}
+          break;
+        case "ZOOMCAR":
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_zoomecar");
+          } catch (error) {}
+          break;
+        case "XOXODAY":
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_xoxoday");
+          } catch (error) {}
+          break;
+        case "GAANA":
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_Gaana");
+          } catch (error) {}
+          break;
+        default:
+          break;
+      }
+      this.$router.push({path:'/anniversaryIntroduce',query:{anchor:'terms',who:who}});
+    },
+    jumpToLottery(){
+      try {
+        window.heg.trackEvent("Ac_App_1stanniversary_lotterybutton");
+      } catch (error) {}
+      emitCustomEvent(Anniv_draw_prize);
+      this.$router.push('/anniversary');
+    },
+    jumpCoupon(){
+      if(!this.ifLogin){
+        try {
+          window.heg.nativeSignIn();
+        } catch (error) {
+          this.$router.push("/login");
+        }
+      }else{
+        try {
+          window.heg.nativeMyCoupons();
+        } catch (error) {this.$router.push("/privateCoupons");};
+      }
+    },
+    shareTrack(who){
+      switch (who) {
+        case 0:
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_facebook");
+          } catch (error) {}
+          break;
+        case 1:
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_Twitter");
+          } catch (error) {}
+          break;
+        case 2:
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_Instagram");
+          } catch (error) {}
+          break;
+        case 3:
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_google+");
+          } catch (error) {}
+          break;
+        case 4:
+          try {
+            window.heg.trackEvent("Ac_App_1stanniversary_youtube");
+          } catch (error) {}
+          break;
+        default:
+          break;
+      }
+    },
+    copyCode(who){
+      let that = this;
+      if(this.flag){
+        this.flag = false;
+        let clipboard;
+        if(who == 1){
+          clipboard = new Clipboard('#copyUrl1',{
+            text: function() {
+              return that.code1;
+            }
+          });
+        }else if(who == 2){
+          clipboard = new Clipboard('#copyUrl2');
+        }
+        clipboard.on('success', function(e) {
+          Toast({
+            message:"Successfully copied to the Clipboard! ",
+            duration:1200
+          });
+          e.clearSelection();
+          clipboard.destroy();
+        });
+        clipboard.on('error', function(e) {
+          Toast({
+            message:"Copy failed, please input manually! ",
+            duration:1200
+          });
+          e.clearSelection();
+          clipboard.destroy();
+        });
+        setTimeout(function(){
+          that.flag = true;
+        },1200);
+      }
+    },
+    onReceviedUuid(uuid) {// 接受app登陆发来的通知,跟新页面
+      CookieUtil.removeItem("uuid");
+      CookieUtil.setItem("uuid", uuid);
+      this.ifLogin = true;
+      return "1";
+    },
+  },
+  created() {
+    var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+    if(width >= 450){
+      this.ipad768 = true;
+    }
+   try {
+      let deviceObj =
+        typeof window.heg.getNativeSource() === "string"
+          ? JSON.parse(window.heg.getNativeSource())
+          : window.heg.getNativeSource();
+      this.contentMargin =
+        Number(deviceObj.deviceType) == 1 && !deviceObj.deviceNative;
+      this.isShowBtn = false;
+      let uuid = window.heg.getNativeUuid();
+      if(uuid){
+        CookieUtil.setItem('uuid', uuid);
+      }else{
+        CookieUtil.removeItem('uuid');
+      }
+      window.onReceviedUuid = this.onReceviedUuid;
+      if(CookieUtil.hasItem("uuid")) {//登陆后
+        this.ifLogin = true;
+      }else{
+        this.ifLogin = false;
+      }
+    } catch (e) {
+      if(CookieUtil.hasItem("uuid")) {//登陆后
+        this.ifLogin = true;
+      }else{
+        this.ifLogin = false;
+      }
+    }
+    this.checkType();
+  },
+  beforeDestroy() {
+    
+  },
+}
+</script>
+<style lang="less">
+#anni-landing{
+  .s1-banner{
+    padding:0.8rem 0 1rem;
+    height:12.8rem;
+    .mint-swipe-items-wrap{
+      width:100%;
+      div{
+        .banner-box{
+          width: 12rem;
+          left: 0;
+          right: 0;
+          margin:auto;
+          box-shadow:0 2px 10px 1px #666;
+        }
+        img{
+          width:12rem;
+          vertical-align: top;
+          border-radius:5px 5px 0 0;
+        }
+      }
+    }
+  }
+}
+</style>
+<style lang="less" scoped>
+#anni-landing{
+  height:auto;
+  .header {
+    background: #0b9d78;
+    .title {
+      font-size: 0.768rem;
+      color: #fff;
+    }
+    .sp {
+      opacity: 0;
+    }
+  }
+  a{display:inline-block;text-decoration:underLine;}
+  .marTop{
+    margin-top: 2rem;
+  }
+  img{
+    width:100%;
+    vertical-align: top;
+  }
+  .section1{
+    width: 100%;
+    .s1-top{
+      p{
+        font-size:0.512rem;
+        color:#333;
+        line-height:0.8rem;
+      }
+      p:nth-of-type(1){font-size:0.577rem;}
+    }
+    .s1-rectangle{
+      position: relative;
+      img{
+        width: 12rem;
+      }
+      p{
+        font-size:0.577rem;
+        color:#f7f4f2;
+        line-height:0.8rem;
+        letter-spacing:0.5px;
+        span{color:#e8fc04;font-size:0.769rem;}
+      }
+      .s1-p-box{
+        position: absolute;
+        top: 2px;
+        left: 0;
+        right: 0;
+        margin:auto;
+      }
+    }
+    .s1-advertise-p{
+      margin:0 0.68rem;
+      color:#112645;
+      font-size: 0.769rem;
+      line-height:1rem;
+      padding:0.3rem 0;
+    }
+    .s1-advertise{
+      margin:0.2rem 0.68rem 0.8rem;
+      position: relative;
+      background:#fff;
+      border-radius:3px;
+      .copy{
+        padding:0.5rem 1rem;
+        cursor: pointer;
+        right:1rem;
+        position: absolute;
+        img{width: 100%;}
+      }
+      .copy1{
+        top:3rem;
+      }
+      .copy2{
+        top:7.25rem;
+      }
+      .ipad1{
+        top:62px;
+        right:200px;
+      }
+      .ipad2{
+        top:162px;
+        right:200px;
+      }
+      img.bg{
+        width:100%;
+        border-radius:5px;
+        box-shadow:0 5px 15px #aaa;
+      }
+      img.ipad768{
+        width:343px;
+      }
+      button.BookNow{
+        display:block;
+        width:4.48rem;
+        height:1.282rem;
+        line-height:1.282rem;
+        color:#f7f4f2;
+        background: #112645;
+        border-radius:5px;
+        position: absolute;
+        bottom: 0.3rem;
+        left: 0;
+        right: 0;
+        margin:auto;
+        cursor: pointer;
+      }
+      button.ipadBtn{
+        width: 105px;
+        height: 30px;
+        line-height:30px;
+      }
+    }
+    .s1-title{
+      p{
+        color:#112645;
+        line-height:1rem;
+      }
+      p:first-child{font-size:0.470rem;}
+      p:nth-child(2){font-size:0.769rem;}
+      p:last-child{font-size:0.427rem;opacity:0.5;}
+    }
+    .s2-button{
+      font-size: 0.641rem;
+      color:#fff;
+      background: #b8252b;
+      border-radius:5px;
+      padding:0.4rem 0.5rem;
+      cursor: pointer;
+    }
+    .s2-title{
+      padding:0 0.5rem 0.5rem;
+      p{
+        font-size:0.470rem;
+        color:#333;
+        line-height:1rem;
+      }
+      p:first-child{font-size: 0.769rem;padding:0.8rem 0 0.1rem;}
+    }
+    .s2-banner{
+      padding:0 0.68rem .616rem;
+      display:flex;
+      justify-content:space-between;
+      li{
+        width: 7rem;
+        background: #fff;
+        .s2-ban-top{
+          font-size: 0.512rem;
+          color:#112645;
+          font-weight: bolder;
+        }
+        .s2-ban-middle{
+          height: 4.78rem;
+          img{
+            width: 100%;
+            height: 100%;
+          }
+        }
+        .s2-ban-bottom{
+          font-size: 0.427rem;
+          color:#333;
+          padding:0.2rem 0.3rem;
+          text-align:left;
+          line-height:0.7rem;
+          a{word-wrap:break-word;}
+        }
+      }
+      li:first-child .s2-ban-top{
+        height:1.8rem;
+        line-height:1.8rem;
+      }
+      li:last-child{
+        .s2-ban-top{
+          height:1.6rem;
+          padding:0.1rem 0;
+          font-size:12px;
+        }
+        a{display:block;}
+      }
+    }
+    .s3-title{
+      padding: 0 0 1rem;
+      p{
+        color:#b8252b;
+        font-size: 0.512rem;
+        line-height:0.8rem;
+      }
+    }
+    .s3-share{
+      padding:0 2rem 0.427rem;
+      p{font-size:0.512rem;padding-bottom:0.342rem;color:#112645;}
+      .share-icon{
+        justify-content:space-around;
+        li{
+          width: 1.709rem;
+          height: 1.709rem;
+          img{
+            width: 100%;
+            height:100%;
+            border-radius:50%;
+            cursor: pointer;
+          }
+        }
+      }
+    }
+    .s3-down{
+      padding-bottom: 1rem;
+      p{color:#112645;font-size: 0.512rem;padding:0 0 0.427rem;}
+      img{
+        width: 4.2rem;
+        cursor: pointer;
+      }
+    }
+    .foot-bottom {
+      vertical-align: middle;
+      background:transparent;
+      padding: 0 0 1rem;
+      p {
+        font-size: 0.470rem;
+        color: #112645;
+        padding: 0.2rem 0;
+        span{
+          border-right: 1px solid #112645;
+          display: inline-block;
+          padding: 0 0.2rem;
+          cursor: pointer;
+        }
+        span:last-child{
+          border-right: none;
+        }
+      }
+    }
+  }
+}
+</style>

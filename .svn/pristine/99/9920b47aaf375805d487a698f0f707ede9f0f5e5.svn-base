@@ -1,0 +1,359 @@
+<template>
+    <div class="wrapper">
+        <head-top class="head">
+            <i slot="left" class="iconfont icon-back"></i>
+            <div slot="title" class="title">
+                Reschedule
+            </div>
+            <i class="sp iconfont icon-back" slot="right"></i>
+        </head-top>
+        <div class="container">
+            <div class="passengers">
+                <div class="title">Select Passenger</div>
+                <ul class="list" v-for="(item,index) in orders[orderIndex].travellerinfo" :key="item.travellerId">
+                    <li :class="{active:pickItem[index]}" @click="chooseId(index)" v-show="item.status == 1">
+                        {{item.name}}
+                    </li>
+                </ul>
+            </div>
+            <div class="changeDate">
+                <div class="title">Depart on</div>
+                <div class="form-group">
+                    <span>
+                        {{time||'Day/Month/Year'}}
+                        <input type="date" v-model="time">
+                    </span>
+                </div>
+            </div>
+            <div class="number">
+                <div class="title">Flight Number</div>
+                <div class="form-group">
+                    <input type="text" v-model="flightNo" placeholder="Flight Number">
+                </div>
+            </div>
+            <div class="text">
+                <div class="title">Comments & Demands</div>
+                <div class="form-group">
+                    <textarea name="" id="" cols="30" rows="10"></textarea>
+                </div>
+                <div class="tips flex content-end">
+                    <span>limit:300</span>
+                </div>
+            </div>
+            <div class="button">
+                <a @click="changeTrip()">Submit</a>
+            </div>
+        </div>
+    </div>
+</template>
+<script>
+import headTop from '../../../components/head/head.vue'
+import flightInfo from './base/flightInfo.vue'
+import { TimeFormatUtil, OrderStatusUtil } from './../../../models/utils'
+import { Toast, Indicator } from 'mint-ui'
+import { User } from '../../../models/user'
+import { DomainManager } from '../../../config/DomainManager'
+
+
+export default {
+    components: {
+        headTop,
+        flightInfo,
+        Toast
+    },
+    data() {
+        return {
+            orders: [],
+            orderIndex: 0,
+            flightNo: '',
+            time: '',
+            pickList: [],
+            pickItem: []
+        }
+    },
+    methods: {
+        chooseId(index) {
+            this.pickItem[index] ? this.$set(this.pickItem, index, false) : this.$set(this.pickItem, index, true);
+        },
+        clearArr() {
+            var idArr = [];
+            for (var i = 0; i < this.pickItem.length; i++) {
+                if (this.pickItem[i]) {
+                    idArr.push(i);
+                }
+            }
+            let pi = this.orders[this.orderIndex].travellerinfo;
+            for (var x = 0; x < idArr.length; x++) {
+                this.pickList.push(pi[idArr[x]].travellerId);
+            }
+        },
+        changeTrip() {
+            this.pickList = [];
+            this.clearArr();
+            let passengerIdList = this.pickList;
+            if (this.time != '') {
+                var changeDate = new Date(this.time);
+            } else {
+                var changeDate = 'Day/Month/Year';
+            }
+            let fn = this.flightNo;
+            if (passengerIdList.length == 0) {
+                Toast('Please choose at least 1 passenger');
+                Indicator.close();
+            } else if (changeDate == 'Day/Month/Year') {
+                Toast('Please choose the date');
+                Indicator.close();
+            } else if (new Date().getTime() > changeDate.getTime()) {
+                Toast('invalid date');
+                Indicator.close();
+            } else if (fn == '') {
+                Toast('Please enter the flight number');
+                Indicator.close();
+            } else {
+                Indicator.open({ spinnerType: 'fading-circle' });
+                User.changeSign(passengerIdList, fn, changeDate, this).then(res => {
+                    let parm = 'orderId=' + this.orders[this.orderIndex].id;
+                    if (res.success) {
+                        Indicator.close();
+                        Toast('success')
+                        window.location.href = DomainManager.getSearchOrderResultUrl() + parm;
+                    } else {
+                        Indicator.close();
+                        Toast('error,please try again.')
+                    }
+                })
+            }
+        }
+    },
+    created() {
+        // this.orders = this.$store.getters.orderDetail;
+        // if (!this.orders) {
+        // 	this.orders = JSON.parse(sessionStorage.getItem('orders'));
+        this.orders = JSON.parse(sessionStorage.getItem('orders'));
+        this.fee = JSON.parse(sessionStorage.getItem('orderFee')).fee;
+        this.orderIndex = JSON.parse(sessionStorage.cancelType);
+    }
+}
+</script>
+<style lang="less" scoped>
+.head {
+    background: #0b9d78!important;
+    .title {
+        font-size: 0.768rem;
+        color: #fff;
+    }
+    .sp {
+        opacity: 0;
+    }
+}
+
+.container {
+    overflow: auto;
+    position: relative;
+    .change-option {
+        width: 12.16rem;
+        position: fixed;
+        top: 50%;
+        margin-top: -6.4rem;
+        left: 50%;
+        margin-left: -6.08rem;
+        z-index: 9;
+        background: #fff;
+        .content {
+            width: 100%;
+            height: 100%;
+            padding: 1.19rem 0.85rem;
+            box-sizing: border-box;
+        }
+        .top {
+            margin-bottom: 0.512rem;
+            .close {
+                color: #000;
+                font-size: 0.512rem;
+            }
+        }
+        .text {
+            margin-bottom: 1.45rem;
+            p {
+                font-size: 0.512rem;
+                text-align: left;
+            }
+        }
+        .otp {
+            .msg {
+                margin-bottom: 0.426rem;
+                span,
+                a {
+                    width: 3.84rem;
+                    font-size: 0.469rem;
+                    display: block;
+                    line-height: 1.28rem;
+                }
+                a {
+                    background: #ffad3d;
+                    color: #fff;
+                    border-radius: 4px;
+                }
+                span {
+                    text-align: left;
+                }
+            }
+            .form-group {
+                height: 1.28rem;
+                margin-bottom: 1.06rem;
+                border: 1px solid #ddd;
+                border-radius: 2px;
+                input {
+                    display: block;
+                    width: 100%;
+                    height: 100%;
+                    box-sizing: border-box;
+                    padding: 0 0.314rem;
+                }
+            }
+        }
+        .btn {
+            margin: 0 0.64rem;
+            display: block;
+            line-height: 1.7rem;
+            background: #ffad3d;
+            color: #fff;
+            font-size: 0.554rem;
+            border-radius: 4px;
+        }
+    }
+    .passengers {
+        padding: 2.04rem 0 0rem;
+        margin-bottom: 0.64rem;
+        .title {
+            font-size: 0.597rem;
+            line-height: 1.7rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            padding: 0 0.64rem;
+            margin-bottom: 0.64rem;
+        }
+        .list {
+            margin: 0 0.64rem;
+            li {
+                line-height: 1.28rem;
+                border: 1px solid #999999;
+                border-radius: 1rem;
+                font-size: 0.512rem;
+                color: #000;
+                margin-bottom: 0.426rem;
+            }
+            .active {
+                background: #0b9d78;
+                color: #fff;
+                border: 1px solid #0b9d78;
+            }
+        }
+    }
+    .changeDate {
+        margin-bottom: 0.64rem;
+        .title {
+            font-size: 0.597rem;
+            line-height: 1.7rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            padding: 0 0.64rem;
+            margin-bottom: 0.64rem;
+        }
+        .form-group {
+            margin: 0 0.64rem;
+            border: 1px solid #999999;
+            height: 1.92rem;
+            span {
+                font-size: 0.768rem;
+                position: relative;
+                display: block;
+                width: 100%;
+                line-height: 1.92rem;
+                text-align: left;
+                box-sizing: border-box;
+                padding: 0 0.314rem;
+                z-index: 9;
+                input {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    display: block;
+                    width: 100%;
+                    height: 100%;
+                    line-height: 1.92rem;
+                    box-sizing: border-box;
+                    padding: 0 0.314rem;
+                    opacity: 0;
+                }
+            }
+        }
+    }
+    .number {
+        margin-bottom: 0.64rem;
+        .title {
+            font-size: 0.597rem;
+            line-height: 1.7rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            padding: 0 0.64rem;
+            margin-bottom: 0.64rem;
+        }
+        .form-group {
+            margin: 0 0.64rem;
+            border: 1px solid #999999;
+            height: 1.92rem;
+            input {
+                display: block;
+                width: 100%;
+                height: 100%;
+                line-height: 1.92rem;
+                box-sizing: border-box;
+                padding: 0 0.314rem;
+                font-size: 0.768rem;
+            }
+        }
+    }
+    .text {
+        margin-bottom: 0.64rem;
+        .title {
+            font-size: 0.597rem;
+            line-height: 1.7rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            padding: 0 0.64rem;
+            margin-bottom: 0.64rem;
+        }
+        .form-group {
+            margin: 0 0.64rem;
+            textarea {
+                border: 1px solid #999999;
+                display: block;
+                width: 98%;
+                height: 100%;
+                text-align: left;
+            }
+        }
+        .tips {
+            margin: 0.2rem 0.64rem;
+            span {
+                font-size: 0.512rem;
+            }
+        }
+    }
+    .button {
+        margin-top: 1.7rem;
+        margin-bottom: 2.7rem;
+        a {
+            margin: 0 auto;
+            display: block;
+            line-height: 1.7rem;
+            width: 14.72rem;
+            background: #ffad3d;
+            color: #fff;
+            font-size: 0.554rem;
+            border-radius: 4px;
+        }
+    }
+}
+</style>

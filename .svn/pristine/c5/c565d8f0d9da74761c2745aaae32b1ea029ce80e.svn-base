@@ -1,0 +1,7 @@
+import * as types from './types.js'
+
+export default{
+	bookInfo({commit},isOne){
+		commit(types.BOOK_INFO,isOne)
+	}
+}

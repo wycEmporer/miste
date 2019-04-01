@@ -1,0 +1,424 @@
+<template>
+  <div class="page-ins">
+    <div class="offers">
+      <div class="title flex space-between align-items-center">
+        <div class="ins-title flex">
+          <span class="title-icon">3</span>
+          <span class="title-info">Secure Your Trip</span>
+        </div>
+        <div class="title-logo"><img :src='require("../../../assets/images/book/insurance_logo.png")' alt=""></div>
+      </div>
+      <div class="form">
+        <div class="form-gro">
+          <div class="flex space-between align-items-center">
+            <div class="flex align-items-center">
+              <div class="iconSty">
+                <img :src="require('assets/images/book/in-plane.png')" alt="">
+              </div>
+              <div class="fontSz12 textSty">
+                <p>96% of our customers insure their trip</p>
+                <p>See all yhe benefits you get for just Rs. {{propsToView.perInsurePr}}</p>
+              </div>
+            </div>
+            <div class="showInsureItem" @click="isShowInsureItem">
+              <i class="iconfont icon-back" :class="{down: !showInsureFlag}"></i>
+            </div>
+          </div>
+          <div class="insureItems flex space-between" v-show="showInsureFlag">
+            <div class="item">
+              <div class="item-txt">
+                Trip <br>
+                Cancellation
+              </div>
+              <div class="item-pr">
+                <p class="grayDark">Claim upto</p>
+                <p v-if="propsToView.isIntl">$ 500</p>
+                <p v-else><i class="rs">Rs.</i> 20,000</p>
+              </div>
+            </div>
+            <div class="item">
+              <div class="item-txt">
+                Baggage Loss
+              </div>
+              <div class="item-pr">
+                <p class="grayDark">Claim upto</p>
+                <p v-if="propsToView.isIntl">$ 500</p>
+                <p v-else><i class="rs">Rs.</i> 10,000</p>
+              </div>
+            </div>
+            <div class="item">
+              <div class="item-txt">
+                Trip Delay
+              </div>
+              <div class="item-pr">
+                <p class="grayDark">Claim upto</p>
+                <p v-if="propsToView.isIntl">$ 180</p>
+                <p v-else><i class="rs">Rs.</i> 10,500</p>
+              </div>
+            </div>
+            <div class="item flex align-items-center content-center">
+              <a href="jiavascript:;" @click="showTerms(propsToView.termsUrl)">
+                <div class="insureLink" link-to="">
+                  <p class="colorPri fontSz18">+11</p>
+                  <p class="grayDark">More</p>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="form-gro insuLine fontSz12">Insurance only for Indian citizens aged between 6 months to 70 years.</div>
+        <div class="form-gro flex space-between">
+          <div class="fontSz12 textSty flex align-items-center">
+              <span class="insureRadio" :class="{active:insureRadio}" @click="setInsure(true)"></span>
+            <div>
+              <p>Yes, secure my trip with insurance</p>
+              <p>I agree to the <span style="display:inline" @click="showInsurance" class="colorPri">terms & conditions</span></p>
+            </div>
+          </div>
+        </div>
+        <div class="form-gro isInter" v-if="propsToView.isIntl && insureRadio">
+          <div class="fontSz12 child1">
+            <span style="font-size:14px;">Stay duration:</span>
+            <div class="Insdays">
+              <input type="number" v-model="form.interDays" v-inputE="form" placeholder="2~180days">
+              <span class="Indays" v-if="form.errCode">{{form.dayOrdays}}</span>
+            </div>
+            <i class="rs">Rs.</i>{{propsToView.totalMoney}} <span v-show="form.errCode1">for {{form.interDays}} {{form.dayOrdays2}}</span>{{form.text}}.
+          </div>
+          <p class="fontSz12">Policy begins on your departure date and ends after the duration.</p>
+        </div>
+        <div class="form-gro">
+          <div class="fontSz12 textSty flex align-items-center">
+              <span class="insureRadio" :class="{active:!insureRadio}" @click="setInsure(false)"></span>
+            <div>
+              No, I do not wish to insure my trip
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- <mt-popup v-model="showDialog" popup-transition="popup-fade" modal="true" closeOnClickModal="false" class="dialogPopup" >
+      <failure id="showDialg" >
+        <div slot="content" class="slot-text" >{{data.noInsuranceMsg}}</div>
+        <div slot="btn" class="flex space-between" >
+          <mt-button @click="closePopup2()" class="btn btn1" type="default">I will pay Rs.{{Math.abs(data.tdis)}} more</mt-button>
+          <mt-button @click="submitPopup2()" class="btn btn2" type="default">I want Insurance</mt-button>
+        </div>
+      </failure>
+    </mt-popup> -->
+  </div>
+</template>
+<script>
+import failure from "pages/failure/failure.vue";
+import {Indicator} from 'mint-ui';
+export default {
+  components:{
+    failure,
+  },
+  props: {
+    data:{
+      type: Object,
+      default: {},
+    },
+  },
+  data() {
+    return {
+      form:{
+        dayOrdays:this.data.days > 1?'days':'day',
+        dayOrdays2:this.data.days > 1?'days':'day',
+        errCode:true,
+        errCode1:this.data.days > 1?true:false,
+        interDays:this.data.days,
+        text:'(Per Person)',
+        price:this.data.product.price,
+        total:this.data.product.price * this.data.days,
+      },
+      insureRadio: true,
+      showInsureFlag: false,
+      showDialog:false,
+    };
+  },
+  watch:{
+    form:{
+      handler:function(val,oldV){
+        if(this.form.interDays == "" || this.form.interDays < 2){
+          if(String(this.form.interDays == 1 || this.form.interDays).split("")[0] == 0 || (String(this.form.interDays).split("")[0] == 0 && String(this.form.interDays).split("")[1] == 0)){
+            this.form.interDays = 2;
+            this.form.errCode1 = false;
+          }
+          this.form.errCode = false;
+          this.form.text = "(Per Day Per Person)";
+        }else if(this.form.interDays > 180){
+          this.form.interDays = 180;
+          this.form.errCode = false;
+          this.form.text = "(Per Person)";
+        }else{
+          this.form.errCode1 = true;
+          this.form.text = "(Per Person)";
+        }
+        this.$emit('transInsureChecked', {insureRadio:true,insurance:this.propsToView});
+        this.$emit("changed",this.form);
+      },
+      deep:true
+    },
+  },
+  computed:{
+    propsToView(){
+      let termsUrl = this.data.isIntl ? "/international-terms" + this.data.product.value
+        : "/domestic-terms";
+      let day,title,totalMoney;
+      if(this.data.isIntl){
+        day = this.form.interDays;
+        title = this.data.product.computeMode == 1 ? "per person" : "per day";
+        totalMoney = this.data.product.price * (this.form.interDays == "" || this.form.interDays ==0 ? 0:this.form.interDays);
+        if(day < 2){
+          totalMoney = this.data.product.price;
+        }
+      }else{
+        title = "";
+        day = null,
+        totalMoney = this.data.insurePr;
+      }
+      let insObj = {
+        days:this.data.days,
+        totalMoney:this.data.product.price * this.data.days,
+      };
+      sessionStorage.setItem("insuranceInfo",JSON.stringify(insObj));
+      return {
+        termsUrl,
+        title,
+        day:day,
+        insurePr: this.data.insurePr,
+        passengers: this.data.passengers,
+        perInsurePr: this.data.product.price,
+        totalMoney: totalMoney,
+        isIntl: this.data.isIntl,
+        hasInsurance:this.data.hasInsurance,
+        tdis:this.data.hasInsurance?this.data.tdis:0,
+      }
+    },
+  },
+  methods:{
+    // closePopup2(){
+    //   this.insureRadio = false;
+    //   this.$emit('transInsureChecked', {insureRadio:this.insureRadio,insurance:this.propsToView});
+    //   this.showDialog = false;
+    // },
+    // submitPopup2(){
+    //   this.insureRadio = true;
+    //   this.$emit('transInsureChecked', {insureRadio:this.insureRadio,insurance:this.propsToView});
+    //   this.showDialog = false;
+    // },
+    showTerms(type){
+      this.$emit('terms',type);
+    },
+    showInsurance(){
+      this.$emit('insuranceDetail',true);
+    },
+    setInsure(flag){
+      if(!flag){
+        if(sessionStorage.getItem('ticketType') == 1){
+          if(this.data.hasInsurance){
+            this.insureRadio = false;
+            this.$emit('transInsureChecked', {insureRadio:this.insureRadio,insurance:this.propsToView});
+          }
+        }else{
+          this.insureRadio = false;
+          this.$emit('transInsureChecked', {insureRadio:this.insureRadio,insurance:this.propsToView});
+        }
+      }else{
+        this.insureRadio = true;
+        this.$emit('transInsureChecked', {insureRadio:this.insureRadio,insurance:this.propsToView});
+      }
+    },
+    isShowInsureItem(){
+      return this.showInsureFlag = !this.showInsureFlag;
+    }
+  },
+  directives: {
+    'inputE'(el,binding,vnode){
+      el.onfocus = function(){
+        binding.value.interDays = '';
+        binding.value.errCode1 = false;
+      },
+      el.onblur = function(){
+        if(binding.value.interDays == '' || binding.value.interDays < 0){
+          let obj = JSON.parse(sessionStorage.getItem("insuranceInfo"));
+          binding.value.errCode = true;
+          binding.value.interDays = obj.days;
+          binding.value.text = "(Per Person)";
+        }else if(binding.value.interDays < 2 && binding.value.interDays >= 0){
+          binding.value.interDays = 2;
+          binding.value.errCode = true;
+          binding.value.text = "(Per Person)";
+        }else{
+          binding.value.errCode = true;
+          binding.value.text = "(Per Person)";
+        }
+      }
+    }
+  }
+};
+</script>
+<style lang="less">
+  @import "~assets/less/theme.less";
+  .page-ins{
+    padding-top: 10px;
+    background: #fff;
+    margin-bottom: 0.21rem;
+    .ins-title span{
+      display:inline-block !important;
+    }
+    .title-logo{
+      width:5rem;
+      img{
+        width: 100%;
+        height:100%;
+      }
+    }
+    .form-gro{
+      padding: 0.64rem;
+      .iconSty{
+        margin-right: 14px;
+      }
+      .textSty{
+        text-align: left;
+        line-height: 20px;
+      }
+    }
+    .insuLine{
+      border-top:1px dotted #ddd;
+      border-bottom:1px dotted #ddd;
+      text-align:left;
+      padding:0.2rem 0.64rem;
+      line-height:0.8rem;
+    }
+    .isInter{
+      text-align: left;
+      padding: 0 0.64rem;
+      p,.child1{line-height: 0.8rem;}
+      .child1{padding-bottom: 0.2rem;}
+      .Insdays{
+        width:3.7rem;
+        display:inline-block;
+        letter-spacing: -0.5px;
+        border-bottom:1px solid #999;
+        position: relative;
+        span{padding: 2px 0 3px;}
+        .Indays{
+          position: absolute;
+          top:0;
+          left:2rem;
+          font-size: 18px;
+          color:#ed8649;
+        }
+        input{
+          text-indent:0.5rem;
+          width:3.7rem;
+          font-size: 18px;
+          color:#ed8649;
+          border-radius:0;
+        }
+        input::-webkit-input-placeholder{font-size:16px;text-indent:0;text-align: center;}
+      }
+    }
+    .showInsureItem{
+      i{
+        display: block;
+        color: @gray-dark;
+        transform: rotateZ(90deg);
+        &.down{
+          transform: rotateZ(-90deg);
+        }
+        .show{
+          transform: rotateZ(-90deg);
+        }
+      }
+    }
+    .insureItems{
+      margin-top: 10px;
+    }
+    .item{
+      box-sizing: border-box;
+      // border: 1px solid #ccc;
+      font-size:10px;
+      width:80px;
+      box-shadow: 0 0 2px #ccc;
+      padding: 7px;
+      &:first-child{
+        .item-txt{
+           padding: 0;
+        }
+      }
+      .item-txt{
+        // height: 18px;
+        box-sizing: border-box;
+        padding: 4px 0;
+        overflow: hidden;
+        margin-bottom: 5px;
+      }
+      .item-pr{
+        border-top: 1px solid #ccc;
+        padding-top: 5px;
+      }
+      &:last-child{
+        border: 1px solid @primary-color;
+        box-shadow: none;
+      }
+      .insureLink{
+        .fontSz18{
+          font-size:18px;
+        }
+      }
+    }
+    .insureRadio{
+      display: inline-block;
+      margin-right: 8px;
+      width:14px;
+      height: 14px;
+      border: 1px solid #c7c7c7;
+      border-radius: 13px;
+      background-color: @gray-lighter;
+      box-sizing: content-box;
+      padding:3px;
+      &.active{
+        background-color: @warning-color;
+        border: 1px solid @warning-color;
+        background-clip: content-box;
+      }
+    }
+    
+    #showDialg{
+      width: 12.5rem;
+      padding-top:0;
+      .head{display: none;}
+      .content{
+        padding:1.285rem 0.35rem 1.1rem; 
+        .slot-text{
+          text-align: left;
+          font-size: 0.512rem;
+          word-wrap:break-word;
+          letter-spacing:0.2px;
+        }
+      }
+      .sure{
+        margin-top:0;
+        line-height:0.6rem;
+        .btn{
+          width: 50%;
+          background-color:#999;
+          color:#fff;
+          font-size: 0.512rem;
+          letter-spacing: 0.2px;
+          line-height:0.6rem;
+        }
+        .btn2{
+          background-color:#FFAD3D;
+        }
+        .mint-button{
+          border-radius:0;
+        }
+      }
+    }
+  }
+</style>

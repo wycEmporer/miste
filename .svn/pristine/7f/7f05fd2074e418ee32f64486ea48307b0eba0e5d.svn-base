@@ -1,0 +1,755 @@
+<template>
+	<div class="wrapper">
+		<head-top class="header" :operate="routerGo">
+			<i slot="left" class="iconfont icon-back"></i>
+			<span slot="title" class="title">Sign In</span>
+			<img class="placeholder" slot="right" alt="">
+		</head-top>
+
+		<div class="container-login flex content-center">
+			<div class="login" :class="{marTop: contentMargin}">
+				<div class="logo">
+					<a v-show="false" id="facebook" @click="signinWithFacebookAccount"></a>
+					<!-- <a id="twitter"></a> -->
+				</div>
+        <div class="l-trip-control-btn flex space-between align-items-center">
+          <div class="l-btn-wrap" >
+            <a id="oneway" :class="{active:isMobile}" @click="showMobile">Mobile Number</a>
+          </div>
+          <div class="l-btn-wrap">
+            <a id="roundtrip" :class="{active:isEmail}" @click="showEmail">Email</a>
+          </div>
+        </div>
+        <form class="search" v-show="isMobile" @submit.prevent="cancelForm">
+          <div class="search-cont">
+            <div class="phoneNumber flex space-between">
+              <div class="select-group">
+                <select name="" id="" v-model="mobile.code">
+                  <option :value="item.regionCode" v-for="(item, key) in mobile.phoneCode" :key="key">
+                    {{item.countryName + ' (+' + item.regionCode + ')'}}
+                  </option>
+                </select>
+                <span>
+                  {{'+' + mobile.code}}
+                </span>
+              </div>
+              <input class="phone" id="phoneInput" type="Number" v-phonefocus="mobile" placeholder="Enter your Mobile Number" v-model="mobile.phoneNo">
+            </div>
+            <div class="checkError" v-show="mobile.errPhone">Please enter a valid Mobile number.</div>
+            <div class="tripId">
+              <input type="password" id="phonePassInput" class="search-input" v-phonepassfocus="mobile" @keypress.13="EnterSign" v-model.trim="mobile.password" placeholder="Password" />
+              <div class="checkError" v-show="mobile.errPass">Password is invalid(6-32characters).</div>
+            </div>
+            <div class="forgetPass flex">
+              <p></p>
+              <p @click="$router.push('/forgotpassworduser')">Forgot password?</p>
+            </div>
+            <div class="s-confirm">
+              <button :class="{btnActive:mobile.canClick}" :disabled="mobile.canClick" @click="sign">Sign In</button>
+            </div>
+            <div class="needSignUp flex">
+              <p>Need an account?</p>
+              <p @click="$router.push('/register')">Sign up</p>
+            </div>
+          </div>
+        </form>
+        <form class="search" v-show="isEmail" @submit.prevent="cancelForm">
+          <div class="search-cont">
+            <div class="phoneNumber flex space-between">
+              <input class="phone" id="emailInput" type="text" placeholder="Enter your email address" v-emailfocus="email" v-model.trim="email.email" style="border-left:1px solid #ddd;width:95%;height: 1.7rem;">
+            </div>
+            <div class="checkError" v-show="email.errEmail">Please enter a valid Email address.</div>
+            <div class="tripId">
+              <input class="search-input" id="emailPassInput" type="password" v-emailpassfocus="email" v-model.trim="email.password" placeholder="Password" />
+              <div class="checkError" v-show="email.errPass">Password is invalid(6-32characters).</div>
+            </div>
+            <div class="forgetPass flex">
+              <p></p>
+              <p @click="$router.push('/forgotpassworduser')">Forgot password?</p>
+            </div>
+            <div class="s-confirm">
+              <button :class="{btnActive:email.canClick}" :disabled="email.canClick" @click="sign">Sign In</button>
+            </div>
+            <div class="needSignUp flex">
+              <p>Need an account?</p>
+              <p @click="$router.push('/register')">Sign up</p>
+            </div>
+          </div>
+        </form>
+			</div>
+		</div>
+	</div>
+</template>
+<script>
+import headTop from "../../components/head/head.vue";
+import { Indicator,MessageBox,Toast } from "mint-ui";
+import { TimeFormatUtil, GetFlightOrderUtil } from "../../models/utils";
+import { FaceBookApi, authories, loginStatus } from "../../models/facebookapi";
+import { User } from "../../models/user";
+import {Reg} from '../../models/utils/Reg.js';
+import { CookieUtil } from "../../models/utils";
+import { loginUserInfo } from "../../vuex/models/user/XUser.js";
+import { DomainManager } from "../../config/DomainManager.js";
+import { Silver, Gold } from "../../models/discount";
+import * as types from "../../vuex/types/types.js";
+import * as XUser from "../../vuex/models/user/XUser.js";
+
+var _fb = new FaceBookApi();
+
+export default {
+  components: {
+    headTop
+  },
+  data() {
+    return {
+      user: "",
+      isLogin: false,
+      path: "",
+      isMobile: true,
+      isEmail: false,
+      contentMargin:true,
+      username:"",
+      password:"",
+      type:1,
+      mobile:{
+				code: CookieUtil.hasItem("phone")?CookieUtil.getItem("phone").split(" ")[0]:'91',
+				phoneNo:CookieUtil.hasItem("phone")?CookieUtil.getItem("phone").split(" ")[1]:'',
+				password:'',
+				phoneCode: [],
+				active:false,
+				canClick:true,
+        errPhone:false,
+        errPass:false,
+			},
+			email:{
+				email:CookieUtil.hasItem('email')?(CookieUtil.getItem('email').indexOf('"') > -1?CookieUtil.getItem('email').split('"')[1]:CookieUtil.getItem('email')):'',
+				password:'',
+				active:false,
+				canClick:true,
+				errEmail:false,
+        errPass:false,
+			},
+    };
+  },
+  watch:{
+    mobile:{
+      handler(oldV,newV){
+        if(this.mobile.phoneNo == "" || this.mobile.password == "" || !Reg.contactPhone.test(this.mobile.phoneNo)){
+          this.mobile.canClick = true;
+        }else{
+          this.mobile.canClick = false;
+        }
+      },
+      deep:true
+    },
+    email:{
+      handler(oldV,newV){
+        if(this.email.email == "" || this.email.password == "" || !Reg.email.test(this.email.email)){
+          this.email.canClick = true;
+        }else{
+          this.email.canClick = false;
+        }
+      },
+      deep:true
+    }
+  },
+  methods: {
+    cancelForm(){},
+    showMobile() {
+			this.isMobile = true;
+			this.isEmail = false;
+		},
+		showEmail() {
+			this.isMobile = false;
+			this.isEmail = true;
+    },
+    routerGo() {
+      this.path ? this.$router.replace(this.path) : this.$router.replace("/");
+    },
+    goWallet() {
+      let self = this;
+      Promise.all([
+        Silver.getSilverPrice(this),
+        Gold.getGoldPrice(this),
+        Silver.getSilverRunningNew(this),
+        Gold.getGoldRunningNew(this),
+        User.searchCashBack(this)
+      ]).then(
+        res => {
+          let silverState = {
+            happySilverBalance: res[0].balance,
+            happySilverRunning: res[2]
+          };
+          let goldState = {
+            happyGoldBalance: res[1].happyGoldBalance,
+            happyGoldRunning: res[3]
+          };
+          let cashbackState = {
+            total: res[4].data.amount,
+            list: res[4].data.record
+          };
+          self.$store.commit(types.GET_SILVER, silverState);
+          self.$store.commit(types.GET_GOLD, goldState);
+          sessionStorage.setItem("silver", JSON.stringify(silverState));
+          sessionStorage.setItem("gold", JSON.stringify(goldState));
+          sessionStorage.setItem("cashback", JSON.stringify(cashbackState));
+        },
+        err => {
+          console.log(err);
+        }
+      );
+    },
+    EnterSign(){
+      if(this.isMobile){
+        this.username = this.mobile.code+' '+this.mobile.phoneNo;
+        this.password = this.mobile.password;
+        this.type = 1;
+        this.loginFn1(this.username,this.password,this.type);
+      }else if(this.isEmail){
+        this.username = this.email.email;
+        this.password = this.email.password;
+        this.type = 2;
+        this.loginFn2(this.username,this.password,this.type);
+      }
+    },
+    sign() {
+      let self = this;
+      if(this.isMobile){
+        if(Reg.onlyNumber1.test(this.mobile.phoneNo)){
+          if(this.mobile.code == '91' && String(this.mobile.phoneNo).length != 10){
+            Toast({
+              message:"Please enter a valid mobile number",
+              duration:1500
+            });
+            return false;
+          }else if( this.mobile.code == '86' && String(this.mobile.phoneNo).length != 11){
+            Toast({
+              message:"Please enter a valid mobile number",
+              duration:1500
+            });
+            return false;
+          }else {
+            this.username = this.mobile.code+' '+this.mobile.phoneNo;
+            this.password = this.mobile.password;
+            this.type = 1;
+            this.loginFn1(this.username,this.password,this.type);
+          }
+        }else{
+          Toast({
+            message:"Please enter a valid mobile number",
+            duration:1500
+          });
+        }
+      }else if(this.isEmail){
+        this.username = this.email.email;
+        this.password = this.email.password;
+        this.type = 2;
+        this.loginFn2(this.username,this.password,this.type);
+      }
+    },
+    loginFn1(cellPhone,pass,type){
+      Indicator.open({
+        spinnerType: "fading-circle"
+      });
+      let self = this;
+      User.loginPhone(self, cellPhone, encodeURIComponent(pass),type, true).then(res => {
+        res.json().then(jsonObj => {
+            if (jsonObj.success) {
+              Indicator.close();
+              if (CookieUtil.hasItem("uuid")) {
+                User.loadUser(self).then(user => {
+                  self.$nextTick(() => {
+                    self.user = user;
+                    let userIdString = user.userId.toString();
+                    try {
+                      window.heg.onUserSignIn(userIdString);
+                    } catch (e) {}
+                    self.$store.commit(loginUserInfo, user);
+                    sessionStorage.setItem("user", JSON.stringify(user));
+                  });
+                });
+              }
+              this.goWallet();
+              this.path? this.$router.replace(this.path): this.$router.replace("/");   
+            } else {
+              Indicator.close();
+              Toast({
+                message:jsonObj.msg,
+                duration:1200
+              });
+            }
+          }).catch(err => console.log(err));
+      }).catch(err => {
+        console.log(err);
+        Indicator.close();
+        Toast({
+          message: "Login failed",
+          duration: 1000
+        });
+      });
+    },
+    loginFn2(username,pass,type){
+      Indicator.open({
+        spinnerType: "fading-circle"
+      });
+      let self = this;
+      User.login(self, username, encodeURIComponent(pass),type, true).then(res => {
+        res.json().then(jsonObj => {
+            if (jsonObj.success) {
+              Indicator.close();
+              if (CookieUtil.hasItem("uuid")) {
+                User.loadUser(self).then(user => {
+                  self.$nextTick(() => {
+                    self.user = user;
+                    let userIdString = user.userId.toString();
+                    try {
+                      window.heg.onUserSignIn(userIdString);
+                    } catch (e) {}
+                    self.$store.commit(loginUserInfo, user);
+                    sessionStorage.setItem("user", JSON.stringify(user));
+                  });
+                });
+              }
+              this.goWallet();
+              this.path? this.$router.replace(this.path): this.$router.replace("/");   
+            } else {
+              Indicator.close();
+              Toast({
+                message:jsonObj.msg,
+                duration:1200
+              });
+            }
+          }).catch(err => console.log(err));
+      }).catch(err => {
+        console.log(err);
+        Indicator.close();
+        Toast({
+          message: "Login failed",
+          duration: 1000
+        });
+      });
+    },
+    signinWithFacebookAccount() {
+      _fb.getLoginStatus(response => {
+        let status = response.status;
+        let athorObj = response.authResponse;
+        switch (status) {
+          case loginStatus.CONNECTED:
+            _fb.getUserInfo(res => {
+              User.loginWithFacebookInfos(
+                this,
+                res.id,
+                res.email,
+                res.first_name,
+                res.last_name
+              );
+            });
+            break;
+          case loginStatus.AUTH_RESPONSE:
+            _fb.getUserInfo(res => {
+              User.loginWithFacebookInfos(
+                this,
+                res.id,
+                res.email,
+                res.first_name,
+                res.last_name
+              );
+            });
+            break;
+          default:
+            _fb.login([authories.PUBLIC_PROFILE, authories.EMAIL], res => {
+              _fb.getUserInfo(res => {
+                User.loginWithFacebookInfos(
+                  this,
+                  res.id,
+                  res.email,
+                  res.first_name,
+                  res.last_name
+                );
+              });
+            });
+            break;
+        }
+      });
+    },
+  },
+  created () {
+    try {
+      let deviceObj =
+        typeof window.heg.getNativeSource() === "string"
+          ? JSON.parse(window.heg.getNativeSource())
+          : window.heg.getNativeSource();
+      this.contentMargin =
+        Number(deviceObj.deviceType) == 1 && !deviceObj.deviceNative;
+    } catch (e) {}
+		User.findSms(this).then(res => {
+				this.mobile.phoneCode = res.list;
+		})
+  },
+  beforeRouteEnter(to, from, next) {
+    next(vm => {
+      // switch(from.path){
+      //   case '/referral': 
+      //   case "/christmas-newyear" : 
+      //   vm.path = from.path;
+      //   break;
+      // }
+      if(from.path == "/register" || from.path == "/register/" || from.path == "/forgotpassworduser" || from.path == "/forgotpassworduser/"){
+        vm.path = "/";
+      }else{
+         vm.path = from.fullPath;
+      }
+    });
+  },
+  directives:{
+    phonefocus:{
+      bind(el,binding,vnode){
+        el.onfocus = function(){
+          binding.oldValue.errPhone = false;
+        },
+        el.onblur = function(){
+          if(!Reg.contactPhone.test(Number(binding.value.phoneNo))) {
+            binding.oldValue.errPhone = true;
+          }else{
+            binding.oldValue.errPhone = false;
+          }
+        }
+      },
+    },
+    phonepassfocus:{
+      bind(el,binding,vnode){
+        el.onfocus = function(){
+          binding.oldValue.errPass = false;
+        },
+        el.onblur = function(){
+          let reg = /\s+/;
+          let reg1 = /^[\w\W]{6,38}$/;
+          binding.oldValue.password = binding.oldValue.password.replace(reg,'');
+          if (Object.is(binding.oldValue.password, "") || !reg1.test(binding.oldValue.password)) {
+            binding.oldValue.errPass = true;
+          }else{
+            binding.oldValue.errPass = false;
+          }
+        }
+      },
+    },
+    emailfocus:{
+      bind(el,binding,vnode){
+        el.onfocus = function(){
+          binding.value.errEmail = false;
+        },
+        el.onblur = function(){
+          if (!Reg.email.test(binding.value.email)) {
+            binding.value.errEmail = true;
+          }else{
+            binding.value.errEmail = false;
+          }
+        }
+      },
+    },
+    emailpassfocus:{
+      bind(el,binding,vnode){
+        el.onfocus = function(){
+          binding.value.errPass = false;
+        },
+        el.onblur = function(){
+          let reg = /\s+/;
+          let reg1 = /^[\w\W]{6,38}$/;
+          binding.value.password = binding.value.password.replace(reg,'');
+          if (Object.is(binding.value.password, "") || !reg1.test(binding.value.password)) {
+            binding.value.errPass = true;
+          }else{
+            binding.value.errPass = false;
+          }
+        }
+      }
+    }
+    
+  },
+};
+</script>
+<style lang="less" scoped>
+// @import '../../../node_modules/mint-ui/lib/style.css';
+.header {
+  background: #0b9d78;
+  position: absolute;
+  top: 0;
+  .title {
+    font-size: 0.768rem;
+  }
+  i {
+    display: block;
+    height: 100%;
+  }
+}
+
+.top-content {
+  padding-top: 2.04rem;
+  .text {
+    font-size: 0.427rem;
+    padding: 0.64rem 0rem;
+  }
+  .avatar {
+    width: 4.05rem;
+    height: 4.05rem;
+    margin: 0 auto;
+    border: 1px solid #ddd;
+    border-radius: 50%;
+    overflow: hidden;
+    img {
+      display: block;
+      color: #999;
+      width: 4rem;
+      height: 4rem;
+    }
+  }
+}
+
+.container-login {
+  width: 100%;
+  height: 100%;
+  .checkError {
+    color: #f65858;
+    margin: 0.2rem 0 0;
+    font-size: 0.6rem;
+    text-align: left;
+  }
+  .marTop{padding: 2rem 0 0;}
+  .login {
+    width: 100%;
+    .logo {
+      #facebook {
+        width: 13.46rem;
+        height: 1.8rem;
+        margin-top: 0.6rem;
+        display: block;
+        background: url("../../assets/images/login/fbsignin.png") center
+          no-repeat;
+        background-size: cover;
+        border-radius: 0.2rem;
+      }
+      #twitter {
+        width: 13.46rem;
+        height: 1.8rem;
+        display: block;
+        background: url("../../assets/images/login/twsignin.png") center
+          no-repeat;
+        background-size: cover;
+        margin-top: 0.42rem;
+        border-radius: 0.2rem;
+      }
+    }
+    .l-trip-control-btn {
+      width: 100%;
+      height: 1.706rem;
+      .l-btn-wrap {
+        width: 50%;
+        height: 100%;
+        background:#ebebeb;
+        box-sizing: border-box;
+      }
+      a {
+        display: inline-block;
+        width: 60%;
+        height: 1.6rem;
+        line-height: 1.6rem;
+        margin:auto;
+        color: #999;
+        font-size: 0.597rem;
+        letter-spacing: 0.5px;
+      }
+      .active {
+        color: #000;
+        border-bottom:2px solid #0b9d78;
+      }
+    }
+    .search {
+      padding: 1.282rem 1rem 0.68rem;
+      .search-cont {
+        overflow: hidden;
+        .tripId {
+          margin-top: 0.854rem;
+          .search-input {
+            width: 92%;
+            padding: 0.5rem;
+            border: none;
+            font-size: 0.6rem;
+            border-radius: 2px;
+            border: 1px solid #ddd;
+          }
+        }
+        .phoneNumber {
+          .select-group {
+            position: relative;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+            border-radius: 2px;
+            width: 22%;
+            height: 1.769rem;
+            margin-right:3%;
+            // margin-right: 0.5rem;
+            select {
+              position: absolute;
+              top: 0;
+              left: 0;
+              opacity: 0;
+              z-index: 9;
+              display: block;
+              width: 100%;
+              height: 100%;
+            }
+            span {
+              width: 100%;
+              height: 100%;
+              position: absolute;
+              top: 0;
+              left: 0;
+              text-align: center;
+              height: 1.769rem;
+              line-height: 1.769rem;
+              font-size: 0.64rem; // color: #666;
+              font-weight: normal;
+            }
+          }
+          .phone {
+            width: 70%;
+            height: 1.7rem;
+            padding: 0 0.5rem;
+            font-size: 0.6rem;
+            border-radius: 2px;
+            border: 1px solid #ddd;
+          }
+          .otpActive{
+            background: #ddd;
+          }
+        }
+        .forgetPass{
+          font-size: 0.6rem;
+          color:#0b9d78;
+          text-align: right;
+          padding-bottom: 1.309rem;
+          p{padding:0.3rem 0 0;}
+          p:first-child{flex:1;}
+          p:last-child{
+            width:5.5rem;
+            text-align: right;
+          }
+        }
+        .s-confirm{
+          margin: 0 0 0.8rem;
+          button{
+            width: 100%;
+            height:1.709rem;
+            line-height: 1.709rem;
+            color:#fff;
+            background:#ffad3d;
+            border-radius: 3px;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            font-size: 0.7rem;
+          }
+          .btnActive{
+            background:#ddd;
+          }
+        }
+        .needSignUp{
+          font-size: 0.6rem;
+          align-items: center;
+          p{flex:1;height:1.7rem;line-height: 1.7rem;}
+          p:first-child{text-align: left;}
+          p:last-child{
+            background: #0b9d78;
+            color:#fff;
+            border-radius:2px;
+          }
+        }
+      }
+    }
+    .form-group {
+      display: table;
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 0.4rem;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      i {
+        display: table-cell;
+        color: #ddd;
+        padding: 0 0.32rem;
+        border-right: 1px solid #ddd;
+      }
+      input {
+        display: table-cell;
+        display: block;
+        width: 100%;
+        font-size: 0.64rem;
+        padding: 0.45rem;
+        box-sizing: border-box;
+        background-size: 0.9rem;
+      }
+    }
+  }
+
+  ::-webkit-input-placeholder {
+    color: #ccc;
+    font-size: 0.6rem;
+  }
+
+  ::-moz-placeholder {
+    color: #ccc;
+    font-size: 0.6rem;
+  }
+
+  :-moz-placeholder {
+    color: #ccc;
+    font-size: 0.6rem;
+  }
+
+  .refer {
+    input {
+      width: 12.8rem;
+      height: 1.8rem;
+      border-radius: 0.2rem;
+      color: #fff;
+      font-size: 0.68rem;
+    }
+    .signin {
+      margin: 2.85rem 0 0.4rem;
+      a {
+        background-color: #ffad3d;
+        width: 100%;
+        height: 1.8rem;
+        line-height: 1.8rem;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 0.68rem;
+        display: inline-block;
+      }
+    }
+    .register {
+      display: none;
+      a {
+        box-sizing: border-box;
+        font-size: 0.768rem;
+        width: 12.8rem;
+        height: 2rem;
+        line-height: 2rem;
+        border-radius: 4px;
+        background-color: #f0eff5;
+        border: 1px solid #ffad3d;
+        color: #ffad3d;
+        display: inline-block;
+      }
+    }
+  }
+  .forgot,
+  .tips {
+    text-align: right;
+    span {
+      font-size: 0.512rem;
+      color: #0b9d78;
+      padding: 0.64rem 0 0.64rem 0.64rem;
+    }
+  }
+}
+</style>

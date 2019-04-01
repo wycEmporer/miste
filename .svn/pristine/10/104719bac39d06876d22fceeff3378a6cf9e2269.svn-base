@@ -1,0 +1,1139 @@
+<template>
+  <div class="container">
+    <div :class="{content: showHeaders}">
+      <div class="summary">
+        <h3 class="title font68 text-left marB10">
+          Order Id: {{orderId}}
+        </h3>
+        <h4 class="font68 text-left marB20">
+          Amount: INR{{needToPay - useGold | formatDate}}
+        </h4>
+        <div class="offers-group" v-if="isLogin && !isDisableUseGold">
+          <div class="radio-group-sp align-items-center marB10" @click="radio3">
+            <div class="ug flex content-start" >
+              <div class="round1">
+                <div :class="{round2:isSelect}"></div>
+              </div>
+              <p class="font68">Happy Gold Account Balance
+                <span>Rs.{{goldBalance | formatDate}}</span>
+              </p>
+            </div>
+          </div>
+          <div class="input-group flex content-start align-items-center" v-show="isSelect">
+            <input type="number" ref="gold" class="form-control" v-model.number="useGold" @blur="computeGold" @keyup="computeGold">
+            <!-- <p>Please input happygold amount here</p> -->
+          </div>
+        </div>
+      </div>
+      <div v-show="goldPay" v-if="isLogin" class="cont">
+         <button type="button" class="btn btn-warning" @click="makePayment('paypal')" style="width:100%;">Pay</button>
+      </div>
+      <div class="cont" v-show="!goldPay">
+        <h5 class="font6 text-left marB10">
+          Choose your payment mode
+        </h5>
+        <div class="panel-group" role="tablist" aria-multiselectable="true">
+          <div class="panel panel-default" v-if="credit.isShow">
+            <div class="panel-heading flex content-start" role="tab" @click.prevent="toggleShow('credit')">
+              <h4 class="panel-title">
+                <a role="button" aria-expanded="true" aria-controls="collapseOne">
+                  <i class="iconfont icon-credit iconfont1"></i>
+                  Credit card
+                </a>
+              </h4>
+            </div>
+            <collapse-transition>
+              <div v-show="credit.in" role="tabpanel" aria-labelledby="headingOne">
+                <div class="panel-body">
+                  <div class="credit-form">
+                    <p class="font6 text-left marB10" style="color:#666; line-height:.8rem;">For security reasons, the holder of the international credit card used to book a ticket or group of tickets must be one of the travellers on that itinerary or have the same family name.</p>
+                    <div class="cf-box">
+                      <form autocomplete="off">
+                        <div class="c_group">
+                          <div class="flex content-start">
+                            <input type="text" class="form-control" v-model="credit.num" maxlength="20" placeholder="Enter card number">
+                          </div>
+                          <div class="checkError" v-show="credit.inputError.num">Please enter a valid card number</div>
+                        </div>
+                        <div class="c_group">
+                          <div class="flex content-start">
+                            <input type="text" v-model="credit.name" class="form-control" placeholder="Enter card holder's name">
+                          </div>
+                          <div class="checkError" v-show="credit.inputError.name">Please enter a valid name</div>
+                        </div>
+                        <div  class="flex space-between c_group" id="isMonthChange1" style="position:relative;">
+                          <div class="flex1">
+                            <div>
+                              <select name="" class="form-control" v-model="credit.month">
+                                <option value="">MM</option>
+                                <option :value="i" v-for="i in 12" :key="i">{{(i+100).toString().slice(1)}}</option>
+                              </select>
+                            </div>
+                            <div class="checkError" v-show="credit.inputError.month">You miss this</div>
+                          </div>
+                          <div class="flex1">
+                            <div>
+                              <select class="form-control" v-model="credit.year">
+                                <option value="">YYYY</option>
+                                <option :value="new Date().getFullYear() + i -1 " v-for="i in 23" :key="i">{{new Date().getFullYear() + i -1 }}</option>
+                                
+                              </select>
+                            </div>
+                            <div class="checkError" ref="monthCheck1" v-show="credit.inputError.year">You miss this</div>
+                          </div>
+                          <div class="flex1">
+                            <div>
+                              <input type="text" class="c_cvv form-control" v-model="credit.cvv" maxlength="3" placeholder="CVV">
+                            </div>
+                            <div class="checkError" v-show="credit.inputError.cvv">You miss this</div>
+                          </div>
+                          <div class="checkError" id="monthCheck1" v-show="credit.inputError.months">Your card has expired.</div>
+                        </div>
+                        <div class="c_group">
+                          <div class="checkError" style="padding-bottom:0.3rem;" v-show="err">{{errMsg}}</div>
+                          <button type="button" class="btn btn-warning" @click="makePayment('credit')" style="width:100%;">Pay</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </collapse-transition>
+          </div>
+
+          <div class="panel panel-default" v-if="debit.isShow">
+            <div class="panel-heading flex content-start" role="tab" @click="toggleShow('debit')">
+              <h4 class="panel-title">
+                <a class="collapsed" role="button" aria-expanded="false"
+                  aria-controls="collapseTwo">
+                  <i class="iconfont icon-credit_card"></i>
+                  Debit card
+                </a>
+              </h4>
+            </div>
+            <collapse-transition name="collapse">
+              <div v-show="debit.in" role="tabpanel" aria-labelledby="headingTwo">
+                <div class="panel-body">
+                  <div>
+                    <div>
+                      <form autocomplete="off">
+                        <div class="c_group">
+                          <div class="flex content-start">
+                            <input type="text" class="form-control" maxlength="20" placeholder="Enter card number" v-model="debit.num">
+                          </div>
+                          <div class="checkError" v-show="debit.inputError.num"> Please enter a valid card number</div>
+                        </div>
+                        <div class="c_group">
+                          <div class="flex content-start">
+                            <input type="text" class="form-control" v-model="debit.name" placeholder="Enter card holder's name">
+                          </div>
+                          <div class="checkError" v-show="debit.inputError.name">Please enter a valid name</div>
+                        </div>
+                        <div class="flex space-between c_group" id="isMonthChange2" style="position:relative;">
+                          <div class="flex1">
+                            <div>
+                              <select v-model="debit.month" class="form-control">
+                                <option value="">MM</option>
+                                <option :value="i" v-for="i in 12" :key="i">{{(i+100).toString().slice(1)}}</option>
+                              </select>
+                            </div>
+                            <div class="checkError" v-show="debit.inputError.month">You miss this</div>
+                          </div>
+                          <div class="flex1">
+                            <div>
+                              <select class="form-control" v-model="debit.year">
+                                <option value="">YYYY</option>
+                                <option :value="new Date().getFullYear() + i - 1" v-for="i in 23" :key="i">{{new Date().getFullYear() + i- 1}}</option>
+                              </select>
+                            </div>
+                            <div class="checkError" v-show="debit.inputError.year">You miss this</div>
+                          </div>
+                          <div class="flex1">
+                            <div>
+                              <input type="text" class="c_cvv form-control" v-model="debit.cvv" maxlength="3" placeholder="CVV">
+                            </div>
+                            <div class="checkError" v-show="debit.inputError.cvv">You miss this</div>
+                          </div>
+                        <div class="checkError" id="monthCheck2" v-show="debit.inputError.months">Your card has expired.</div>
+                        </div>
+                        <div class="c_group">
+                          <div class="checkError" style="padding-bottom:0.3rem;" v-show="err">{{errMsg}}</div>
+                          <button type="button" class="btn btn-warning" @click="makePayment('debit')" style="width:100%;">Pay</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </collapse-transition>
+          </div>
+
+          <div class="panel panel-default" v-if="netBank.isShow">
+            <div class="panel-heading flex content-start" role="tab" @click="toggleShow('netBank')">
+              <h4 class="panel-title">
+                <a class="collapsed" role="button" aria-expanded="false"
+                  aria-controls="collapseThree">
+                  <i class="iconfont icon-bank"></i>
+                  Net banking
+                </a>
+              </h4>
+            </div>
+            <collapse-transition name="collapse">
+              <div v-show="netBank.in" role="tabpanel" aria-labelledby="headingThree">
+                <div class="panel-body">
+                  <div>
+                    <div>
+                      <form>
+                        <div class="bankList c_group">
+                          <div class="checkError" v-show="netBank.errorShow">
+                            Please choose a bank
+                          </div>
+                          <div class="flex checkWrap flexWrap">
+                            <div class="hotbank" v-for="(val, index) in hotBank" :key="index">
+                              <label>
+                                <input type="radio" v-model="netBank.selectId" :value="val.id">
+                                <img :src="val.bankpic" alt="">
+                                <!-- <b class="bankIcon" :class="val.bankName"></b> -->
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="c_group">
+                          <div>
+                            <select class="form-control" v-model="netBank.selectId">
+                              <option value="">Choose your bank</option>
+                              <option :value="val.id" v-for="(val, index) in netBank.bankList" :key="index">{{val.bankName}}</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="c_group">
+                          <button type="button" class="btn btn-warning" style="width:100%;" @click="makePayment('netBank')">Pay</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </collapse-transition>
+          </div>
+          
+          <div class="panel panel-default" v-if="wallet.isShow">
+            <div class="panel-heading flex content-start" role="tab" @click="toggleShow('wallet')">
+              <h4 class="panel-title">
+                <a class="collapsed" role="button" aria-expanded="false"
+                  aria-controls="collapseFour">
+                  <i class="iconfont icon-mobile"></i>
+                  Mobile Wallet
+                </a>
+              </h4>
+            </div>
+            <collapse-transition name="collapse">
+              <div v-show="wallet.in" role="tabpanel" aria-labelledby="headingFour">
+                <div class="panel-body">
+                  <div class="credit-form">
+                    <div class="cf-box">
+                      <form>
+                        <div class="bankList c_group">
+                          <div class="checkError" v-show="wallet.errorShow">
+                            Please choose a mode
+                          </div>
+                          <div class="flex flexWrap">
+                            <div class="hotbank" v-for="(val, index) in wallet.walletList" :key="index">
+                              <label>
+                                <input type="radio" v-model="wallet.selectId" :value="val.id">
+                                <img :src="val.bankpic" class="imgHeight" alt="">
+                                <!-- <b class="bankIcon" :class="val.bankName"></b> -->
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="c_group">
+                          <button type="button" class="btn btn-warning" style="width:100%;" @click="makePayment('wallet')">Pay</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </collapse-transition>
+            
+          </div>
+          <div class="panel panel-default" v-if="UPI.isShow">
+            <div class="panel-heading flex content-start" role="tab" @click="toggleShow('UPI')">
+              <h4 class="panel-title">
+                <a class="collapsed" role="button" aria-expanded="false"
+                  aria-controls="collapseFive">
+                  <img class="PUIimg" :src='require("../../../assets/images/payment/pui.jpg")' alt="">
+                  UPI
+                </a>
+              </h4>
+            </div>
+            <collapse-transition name="collapse">
+              <div v-show="UPI.in" role="tabpanel" aria-labelledby="headingFive">
+                <div class="panel-body">
+                  <div class="">
+                    <div class="upi">
+                      <form>
+                        <div class="c_group">
+                          <p class="font6 text-left marB10">Enter your Virtual Payment Address (
+                          <span>VPA</span>)</p>
+                          <div class="flex content-start">
+                            <input type="text" v-model="UPI.email" class="form-control" placeholder="Ex: username@upi">
+                          </div>
+                          <div class="checkError" v-show="UPI.errorShow">
+                            Please enter a valid VPA
+                          </div>
+                        </div>
+                        
+                        <div class="c_group">
+                          <button type="button" class="btn btn-warning" @click="makePayment('UPI')" index="6" style="width:100%;">Pay</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </collapse-transition>
+            
+          </div>
+          <div class="panel panel-default" v-if="paypal.isShow">
+            <div class="panel-heading flex content-start" role="tab" @click="toggleShow('paypal')">
+              <h4 class="panel-title">
+                <a class="collapsed" role="button"  aria-expanded="false"
+                  aria-controls="collapseSix">
+                  <i class="iconfont icon-paypal"></i>
+                  Paypal
+                </a>
+              </h4>
+            </div>
+            <collapse-transition name="collapse">
+              <div v-show="paypal.in" role="tabpanel" aria-labelledby="headingSix">
+                <div class="panel-body">
+                  <div class="c_group">
+                    <button type="button" class="btn btn-warning" @click="makePayment('paypal')" style="width:100%;">Pay</button>
+                  </div>
+                </div>
+              </div>
+            </collapse-transition>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    <mt-popup v-model="failPop.show" popup-transition="popup-fade" modal="true" closeOnClickModal="false">
+      <failure>
+        <div slot="head">Payment Unavailable</div>
+        <p slot="content">{{failPop.msg}}</p>
+        <mt-button @click="goBack(failPop.code)" slot="btn" class="btn" type="default">OK</mt-button>
+      </failure>
+    </mt-popup>
+  </div>
+</template>
+
+<script>
+import { GetFlightOrderUtil, CookieUtil } from "models/utils";
+import { DomainManager } from "config/DomainManager";
+import { User } from "models/user";
+import { Reg, hegTrack } from "models/utils";
+import { Indicator, Popup,Toast} from "mint-ui";
+import failure from "pages/failure/failure.vue";
+import collapseTransition from "components/collapse/collapse.js";
+
+const IS_PROD_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://www.cashfree.com/checkout/post/submit"
+    : "https://test.gocashfree.com/billpay/checkout/post/submit ";
+
+export default {
+  components: {
+    failure,
+    collapseTransition
+  },
+  data() {
+    return {
+      flag:false,
+      failPop: {
+        show: false,
+        msg: "",
+        code:null,
+      },
+      err:false,
+      errMsg:"",
+      credit: {
+        isShow: false,
+        num: "",
+        name: "",
+        year: "",
+        month: "",
+        cvv: "",
+        in: true,
+        inputError: {
+          num: false,
+          name: false,
+          year: false,
+          month: false,
+          months:false,
+          cvv: false
+        }
+      },
+      debit: {
+        isShow: false,
+        num: "",
+        name: "",
+        year: "",
+        month: "",
+        cvv: "",
+        in: false,
+        inputError: {
+          num: false,
+          name: false,
+          year: false,
+          month: false,
+          months:false,
+          cvv: false
+        }
+      },
+      netBank: {
+        isShow: false,
+        bankList: null,
+        selectId: "",
+        errorShow: false,
+        in: false
+      },
+      wallet: {
+        isShow: false,
+        walletList: null,
+        selectId: "",
+        errorShow: false,
+        in: false
+      },
+      EMI: {
+        isShow: false,
+        in: false
+      },
+      UPI: {
+        isShow: false,
+        email: "",
+        errorShow: false,
+        in: false
+      },
+      paypal: {
+        isShow: false,
+        in: false
+      },
+      isSelect: false,
+      goldBalance: 0,
+      useGold: 0,
+      isDisableUseGold: false,
+      needToPay: 0,
+      device: "mobile",
+      showHeaders: true,
+      submiturl:'',
+      contactPhone: '',
+    };
+  },
+
+  computed: {
+    isLogin() {
+      return CookieUtil.hasItem("uuid");
+    },
+    hotBank() {
+      return this.netBank.bankList.filter(val => {
+        return !!val.bankpic;
+      });
+    },
+    goldPay() {
+      return this.needToPay - this.useGold == 0 ? true : false;
+    }
+  },
+  props: {
+    orderId: [String, Number],
+    phoneNo: [String, Number]
+  },
+  created() {
+    try {
+      let deviceObj =
+        typeof window.heg.getNativeSource() === "string"
+          ? JSON.parse(window.heg.getNativeSource())
+          : window.heg.getNativeSource();
+      this.showHeaders =
+        Number(deviceObj.deviceType) == 1 && !deviceObj.deviceNative;
+      this.device = deviceObj.deviceType == 1 ? "Android" : "iOS";
+      
+    } catch (e) {}
+    this.getBankAndWalletList();
+    this.fetchOrderDetail();
+    this.getGoldbalance();
+  },
+  methods: {
+    parseQueryStr (){
+      const result = location.href.split("choosepay/")[1].split("/");
+      return result;
+    },
+    fetchOrderDetail() {
+      Indicator.open({ spinnerType: "fading-circle" });
+      let phoneNo,queryData;
+      // if(this.showHeaders){
+        phoneNo = this.phoneNo ? "&phoneNo=" + this.phoneNo : "";
+        queryData = "orderId=" + this.orderId + phoneNo;
+      //   console.log(queryData);
+      // }else{
+      //   queryData = "orderId="+this.parseQueryStr()[0]+"&phoneNo="+this.parseQueryStr()[1].replace("%20"," ");
+      //   console.log(queryData);
+      // }
+      this.$axios({
+        url: DomainManager.searchFlightOrderUrlString(queryData),
+        method: "get"
+      })
+        .then(res => {
+          Indicator.close();
+          if (res.code == 0) {
+            let orderFee = res.data.order;
+            let useGold = orderFee.fee.hg;
+            this.contactPhone = orderFee.cancatInfo;
+            this.needToPay = orderFee.fee.pp;
+            this.useGold = useGold;
+            if (useGold != 0) {
+              this.isDisableUseGold = true;
+              this.useGold = 0;
+            }
+          } else {
+            Toast({
+              message: res.message,
+              duration: 2000
+            });
+          }
+        })
+        .catch(res => {
+          Indicator.close();
+        });
+    },
+    goBack(who) {
+      this.failPop.show = false;
+      if(who == 5){
+        try{
+          window.heg.goHomePage();
+        } catch (err){
+          var type = sessionStorage.flightType;
+          type == "one"
+            ? this.$router.push("/oneway")
+            : this.ifIN
+              ? this.$router.push("/international")
+              : this.$router.push("/roundtrip");
+        }
+      }
+    },
+    toggleShow(type) {
+      this.err = false;
+      let arr = ["credit", "debit", "wallet", "netBank", "UPI", "paypal"];
+      if (this[type].in) {
+        this[type].in = false;
+      } else {
+        this[type].in = true;
+      }
+      for (let val of arr) {
+        if (val == type) {
+          continue;
+        }
+        this[val].in = false;
+      }
+    },
+    makePayment(payType) {
+      let that = this;
+      try {
+        window.heg.trackEvent('Flight_payment_paypage_paybutton');
+      } catch (error) {};
+      let payAmount = this.needToPay - this.useGold;
+      try {
+        window.heg.send2nativeAdjustWithSum("27g0d9", payAmount);
+      } catch (e) {}
+      let payTransactionMapEncode = {};
+      let params = {
+        orderId: this.$Base64.encode(this.orderId)
+      };
+      switch (payType) {
+        case "credit":
+          if (!this.checkCard("credit")) return false;
+          var formData = {
+            name_on_card: this.credit.name,
+            card_number: this.credit.num,
+            card_cvv: this.credit.cvv,
+            card_yyyy: this.credit.year,
+            card_mm: (this.credit.month / 10 < 1)?"0"+String(this.credit.month):String(this.credit.month),
+          };
+          let month1 = this.credit.month;
+          let nowMonth1 = (new Date()).getMonth()+1;
+          let nowYear1 = (new Date()).getFullYear();
+          if(this.credit.year == nowYear1){
+            if(Number(month1) - Number(nowMonth1) >= 0 ){
+              this.flag = true;
+              payTransactionMapEncode[3] = Object.assign({},{ paymentChannel: 1 },formData);
+              this.credit.inputError.months = false;
+            }else{
+              this.flag = false;
+              this.credit.inputError.months = true;
+              document.getElementById('isMonthChange1').style.marginBottom = "1.4rem";
+            }
+          }else{
+            this.flag = true;
+            payTransactionMapEncode[3] = Object.assign({},{ paymentChannel: 1 },formData);
+            this.credit.inputError.months = false;
+          }
+          break;
+        case "debit":
+          if (!this.checkCard("debit")) return false;
+          var formData = {
+            name_on_card: this.debit.name,
+            card_number: this.debit.num,
+            card_cvv: this.debit.cvv,
+            card_yyyy: this.debit.year,
+            card_mm: (this.debit.month / 10 < 1)?"0"+String(this.debit.month):String(this.debit.month),
+          };
+          let month2 = this.debit.month;
+          let nowMonth2 = (new Date()).getMonth()+1;
+          let nowYear2 = (new Date()).getFullYear();
+          if(this.debit.year == nowYear2 ){
+            if(Number(month2) - Number(nowMonth2) >= 0){
+              this.flag = true;
+              payTransactionMapEncode[3] = Object.assign({},{ paymentChannel: 2 },formData);
+              this.debit.inputError.months = false;
+            }else{
+              this.flag = false;
+              this.debit.inputError.months = true;
+              document.getElementById('isMonthChange2').style.marginBottom = "1.4rem";
+            }
+          }else{
+            this.flag = true;
+            payTransactionMapEncode[3] = Object.assign({},{ paymentChannel: 2 },formData);
+            this.debit.inputError.months = false;
+          }
+          break;
+        case "netBank":
+          if (this.netBank.selectId == "") {
+            this.netBank.errorShow = true;
+            return false;
+          }
+          payTransactionMapEncode[3] = Object.assign(
+            {},
+            { paymentChannel: 3 },
+            { paymentBank: this.netBank.selectId }
+          );
+          this.flag = true;
+          break;
+        case "wallet":
+          if (this.wallet.selectId == "") {
+            this.wallet.errorShow = true;
+            return false;
+          }
+          payTransactionMapEncode[3] = Object.assign(
+            {},
+            { paymentChannel: 4 },
+            { paymentWallet: this.wallet.selectId }
+          );
+          this.flag = true;
+          break;
+        case "UPI":
+          if (!Reg.UPI.test(this.UPI.email.trim())) {
+            this.UPI.errorShow = true;
+            return false;
+          }
+          payTransactionMapEncode[3] = Object.assign(
+            {},
+            { paymentChannel: 6 },
+            { upi_vpa: this.UPI.email }
+          );
+          this.flag = true;
+          break;
+        case "paypal":
+          payTransactionMapEncode[3] = Object.assign({}, { paymentChannel: 7 });
+          this.flag = true;
+          break;
+      }
+      if (this.useGold != 0) {
+        payTransactionMapEncode[4] = {
+          tradeType: 4,
+          tradeAmount: parseInt(this.useGold)
+        };
+        this.flag = true;
+      }
+      Object.assign(params, {
+        payTransactionMapEncode
+      });
+      params.payTransactionMapEncode = this.$Base64.encode(JSON.stringify(params.payTransactionMapEncode));
+      if(this.flag){
+        Indicator.open({ spinnerType: "fading-circle" });        
+        this.dataOut(params);
+      }
+    },
+    dataOut(params){
+      this.$axios({
+        url: DomainManager.paymentUrl(),
+        data: JSON.stringify(params),
+        method: "post",
+        contentType: "application/json",
+        responseType: "json",
+        headers: {
+          "Content-Type": "application/json",
+          "x-Device": this.device
+        }
+      })
+        .then(res => {
+          try{
+            let trackObj = {
+              apiMethodName: 'payment',
+              apiRequestParamter: JSON.stringify(params),
+              apiHttpStatus: '200',
+              apiResponseStatus: res.success,
+              elementId: ''
+            };
+            hegTrack(this, trackObj);
+          }catch(e){}
+          if (res.code == 1) {
+            this.submiturl = res.submiturl;
+            if (res.payWay === 1) {
+              this.err = true;
+              this.cashfree(res.data);
+            } else if (res.payWay === 2 || res.payWay === 3) {
+              this.err = true;
+              this.hdfc(res.data);
+            }
+          } else if (res.code === 0) {
+            this.err = true;
+            Indicator.close();
+            // let params = {orderId: this.orderId};
+            this.$router.replace("/payment-state?orderid=" + this.orderId+'&phoneNo='+ (this.phoneNo||this.contactPhone));
+            // location.href = DomainManager.getSearchOrderResultUrl(this.orderId);
+          } else if(res.code == 10){
+            Indicator.close();
+            this.err = true;
+            this.errMsg = res.msg;
+          } else if(res.code == 5){
+            Indicator.close();
+            this.failPop.code = 5;
+            this.failPop.show = true;
+            this.failPop.msg = res.msg;
+          }else if(res.code == 7) {
+            Indicator.close();
+            if(res.msg == '' || res.msg == null){
+              this.failPop.show = false;
+            }else{
+              this.failPop.code = 7;
+              this.failPop.show = true;
+              this.failPop.msg = res.msg;
+            }
+          }else{
+            Indicator.close();
+            this.failPop.show = true;
+            this.failPop.msg = res.msg;
+          }
+        })
+        .catch(err => {
+          try{
+            let trackObj = {
+              apiMethodName: 'payment',
+              apiRequestParamter: JSON.stringify(params),
+              apiHttpStatus: (err.response && err.response.status) ||  '200',
+              apiResponseStatus: false,
+              elementId: ''
+            };
+            hegTrack(this, trackObj);
+          }catch(e){}
+          Indicator.close();
+          console.log(err);
+        });
+    },
+    checkCard(payType) {
+      let obj = this[payType];
+      obj.inputError.num = false;
+      obj.inputError.month = false;
+      obj.inputError.year = false;
+      obj.inputError.name = false;
+      obj.inputError.cvv = false;
+      let flag = true;
+      if (obj.num.trim() == "" || !Reg.bankCardReg.test(obj.num.trim())) {
+        flag = false;
+        obj.inputError.num = true;
+      }
+      if (obj.month == "") {
+        flag = false;
+        obj.inputError.month = true;
+        obj.inputError.months = false;
+        document.getElementById('isMonthChange1').style.marginBottom = "0.6rem";
+        document.getElementById('isMonthChange2').style.marginBottom = "0.6rem";
+      }
+      if (obj.year == "") {
+        flag = false;
+        obj.inputError.year = true;
+      }
+      if (!Reg.name.test(obj.name.trim())) {
+        flag = false;
+        obj.inputError.name = true;
+      }
+      if (obj.cvv.trim() == "") {
+        flag = false;
+        obj.inputError.cvv = true;
+      }
+      return flag;
+    },
+    cashfree(params, target) {
+      var tempform = document.createElement("form");
+      // tempform.action = IS_PROD_URL;
+      tempform.action = this.submiturl;
+      tempform.method = "post";
+      tempform.style.display = "none";
+      if (target) {
+        tempform.target = target;
+      }
+
+      for (var x in params) {
+        var opt = document.createElement("input");
+        opt.name = x;
+        opt.value = params[x];
+        tempform.appendChild(opt);
+      }
+
+      var opt = document.createElement("input");
+      opt.type = "submit";
+      tempform.appendChild(opt);
+      document.body.appendChild(tempform);
+      tempform.submit();
+      document.body.removeChild(tempform);
+    },
+    hdfc(params, target) {
+      var tempform = document.createElement("form");
+      tempform.action = this.submiturl;
+      tempform.method = "post";
+      tempform.style.display = "none";
+      if (target) {
+        tempform.target = target;
+      }
+
+      for (var x in params) {
+        var opt = document.createElement("input");
+        opt.name = x;
+        opt.value = params[x];
+        tempform.appendChild(opt);
+      }
+
+      var opt = document.createElement("input");
+      opt.type = "submit";
+      tempform.appendChild(opt);
+      document.body.appendChild(tempform);
+      tempform.submit();
+      document.body.removeChild(tempform);
+    },
+    computeGold() {
+      // let reg = /\d+|\d+\.\d+|\.\d+/g;
+      if (this.useGold == 0) return;
+      let useGold = parseInt(this.useGold);
+      this.useGold = Math.min.apply(null, [
+        useGold,
+        this.goldBalance,
+        this.needToPay
+      ]);
+    },
+    getGoldbalance() {
+      if (!this.isLogin) return;
+      User.getGold(this).then(res => {
+        this.goldBalance = Number(res.happyGoldBalance);
+      });
+    },
+    radio3() {
+      if (this.isDisableUseGold) {
+        return;
+      }
+      this.isSelect = !this.isSelect;
+      if (this.isSelect) {
+        this.useGold = Math.min.apply(null, [this.goldBalance, this.needToPay]);
+      } else {
+        this.useGold = 0;
+      }
+    },
+    getBankAndWalletList() {
+      this.$axios({
+        url: DomainManager.getPaymentChannel(),
+        method: "get",
+        headers: {
+          "x-Device": this.device
+        }
+      })
+        .then(res => {
+          if (res.success) {
+            res.channel.forEach((val, key) => {
+              switch (val.id) {
+                case 1:
+                  this.credit.isShow = true;
+                  break;
+                case 2:
+                  this.debit.isShow = true;
+                  break;
+                case 3:
+                  this.netBank.isShow = true;
+                  this.netBank.bankList = val.bankList;
+                  break;
+                case 4:
+                  this.wallet.isShow = true;
+                  this.wallet.walletList = val.walletList;
+                  break;
+                case 5:
+                  this.EMI.isShow = true;
+                  break;
+                case 6:
+                  this.UPI.isShow = true;
+                  break;
+                case 7:
+                  this.paypal.isShow = true;
+              }
+            });
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    }
+  }
+};
+</script>
+<style lang="less" scoped>
+@import "~assets/less/theme.less";
+.content {
+  padding-top: 2.04rem;
+}
+.marB10 {
+  margin-bottom: 10px;
+}
+.marB20 {
+  margin-bottom: 20px;
+}
+.font68 {
+  font-size: 0.68rem;
+}
+.font6 {
+  font-size: 0.6rem;
+}
+
+.text-left {
+  text-align: left;
+}
+.offers-group {
+  font-size: 0.6rem;
+  // color: #ccc;
+  text-align: left;
+  background-color: #fff;
+  border-radius: 0.2rem;
+  .radio-group-sp {
+    .recharge-tips {
+      text-align: center;
+      margin-bottom: 0.3rem;
+      display: block;
+      padding: 0.3rem;
+      background: #17a27f;
+      color: #fff;
+      border-radius: 4px;
+    }
+    .ug {
+      margin-bottom: 0.24rem;
+      .round1 {
+        width: 0.6rem;
+        height: 0.6rem;
+        border: 1px solid #ccc;
+        position: relative;
+        margin-right: 0.3rem;
+        .round2 {
+          width: 70%;
+          height: 70%;
+          background-color: #ffa033;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translateY(-50%) translateX(-50%);
+          -webkit-transform: translateY(-50%) translateX(-50%);
+        }
+      }
+    }
+  }
+  .input-group {
+    margin-bottom: 0.3rem;
+    input {
+      box-sizing: border-box;
+      height: 1.68rem;
+      width: 60%;
+      font-size: 0.68rem;
+      padding: 0.3rem 0.3rem;
+      border: 1px solid #ccc;
+    }
+    p {
+      width: 50%;
+      padding-left: 0.5rem;
+      box-sizing: border-box;
+    }
+    .yellowborder {
+      border: 1px solid #ffa033;
+    }
+    a {
+      box-sizing: border-box;
+      height: 1.75rem;
+      line-height: 1.75rem;
+      width: 4.05rem;
+      font-size: 0.68rem;
+      /*padding:0.3rem 0;*/
+      text-align: center;
+      color: #fff;
+      display: block;
+    }
+  }
+}
+.summary {
+  padding: 0.6rem;
+}
+.cont {
+  padding: 0 0.6rem;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 400;
+}
+.checkError {
+  color: #f65858;
+  margin-top: 0.2rem;
+  font-size: 0.6rem;
+  text-align: left;
+}
+.flex1 {
+  flex: 1 1 100px;
+}
+
+.panel-group {
+  .panel-heading {
+    border-bottom: 0;
+    & + .panel-collapse {
+      .panel-body {
+        border-top: 1px solid #ddd;
+      }
+    }
+  }
+  .panel + .panel {
+    margin-top: 5px;
+  }
+}
+.panel {
+  margin-bottom: 0;
+  border-radius: 4px;
+  background-color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+.panel-body {
+  padding: 0.6rem;
+}
+.c_group {
+  margin-bottom: 0.6rem;
+  .c_cvv {
+    width: 100px;
+  }
+  .imgHeight {
+    max-height: 20px;
+  }
+}
+.btn-warning {
+  color: #fff;
+  background-color: #ffad3d;
+  border-color: #ffa223;
+}
+.btn {
+  display: inline-block;
+  margin-bottom: 0;
+  font-weight: 400;
+  text-align: center;
+  vertical-align: middle;
+  touch-action: manipulation;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  padding: 6px 12px;
+  font-size: 0.6rem;
+  border-radius: 4px;
+}
+.form-control {
+  width: 100%;
+  // height: 0.8rem;
+  padding: 0.3rem 0.46rem;
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #ccc;
+  border-radius: 0.14rem;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.bankList {
+  .checkWrap {
+    justify-content: flex-start;
+  }
+  label {
+    border: 1px solid #999;
+    padding: 8px;
+    border-radius: 4px;
+    display: inline-block;
+    max-width: 130px;
+    margin-bottom: 5px;
+  }
+  input[type="radio"] {
+    float: left;
+  }
+  .hotbank {
+    margin-right: 5px;
+
+    label {
+      width: 5.7rem;
+    }
+    img {
+      height: 20px;
+    }
+  }
+}
+.panel-default {
+  border-color: #ddd;
+  & > .panel-heading {
+    color: #333;
+    background-color: #f5f5f5;
+    border-color: #ddd;
+
+    & + .panel-collapse {
+      &.panel-body {
+        border-top-color: #ddd;
+      }
+    }
+  }
+}
+.panel-heading {
+  border-top-right-radius: 0.1rem;
+  border-top-left-radius: 0.1rem;
+}
+.panel-title {
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: 0.68rem;
+  padding: 0.4rem 0.68rem;
+  .iconfont{
+    font-size:0.68rem;
+    margin-right:0.4rem;
+    float: left;
+  }
+  .PUIimg{
+    width: 0.68rem;
+    height:0.7rem;
+    float: left;
+    margin-right:0.4rem;
+  }
+}
+#monthCheck2,#monthCheck1{
+  position: absolute;
+  top: 1.4rem;
+}
+
+</style>
+

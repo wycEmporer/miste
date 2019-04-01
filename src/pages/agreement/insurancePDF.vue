@@ -1,0 +1,46 @@
+<template>
+	<div id="showPdf">
+		<span class="pdfClose" @click="closePDF">x</span>
+		<pdf v-show="PDFShow"></pdf>
+	</div>
+</template>
+<script>
+import headTop from '../../components/head/head.vue';
+import pdf from './pdf.vue';
+export default {
+	components: {
+		headTop,
+		pdf,
+	},
+	data () {  
+    return {  
+      PDFShow:true,
+    }
+	}, 
+	methods:{  
+    closePDF(){
+			this.$emit('closepdf',false);
+		}
+	}
+}
+</script>
+<style lang="less" scoped>
+#showPdf{
+	position: relative;
+	.pdfClose{
+		display:inline-block;
+		width: 0.9rem;
+		height:0.9rem;
+		font-size: 0.8rem;
+		// line-height: 0.9rem;
+		text-align: center;
+		border:1px solid #fff;
+		border-radius:50%;
+		color:#fff;
+		position: absolute;
+		z-index: 5;
+		top: 0;
+		right: 0.2rem;
+	}
+}
+</style>

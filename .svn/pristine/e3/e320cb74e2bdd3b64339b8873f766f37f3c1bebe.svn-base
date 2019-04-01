@@ -1,0 +1,692 @@
+<template>
+	<div class="wrapper">
+		<head-top :operate="routeWhere" v-if="showHeaders">
+			<i slot="left" class="prev iconfont icon-back"></i>
+			<div slot="title" class="title">Payment</div>
+			<img slot="right" :src="require('assets/images/flight-prev.png')" class="placeholder">
+		</head-top>
+		<div class="container">
+			<div class="content" :class="{marTop: showHeaders}">
+				<div v-if="rsp && success && paySucc" class="box">
+					<div class="marB30">
+						<div><img :src="require('assets/images/payment/pay_succ.jpg')" alt=""></div>
+						<div class="grayDark">
+							<h3 class="fontSm">Dear Customer,</h3>
+							<p class="fontSm">Congratulations on your successful payment for Order ID: <a class="colorPri" @click="goNative">{{orderId}}</a>.</p>
+              <p class="fontSm">You can go to My Trips and use your Order ID to check the status of your booking</p>
+            </div>
+					</div>
+				</div>
+				<div v-if="rsp && !success && paySucc" class="box">
+					<div class="marB30">
+						<div><img :src="require('assets/images/payment/pay_wait.jpg')" alt=""></div>
+						<div class="grayDark">
+              <h3 class="fontSm">Dear customer,</h3>
+							<p class="fontSm">Please wait while the payment information for Order ID: <a class="colorPri" @click="goNative">{{orderId}}</a> is being updated.</p>
+              <p class="fontSm">Your booking details will be sent via SMS and Email. Kindly check your inbox or spam folder.</p>
+              <p class="fontSm">You can go to My Trips and use your Order ID to check the status of your booking.</p>
+            </div>
+					</div>
+				</div>
+        <div v-if="rsp && !success && !paySucc" class="box">
+          <div class="marB30">
+						<div><img :src="require('assets/images/payment/pay_fail.jpg')" alt=""></div>
+						<div class="grayDark">
+							<h3 class="fontSm">Dear customer,</h3>
+							<p class="fontSm">The payment for Order ID: <a class="colorPri" @click="goNative">{{orderId}}</a> has failed.</p>
+              <p class="fontSm">
+                Kindly check the bank account information and your network connection. 
+                You can go to My Trips and use your Order ID to check the status of your booking.
+              </p>
+						</div>
+					</div>
+        </div>
+        <div class="wait-section2" v-if="(rsp && !success && !paySucc) || (rsp && !success && paySucc)">
+          <div class="s2-title flex space-between align-items-center">
+            <p class="s2-p-title">Pay <i>Less</i> with Happy Gold</p>
+            <p @click="goTopUpIntroduce">Details <i class="iconfont icon-emptydown"></i></p>
+          </div>
+          <ul class="s2-more">
+            <li>
+              <h5><span></span>More Savings</h5>
+              <p>Maximum <span style="color:#D8A630;">{{maxSilverP}}%</span> cash reward when you top-up your account with Happy Gold.</p>
+            </li>
+            <li>
+              <h5><span></span>Quicker Payments</h5>
+              <p>The order amount can be paid in full using Happy Gold, and it only takes a moment.</p>
+            </li>
+            <li>
+              <h5><span></span>No Waiting</h5>
+              <p>Instant refund in case of ticket cancellation or non-issuance of ticket due to any other reason.</p>
+            </li>
+          </ul>
+          <div class="btn flex content-center">
+            <a class="rn-btn" href="javascript:" @click="topUpNow">Top-up Now</a>
+          </div>
+        </div>
+			</div>
+		</div>
+    <div class="share-cover" v-show="showAdver" ></div>
+    <couponMmodal @parentListen="closeAdv" :type="fromPayment" :modalObj="modalObj" v-if="showAdver"/>
+	</div>
+</template>
+<script>
+import headTop from "components/head/head.vue";
+import couponMmodal from 'components/coupon-modal';
+import { User } from 'models/user'
+import Clipboard from 'clipboard';
+import { DomainManager } from "config/DomainManager";
+import { Toast, Indicator } from "mint-ui";
+import { parseQueryStr } from "models/utils/parseQueryStr";
+import { AppBridge } from '../../models/appbridge/appbridge.js';
+import { Activity } from "../../models/activity";
+import { CookieUtil } from '../../models/utils';
+import { emitCustomEvent } from 'models/utils/adGAEvent';
+import {skyscanerTrack} from 'models/utils/platformTrack';
+
+export default {
+  components: {
+    headTop,
+    couponMmodal,
+  },
+  data() {
+    return {
+      emitCustomEvent:emitCustomEvent,
+      maxSilverP:'',
+      fromPayment:'fromPayment',
+      isLogin:CookieUtil.hasItem('uuid'),
+      flag:true,
+      isIos:false,
+      rsp: false,
+      paySucc:true,
+      success: false,
+      showAdver:false,
+      clickCloseBtn:false,
+      mark: "",
+      orderId: "",
+      phoneNo: "",
+      timer: null,
+      timers: 0,
+      timer2:null,
+      phoneNo: "",
+      status:null,
+      orders: null,
+      orderFee: null,
+      isClickClose:false,
+      payOK:false,
+      device:{},
+      showHeaders:false,
+      goOrderNopay:false,
+      goOrderComplete:false,
+      goOrderUncoming:false,
+      modalObj:{
+        showFCoupon:true,
+        url:'',
+        coupon:'',
+        date:'',
+        isLogin: false,
+        email:'',
+        hotelObj:{
+          showHCoupon: true
+        },
+        isApp: false,
+      }
+    };
+  },
+  methods: {
+    shareToApp(who){
+      if(!this.showHeaders){
+        AppBridge.shareToApps(who,this);
+      }else{
+        let clipboard, that = this;
+        if(who == 3){
+          if(this.flag){
+            this.flag = false;
+        
+            setTimeout(function(){
+              that.flag = true;
+            },1200);
+          }
+        }else{
+          Toast({
+            message:"Please operate on app",
+            duration:1500,
+          })
+        }
+      }
+    },
+    closeAdv(){
+      this.showAdver = false;
+      this.clickCloseBtn = true;
+      this.paySuccAndAction();
+    },
+    getCouponAD(){
+      let orderId = this.orderId;
+      this.$axios.get(`/heg_api/coupon/getCouponByOrderId.do?orderId=${orderId}`).then(res => {
+        if(res.data){
+          this.showAdver = true;
+          this.modalObj.showFCoupon = true;
+          this.modalObj.url = res.data.url;
+          this.modalObj.coupon = res.data.alt;
+          this.modalObj.date = res.data.landingPageTitle;
+          this.modalObj.isLogin = this.isLogin;
+          this.modalObj.email = res.data.landingPageAlt;
+          this.modalObj.isApp = !this.showHeaders;
+        }else{
+          this.showAdver = false;
+          this.paySuccAndAction();
+          clearTimeout(this.timer2);
+        }
+      }).catch(err => {
+          this.paySuccAndAction();
+          this.showAdver = false;
+      });
+    },
+    routeWhere() {
+      try {
+        window.heg.nativeBack();
+      } catch (e) {
+        this.$router.push("/");
+      }
+    },
+    goNative() {
+      if(this.goOrderNopay){
+        try {
+          window.heg.getNativeSource();
+        } catch (error) {
+          if(!window.WebViewJavascriptBridge){ 
+            this.$router.push("/order/nopay");
+            this.getPayStatus();
+          }
+        }
+        return false;
+      }
+      if (this.goOrderComplete || (this.success && this.rsp && this.paySucc)) {
+        try {
+          window.heg.paySuccess();
+        } catch (error) {
+          if(window.WebViewJavascriptBridge){ 
+            this.$bridge.callhandler('paySuccess');
+          }else{
+            this.$router.push("/order/complete");
+          }
+        }
+        return false;
+      }
+      if(this.goOrderUncoming){
+        try {
+          window.heg.getNativeSource();
+        } catch (error) {
+          if(!window.WebViewJavascriptBridge){ 
+            this.$router.push("/order/upcoming");
+          }
+        }
+        return false;
+      }
+    },
+    paySuccAndAction(){
+      let _this = this;
+      if(_this.clickCloseBtn){
+        this.timer2 = setTimeout(function(){
+          if(_this.goOrderNopay){
+            try {
+              window.heg.getNativeSource();
+            } catch (error) {
+              if(!window.WebViewJavascriptBridge){ 
+                _this.$router.push("/order/nopay");
+                _this.getPayStatus();
+              }
+            }
+            return false;
+          }
+          if (_this.goOrderComplete || (_this.success && _this.rsp && _this.paySucc)) {
+            try {
+              window.heg.paySuccess();
+            } catch (error) {
+              if(window.WebViewJavascriptBridge){ 
+                _this.$bridge.callhandler('paySuccess');
+              }else{
+                _this.$router.push("/order/complete");
+              }
+            }
+            return false;
+          }
+          if(_this.goOrderUncoming){
+            try {
+              window.heg.getNativeSource();
+            } catch (error) {
+              if(!window.WebViewJavascriptBridge){ 
+                _this.$router.push("/order/upcoming");
+              }
+            }
+            return false;
+          }
+        },4000);
+      }else{
+        clearTimeout(_this.timer2);
+        if(_this.goOrderNopay){
+          try {
+            window.heg.getNativeSource();
+          } catch (error) {
+            if(!window.WebViewJavascriptBridge){ 
+              _this.$router.push("/order/nopay");
+              _this.getPayStatus();
+            }
+          }
+          return false;
+        }
+        if (_this.goOrderComplete || (_this.success && _this.rsp && _this.paySucc)) {
+          try {
+            window.heg.paySuccess();
+          } catch (error) {
+            if(window.WebViewJavascriptBridge){ 
+              _this.$bridge.callhandler('paySuccess');
+            }else{
+              _this.$router.push("/order/complete");
+            }
+          }
+          return false;
+        }
+        if(_this.goOrderUncoming){
+          try {
+            window.heg.getNativeSource();
+          } catch (error) {
+            if(!window.WebViewJavascriptBridge){ 
+              _this.$router.push("/order/upcoming");
+            }
+          }
+          return false;
+        }
+      }
+    },
+    getPayStatus() {
+      let _this = this;
+      this.$axios({
+        url:
+          DomainManager.searchFlightOrderUrlString() +
+          "?orderId=" +
+          this.orderId +
+          "&phoneNo=" +
+            this.phoneNo,
+        method: "get"
+        }).then(res => {
+          this.rsp = true;
+          if(res.code == 0){
+            this.orders = res.data.triplist;
+            this.orderFee = res.data.order;
+            sessionStorage.removeItem("orders");
+            sessionStorage.removeItem("orderFee");
+            sessionStorage.removeItem("orderId");
+            sessionStorage.removeItem("orderInsurance");
+  
+            sessionStorage.setItem("orders", JSON.stringify(this.orders));
+            sessionStorage.setItem("orderFee", JSON.stringify(this.orderFee));
+            sessionStorage.setItem("orderId", this.orderId);
+            sessionStorage.setItem("orderInsurance",JSON.stringify(res.data.flightInsuranceDtos));
+            
+            let status = res.data.triplist[0].payStatus;
+            switch (status) {
+            case 0:
+              if (this.timers > 12) {
+                try {
+                  window.heg.trackEvent("Flight_payment_paypage_timeout");
+                } catch (error) {
+                  if(window.WebViewJavascriptBridge){
+                    this.$bridge.callhandler('trackEvent','Flight_payment_paypage_timeout');
+                  }else{
+                    emitCustomEvent('Flight_payment_paypage_timeout', 'payment_results');
+                    this.success = false;
+                    this.paySucc = true;
+                    this.goOrderNopay = true;
+                  }
+                }
+                clearTimeout(this.timer);
+                return;
+              }
+              this.timer = setTimeout(function() {
+                _this.getPayStatus();
+              }, 15000);
+              this.timers++;
+              break;
+            case 1:
+              try {
+                window.heg.trackEvent("Flight_payment_paypage_fedsuccess");
+              } catch (error) {
+                if(window.WebViewJavascriptBridge){
+                  this.$bridge.callhandler('trackEvent','Flight_payment_paypage_fedsuccess');
+                }else{
+                  emitCustomEvent('Flight_payment_paypage_fedsuccess', 'payment_results');
+                }
+              }
+              this.mark = "Your payment process is complete.";
+              this.success = true;
+              this.paySucc = true;
+              let tripList = res.data.triplist;
+              let segments = 0;
+              tripList.forEach(v => {
+                v.ticketsinfo.forEach(val => {
+                  segments += val.length;
+                });
+              });
+              res.data.order.platform == '2' && skyscanerTrack(res.data.order.orderid);
+              res.data.order.platform == '3' && this.ixigo(res.data.order.orderid, res.data.order.fee.gt, segments);
+              res.data.order.platform == '5' && this.wego(res.data.order.orderid, res.data.order.fee.gt);
+              clearTimeout(this.timer);
+              let status1;
+              for (let obj in _this.orders.ticketsinfo) {
+                status1 = _this.orders[0].ticketsinfo[obj][0].status;
+              }
+              if (
+                status1 == 107 ||
+                this.orders[0].payStatus == 0 ||
+                this.orders[0].payStatus == 9 ||
+                this.orders[0].payStatus == 3 ||
+                this.orders[0].payStatus == 4
+              ) {
+                this.goOrderNopay = true;
+              } else if (status1 == 106) {
+                this.goOrderComplete = true;
+              } else {
+                this.goOrderUncoming = true;
+              }
+              Indicator.close();
+              this.getCouponAD();
+            break;
+            case 2:
+              emitCustomEvent('Flight_payment_paypage_fedfail', 'payment_results');
+              clearTimeout(this.timer);
+              this.mark = "Payment in process.";
+              this.success = false;
+              this.paySucc = false;
+              this.goOrderNopay = true;
+              break;
+            default:
+              try {
+                window.heg.trackEvent("Flight_payment_paypage_fedfail");
+              } catch (error) {
+                if(window.WebViewJavascriptBridge){
+                  this.$bridge.callhandler('trackEvent','Flight_payment_paypage_fedfail');
+                }else{
+                  emitCustomEvent('Flight_payment_paypage_fedfail', 'payment_results');
+                  this.success = false;
+                  this.paySucc = false;
+                  this.goOrderNopay = true;
+                }
+              }
+              clearTimeout(this.timer);
+              this.mark = "Unknowed error.";
+              break;
+            }
+          }else{
+            this.success = false;
+            this.paySucc = false;
+            this.goOrderNopay = true;
+          }
+      });
+    },
+    ixigo(inputTransactionId, inputAmount, inputSegments) {
+      let baseUrl =
+        process.env.NODE_ENV === "production"
+          ? "https://www.ixigo.com"
+          : "https://build1.ixigo.com";
+      window.ixiTransactionTracker = function(tag) {
+        function updateRedirect(tag, t, p, v, s) {
+          var u = 
+            baseUrl +
+            "/ixi-api/tracker/updateConversion/" +
+            tag +
+            "?transactionId=" +
+            t +
+            "&pnr=" +
+            p +
+            "&saleValue=" +
+            v +
+            "&segmentNights=" +
+            s;
+          return (
+            "<img style='top:-999999px;left:-999999px;position:absolute' src='" +
+            u +
+            "' />"
+          );
+        }
+        var html = updateRedirect(
+          tag,
+          inputTransactionId,
+          '',
+          inputAmount,
+          inputSegments
+        );
+        var temp = document.createElement("div");
+        temp.innerHTML = html;
+        document.body.appendChild(temp);
+      };
+
+      let script = document.createElement("script");
+      script.src = baseUrl + "/ixi-api/tracker/track1021";
+      document.getElementsByTagName("head")[0].appendChild(script);
+    },
+    wego(order_id, order_total_value){
+      let clickId = CookieUtil.hasItem("wego_click_id")?CookieUtil.getItem("wego_click_id"):"";
+      let baseUrl = process.env.NODE_ENV === "production"
+        ?"https://secure.wego.com"
+        :"https://secure.wegostaging.com";
+      function updateRedirect(ti, tbv){
+        let u = baseUrl + "/analytics/v2/conversions?"+
+        "conversion_id=c-wego-happyeasygo.com&click_id="+
+        clickId+
+        "&comm_currency_code=INR&bv_currency_code=INR&transaction_id="+
+        ti+
+        "&commission="+(tbv * 0.02)+
+        "&total_booking_value="+tbv+
+        "&status=pending";
+        return (
+          "<img style='top:-999999px;left:-999999px;position:absolute' src='" +
+          u +
+          "' width='1' height='1' border='0'/>"
+        );
+      }
+      var html = updateRedirect(order_id, order_total_value);
+      var temp = document.createElement("div");
+      temp.innerHTML = html;
+      document.body.appendChild(temp);
+    },
+    getSilverPolice(){
+      let url = DomainManager.getSilverEnough();
+      this.$axios.get(url).then(res=>{
+        if(res.code == 200){
+          let arr = [];
+          res.data.forEach((e, i)=>{
+            e.message.forEach((e1, i1)=>{
+              arr.push(e1[1].split("%")[0]);
+            })
+          });
+          this.maxSilverP = Math.max.apply(null, arr);
+        }else{
+          Toast(res.msg)
+        }
+      }).catch(err=>{
+        console.log(err);
+      })
+    },
+    goTopUpIntroduce(){
+      if(this.rsp && !this.success && this.paySucc){
+        emitCustomEvent('Flight_payment_paypage_waitHGdetails', 'payment_results');
+      }else{
+        emitCustomEvent('Flight_payment_paypage_failHGdetails', 'payment_results');
+      }
+      this.$router.push('/rechargeint');
+    },
+    topUpNow(){
+      if(this.rsp && !this.success && this.paySucc){
+        emitCustomEvent('Flight_payment_paypage_waittopup', 'payment_results');
+      }else{
+        emitCustomEvent('Flight_payment_paypage_failtopup', 'payment_results');
+      }
+      if(!this.isLogin){
+        AppBridge.nativeSignIn("in",this);
+      }else{
+        this.$router.push('/top-up');
+      }
+    }
+  },
+  async created() {
+    var u = navigator.userAgent;
+    var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1;
+    var isiOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); 
+    if(isiOS){
+      this.isIos = true;
+    }else{
+      this.isIos = false;
+    }
+    this.showHeaders = await AppBridge.getNativeSource(this);
+    let id = await AppBridge.getNativeUuid(this);
+    window.onReceviedUuid = this.onReceviedUuid;
+    if(id){
+      CookieUtil.removeItem("uuid");
+      CookieUtil.setItem("uuid",id);
+      this.isLogin = true;
+    }else{
+      if(CookieUtil.hasItem("uuid")){
+        this.isLogin = true;
+      }else{
+        CookieUtil.removeItem("uuid");
+        this.isLogin = false;
+      }
+    }
+
+    let orderNumber = parseQueryStr().orderid || parseQueryStr().orderId;
+    let phoneNo = parseQueryStr().phoneNo;
+    this.orderId = orderNumber;
+    this.phoneNo = phoneNo;
+    this.getPayStatus();
+    this.getSilverPolice();
+  },
+  beforeDestroy() {
+    localStorage.removeItem("isIOS");
+    clearTimeout(this.timer2);
+  },
+}
+</script>
+<style lang="less" scoped>
+.wrapper{
+  position: relative;
+  .share-cover{
+    width: 100%;
+    height:100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index:19;
+    background: rgba(0,0,0,0.5);
+  }
+}
+.header {
+  background: #17a27f;
+  .title {
+    line-height: 2.04rem;
+    font-size: 0.768rem;
+    color: #fff;
+  }
+  .placeholder {
+    opacity: 0;
+  }
+}
+.marTop {
+  padding-top: 2.04rem;
+}
+.fontSm {
+  font-size: 12px;
+  line-height: 0.9rem;
+}
+.box {
+  text-align: left;
+  img {
+    display: block;
+    width: 100%;
+  }
+}
+.grayDark {
+  color: #333;
+  padding:0 0.64rem;
+  font-family: 'PingFangSC-Regular';
+  padding:0 0.64rem;
+  h3{padding:0.747rem 0 0.2rem;}
+  a{
+    text-decoration: underline;
+  }
+}
+.colorPri {
+  color: #0b9d78;
+}
+.colorDan {
+  color: #f65858;
+}
+
+// top-up
+.wait-section2{
+  padding: 1.5rem 0.64rem 0;
+  .s2-title{
+    padding-bottom: 0.425rem;
+    border-bottom: 1px solid #CDCDCD;
+    .s2-p-title{
+      text-align: left;
+      color: #333333;
+      font-weight: bold;
+      font-size: 0.726rem;
+      line-height:0.854rem;
+      i{
+        color:#D8A630;
+        font-style:italic;
+        font-size: 1.068rem;
+      }
+    }
+    p:last-child{
+      cursor: pointer;
+      font-size: 0.598rem;
+      i{
+        font-size: 0.45rem;
+        display: inline-block;
+        color:#999;
+        transform: rotate(-90deg);
+      }
+    }
+  }
+  .s2-more{
+    text-align: left;
+    li{
+      h5{
+        color:#333;
+        font-size: 0.598rem;
+        line-height: 0.726rem;
+        margin: 0.64rem 0 0.425rem;
+        span{
+          vertical-align:15%;
+          border-left:3px solid #333;
+          border-right:3px solid #fff;
+          border-top:3px solid #fff;
+          border-bottom:3px solid #333;
+          transform: rotate(-135deg);
+          margin-right:0.3rem;
+        }
+      }
+      p{
+        color:#666;
+        font-size: 0.598rem;
+        line-height:0.894rem;
+      }
+    }
+  }
+  .btn{
+    padding:1rem 0;
+  }
+  .rn-btn {
+    color:#fff;
+    width:5.98rem;
+    height:1.495rem;
+    line-height:1.495rem;
+    background: #ED864B;
+    font-size: 0.686rem;
+    border-radius:3px;
+  }
+}
+</style>

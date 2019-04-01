@@ -1,0 +1,216 @@
+<template>
+    <div class="container">
+      <div class="filter">
+        <div class="flex space-between tab-title-wrap">
+          <div class="tab-title" :class="{active: active[0]}" @click="setState(0)">
+            <span>All</span>
+          </div>
+          <div class="tab-title" :class="{active: active[1]}" @click="setState(1)">
+            <span>Pay</span>
+          </div>
+          <div class="tab-title" :class="{active: active[2]}" @click="setState(2)">
+            <span>Confirm In</span>
+          </div>
+          <div class="tab-title" :class="{active: active[3]}" @click="setState(3)">
+            <span>Upcoming</span>
+          </div>
+          <div class="tab-title" :class="{active: active[4]}" @click="setState(4)">
+            <span>Completed</span>
+          </div>
+           <div class="tab-title" :class="{active: active[5]}" @click="setState(5)">
+            <span>Canceled</span>
+          </div>
+        </div>
+        
+      </div>
+      <div class="list">
+        <div class="list-item flex space-between" @click="$router.push(`/hotel/order/${v.bookingNo}`)"  v-for="v in newList" :key="v.id">
+          <div class="aleft flex direction-column">
+            <div class="fontSz14">
+              {{v.hotelName}}
+            </div>
+            <div class="dur">
+              {{v.checkIndateStr}} -- {{v.checkOutdateStr}} 
+            </div>
+          </div>
+          <div class="aright flex direction-column">
+            <p class="fontSz18 colorDan text-right" style="line-height:24px"><i class="rs">Rs.</i> {{v.price | formatDate}}</p>
+            <p class="fontSz9 lineH15 gray text-right">Booking Date: {{v.orderDateStr}}</p>
+            <p class="fontSz9 lineH15 gray text-right">Order ID {{v.bookingNo}}</p>
+            <div class="status-btn fontSz14" :class="v.btnClass">
+              {{keyToStatus[v.status]}}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</template>
+<script>
+import { DomainManager } from "config/DomainManager";
+import { CookieUtil, TimeFormatUtil } from "models/utils";
+import { Indicator, Popup,Toast} from "mint-ui";
+const keyToStatus = {
+  1: "Pay",
+  2: "Confirm In",
+  3: "Upcoming",
+  4: "Completed",
+  5: "Canceled",
+  6: 'Canceled',
+  7: 'Canceled',
+  8: 'Canceled',
+};
+const btnClass = {
+  1: "bgWarn",
+  2: "",
+  3: "nobtn",
+  4: "bgGrey",
+  5: "bgGrey",
+  6: 'bgGrey',
+  7: 'bgGrey',
+  8: 'bgGrey',
+};
+export default {
+  data() {
+    return {
+      filterState: 0,
+      filterName: "",
+      orderStates: [],
+      list: [],
+      keyToStatus:keyToStatus,
+      active:[true, false, false, false, false, false]
+    };
+  },
+  created() {
+    if(!CookieUtil.hasItem("uuid")){
+      this.$router.push('/login');
+      return;
+    }
+    this.getList();
+  },
+  computed:{
+    newList(){
+      return  this.list.filter(val =>
+        (val.status == this.filterState || this.filterState == 0)
+      )
+    }
+  },
+
+  methods: {
+    setState(index){
+      this.filterState = index;
+      this.active = [false, false, false, false, false, false];
+      this.$set(this.active, index, true);
+    },
+    getList() {
+      Indicator.open({ spinnerType: "fading-circle" });
+      this.$axios.get(DomainManager.getHotelList()).then(res => {
+        Indicator.close();
+        if (res.length === 0) return;
+        res.forEach(val => {
+          if(this.orderStates.indexOf(val.status) < 0){
+            this.orderStates.push(val.status);
+          }
+          val.checkIndateStr = TimeFormatUtil.getBookDetailDate(new Date(val.checkInDate.replace(/-/g, '/')));
+          val.checkOutdateStr = TimeFormatUtil.getBookDetailDate(new Date(val.checkOutDate.replace(/-/g, '/')));
+          val.orderDateStr = TimeFormatUtil.dateWithoutYear(new Date(val.orderTimeStr.replace(/-/g, '/')));
+          val.btnClass = btnClass[val.status];
+          this.list.push(val);
+        });
+      });
+    }
+  }
+};
+</script>
+<style lang="less" scoped>
+@import "~assets/less/theme.less";
+
+@baseFontSize: 46.875;
+.px2rem(@name, @px) {
+  @{name}: @px / @baseFontSize * 1rem;
+}
+.text-right {
+  text-align: right;
+}
+.lineH15{
+  line-height: 15px;
+}
+.container {
+  padding: 0 30 / @baseFontSize * 1rem;
+}
+.fontSz9{
+  font-size: 9px;
+}
+.filter {
+  // .px2rem(height,100);
+  margin-top: 2rem;
+  overflow-x: scroll;
+  margin-left: -0.64rem;
+  margin-right: -0.64rem;
+  
+  .tab-title-wrap{
+    border-bottom: 1px solid #ccc;
+    width:fit-content;
+  }
+  .tab-title {
+    font-size:14px;
+    padding: 15px;
+    white-space: nowrap;
+    margin-bottom:-1px;
+    letter-spacing: 1px;
+    &.active{
+      border-bottom: 1px solid  @primary-color;
+      span{
+        color: @primary-color;
+      }
+    }
+  }
+  .search-btn {
+    font-size: 16px;
+    .px2rem(width, 530);
+    .px2rem(height,60);
+    .px2rem(line-height,60);
+    background-color: @warning-color;
+    color: #fff;
+  }
+}
+.list-item {
+  // height: 70px;
+  padding: 15px 0 10px;
+  border-bottom: 1px solid #ccc;
+  .dur{
+    .px2rem(font-size, 32);
+    color:#333;
+  }
+  .aleft {
+    .px2rem(width, 420);
+    // align-content: space-around;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-right: 1px dashed #ccc;
+  }
+  .aright {
+    align-items: flex-end;
+    justify-content: space-around;
+  }
+
+  .status-btn {
+    background-color: @primary-color;
+    .px2rem(width, 240);
+    .px2rem(height, 40);
+    .px2rem(line-height, 40);
+    text-align: center;
+    color: #fff;
+    margin-top: 2px;
+    &.bgGrey {
+      background-color: @gray;
+    }
+    &.nobtn{
+      background-color: #fff;
+      color: @primary-color;
+    }
+    &.bgWarn {
+      background-color: @warning-color;
+    }
+  }
+}
+</style>

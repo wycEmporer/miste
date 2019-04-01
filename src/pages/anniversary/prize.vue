@@ -1,0 +1,515 @@
+<template>
+  <div id="gamePrize">
+    <div style="height:100%;">
+      <head-top class="header">
+        <i slot="left" class="top_icon iconfont icon-back" ></i>
+        <p slot="title" style="margin-left:-1.5rem;">My Prizes</p>
+      </head-top>
+      <div class="content" v-show="havePrize">
+        <div class="top" :class="{marTop: contentMargin}"></div>
+        <ul class="prizes">
+          <li class="flex" v-for="(item,index) in prizeInfo" :key="index">
+            <div class="imgIcon"><img :src='item.listImg' alt="prizes" name="prizes"></div>
+            <div class="word flex">
+              <div class="top" >
+                <div class="top-title flex space-between" @click="jumpDetails(item.prizeName)"><h4>{{item.prizeName}}</h4><span>{{item.winningTime}}</span></div>
+                <p @click="jumpDetails(item.prizeName)">{{item.prizeContent}}</p>
+                <div class="bottom">
+                  <button class="notCheck" v-show="item.redeemValue == 0" @click="writeInfo(item.redeemValue,item.winningId,index)">{{item.Redeem}}</button>
+                  <button class="check" v-show="item.redeemValue == 1" @click="writeInfo(item.redeemValue,item.winningId,index)">{{item.Check}}</button>
+                  <button class="check" v-show="item.redeemValue == 21" @click="writeInfo(item.redeemValue,item.winningId,index)">{{item.Check}}</button>
+                  <button class="check" v-show="item.redeemValue == 22" @click="writeInfo(item.redeemValue,item.winningId,index)">{{item.Check}}</button>
+                </div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="noPirze" v-show="noPrize" :class="{noPirzeMsite: contentMargin}">
+        <img style="width:100%;height:100%;vertical-align:top;" :src="noPrizeImg" alt="">
+      </div>
+    </div>
+    <div class="improveInfo" v-show="showDialog">
+      <form class="infoDetail" :class="{input1:appInput.isInput1,input2:appInput.isInput2,input3:appInput.isInput3}">
+        <div class="infoClose" @click="InfoClose" :class="{isInput:appInput.isInput}"><img :src='require("../../assets/images/anniversary/ani-cancel.png")' alt=""></div>
+        <p class="infoTitle">Enter your information and we will contact you in time</p>
+        <ul class="infoForm">
+          <li >
+            <p class="userInfo">Email（only be your account email）</p>
+            <input class="hasBg" type="email" autocomplete="on" v-model="formInfo.email" readonly>
+          </li>
+          <li >
+            <p class="userInfo">Phone（only be your account phone）</p>
+            <input class="hasBg" type="text" autocomplete="on" v-model="formInfo.phone" readonly>
+          </li>
+          <li >
+            <p class="userInfo">Your name</p>
+            <input class="noBg" type="text" autocomplete="on" v-focus1="appInput" v-model="formInfo.name" :disabled="cantEdit" placeholder="Your name">
+          </li>
+          <li >
+            <p class="userInfo">Recipient's address（Only in India）</p>
+            <input class="noBg" type="text" autocomplete="on" v-focus2="appInput" v-model="formInfo.postalCode" :disabled="cantEdit" placeholder="Postal code">
+          </li>
+          <li class="infoAddress">
+            <textarea class="noBg" v-model="formInfo.address" v-focus3="appInput" rows="3" :disabled="cantEdit" placeholder="City,Street,address,Apt,Floor,etc"></textarea>
+          </li>
+          <div v-show="showEditAddress">
+            <li class="checkLi">
+              <input name='note' type="checkbox" v-model="formInfo.selected" />
+              <label>Once the information is submitted, it cannot be modified</label>
+              <p v-show="completeForm">Please enter your delivery information.</p>
+            </li>
+            <li>
+              <button type="button" @click="confirmRedeem" :class="{cantClick:isDisabled}" :disabled="isDisabled">Confirm</button>
+            </li>
+          </div>
+        </ul>
+      </form>
+    </div>
+  </div>
+</template>
+<script>
+import headTop from '../../components/head/head.vue';
+import {Toast,Indicator} from 'mint-ui';
+import { DomainManager } from "../../config/DomainManager.js";
+import { CookieUtil } from 'models/utils';
+import {AppBridge} from '../../models/appbridge/appbridge.js';
+if(/Android [4-6]/.test(navigator.appVersion)) {
+   window.addEventListener("resize", function() {
+      if(document.activeElement.tagName=="INPUT" || document.activeElement.tagName=="TEXTAREA") {
+         window.setTimeout(function() {
+            document.activeElement.scrollIntoViewIfNeeded();
+         },0);
+      }
+   })
+}
+export default {
+  components:{
+    headTop,
+  },
+  data(){
+    return{
+      model: 0,
+      who: "anchor",
+      appInput:{
+        isAndroid:false,
+        isInput:false,
+        isInput1:false,
+        isInput2:false,
+        isInput3:false,
+      },
+      contentMargin: true,
+      havePrize:false,
+      noPrize:false,
+      isRedeem:3,
+      showDialog:false,
+      isDisabled:true,
+      completeForm:false,
+      showEditAddress:true,
+      cantEdit:false,
+      formInfo:{
+        email:CookieUtil.getItem('email')?(CookieUtil.getItem('email').indexOf('"') == -1?CookieUtil.getItem('email'):CookieUtil.getItem('email').split('"')[1]):"",
+        phone:CookieUtil.getItem('phone')?CookieUtil.getItem('phone'):"",
+        name:'',postalCode:null,address:'',selected:false,id:null
+      },
+      noPrizeImg:require('../../assets/images/anniversary/ani-no-prize.png'),
+      months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      prizeInfo:[],
+    }
+  },
+  watch: {
+    formInfo:{
+      handler:function(val,oldVal){
+        if(!this.formInfo.name || !this.formInfo.postalCode || !this.formInfo.address){
+          this.isDisabled = true;
+        }else{
+          this.isDisabled = false;
+        }
+        if(this.formInfo.selected){
+          this.completeForm = false;
+        }else{
+          this.isDisabled = true;
+          this.completeForm = true;
+        }
+      },
+      deep:true,
+      immediate:true
+    }
+  },
+  methods:{
+    checkType() {
+      let type = AppBridge.device;
+      if(type == 1){
+        this.model = 2;
+      }else if(type == 2){
+        this.appInput.isAndroid = true;
+        this.model = 3;
+      }else{
+        this.model = 0;
+      }
+    },
+    jumpDetails(who){
+      switch (who) {
+        case "Samsung S8":
+          this.who = "Samsung";
+          break;
+        case "Free Air Tickets Coupons":
+          this.who = "Air";
+          break;
+        case "HappyEasyGo Coupons":
+          this.who = "HappyEasyGo";
+          break;
+        case "Travel Bag":
+          this.who = "Bag";
+          break;
+        case "Pendrive":
+          this.who = "Pendrive";
+          break;
+        case "Touchpad Pen":
+          this.who = "Pen";
+          break;
+        case "ZOOMCAR Coupons":
+          this.who = "ZOOMCAR";
+          break;
+        case "TREEBO Coupons":
+          this.who = "TREEBO";
+          break;
+        case "MYNTRA Coupons":
+          this.who = "MYNTRA";
+          break;
+        case "XOXODAY Coupons":
+          this.who = "XOXODAY";
+          break;
+        case "NETMEDS Coupons":
+          this.who = "NETMED";
+          break;
+        case "GAANA Plus Coupons":
+          this.who = "GAANA";
+          break;
+        default:
+          this.who = "anchor";
+          break;
+      }
+      if(who.indexOf("Silver") > -1){
+        this.who = "Silver";
+      }
+      this.$router.push({path:'/anniversaryIntroduce',query:{anchor:'terms',who:this.who}});
+    },
+    getPrizeRecord(){
+      let that = this;
+      let url = DomainManager.getPrizeHistory();
+      this.$axios.get(url).then(res =>{
+        if(res.data){
+          that.prizeInfo = res.data;
+          that.prizeInfo.forEach((e,i) => {
+            let date = new Date(e.winningTime);
+            var M = that.months[date.getMonth()]+' ';
+            var D = (date.getDate() < 10 ? '0' + (date.getDate()) : date.getDate()) + ' ';
+            var h = (date.getHours() < 10 ? '0' + date.getHours() : date.getHours()) + ':';
+            var m = (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes());
+            that.$set(e,'winningTime',M+D+h+m);
+            if(e.source == 1){//HEG
+              if(e.type == 1){//true thing
+                if(e.recipientAddress == null || e.postalCode == null || e.recipientName == null ){
+                  that.isRedeem = 0;
+                }else{
+                  that.isRedeem = 1;
+                }
+              }else{
+                if(e.category == 1){// coupon
+                  that.isRedeem = 21;
+                }else{
+                  that.isRedeem = 22;
+                }
+              }
+            }else{// other platform
+              that.isRedeem = 3;
+            }
+            that.$set(e,'redeemValue',that.isRedeem);
+            that.$set(e,'Redeem','Redeem');
+            that.$set(e,'Check','Check');
+          });
+          // console.log(that.prizeInfo);
+          that.havePrize = true;
+          that.noPrize = false;
+        }else{
+          that.havePrize = false;
+          that.noPrize = true;
+        }
+        Indicator.close();
+      }).catch(err => {
+        console.log(err);
+      })
+    },
+    writeInfo(p1,p2,p3){
+      this.formInfo.id = p2;
+      switch (p1) {
+        case 0:
+          this.showDialog = true;
+          this.cantEdit = false;
+          this.showEditAddress = true;
+          this.formInfo.name = "";
+          this.formInfo.postalCode="";
+          this.formInfo.address="";
+          break;
+        case 1:
+          this.showDialog = true;
+          this.showEditAddress = false;
+          this.cantEdit = true;
+          this.formInfo.name = this.prizeInfo[p3].recipientName;
+          this.formInfo.postalCode = this.prizeInfo[p3].postalCode;
+          this.formInfo.address = this.prizeInfo[p3].recipientAddress;
+          break;
+        case 21:
+          AppBridge.nativeMyCoupons(this);
+          break;
+        case 22:
+          AppBridge.goWalletPage(this);
+          break;
+        default:
+          break;
+      }
+    },
+    confirmRedeem(){
+      this.showDialog = false;
+      this.submitEditInfo();
+    },
+    InfoClose(){
+      this.showDialog = false;
+      this.formInfo.selected = false;
+    },
+    submitEditInfo(){
+      let url = DomainManager.saveRecipient();
+      let params = {
+        id:this.formInfo.id,
+        recipientName:this.formInfo.name,
+        recipientAddress:this.formInfo.address,
+        postalCode:this.formInfo.postalCode,
+      };
+      this.$axios.post(url,params).then(res => {
+        if(res.success){
+          this.getPrizeRecord();
+        }
+      }).catch(err=>{
+        console.log(err);
+      });
+    }
+  },
+  async created(){
+    Indicator.open({
+      spinnerType: 'fading-circle'
+    });
+    this.contentMargin = await AppBridge.getNativeSource(this);
+
+    this.checkType();
+    this.getPrizeRecord();
+  },
+  directives: {
+    'focus1'(el,binding,vnode){
+      el.onfocus = function(){
+        if(binding.value.isAndroid){
+          binding.value.isInput = true;
+          binding.value.isInput1 = true;
+          binding.value.isInput2 = false;
+          binding.value.isInput3 = false;
+        }
+      },
+      el.onblur = function(){
+        binding.value.isInput = false;
+        binding.value.isInput1 = false;
+        binding.value.isInput2 = false;
+        binding.value.isInput3 = false;
+      }
+    },
+    'focus2'(el,binding,vnode){
+      el.onfocus = function(){
+        if(binding.value.isAndroid){
+          binding.value.isInput = true;
+          binding.value.isInput1 = false;
+          binding.value.isInput2 = true;
+          binding.value.isInput3 = false;
+        }
+      },
+      el.onblur = function(){
+        binding.value.isInput = false;
+        binding.value.isInput1 = false;
+        binding.value.isInput2 = false;
+        binding.value.isInput3 = false;
+      }
+    },
+    'focus3'(el,binding,vnode){
+      el.onfocus = function(){
+        if(binding.value.isAndroid){
+          binding.value.isInput = true;
+          binding.value.isInput1 = false;
+          binding.value.isInput2 = false;
+          binding.value.isInput3 = true;
+        }
+      },
+      el.onblur = function(){
+        binding.value.isInput = false;
+        binding.value.isInput1 = false;
+        binding.value.isInput2 = false;
+        binding.value.isInput3 = false;
+      }
+    },
+  }
+}
+</script>
+<style lang="less" scoped>
+#gamePrize{
+  .header {
+    position: static!important;
+    background: #0b9d78;
+    height:7.2%;
+    i {
+      padding: 0 0.64rem;
+    }
+  }
+  .noPirze{
+    height:100%;
+  }
+  .noPirzeMsite{
+    height:92.8%;
+  }
+  .content{
+    text-align:left;
+    padding-bottom: 1.5rem;
+    .marTop{height:7.2%;}
+    .prizes{
+      li{
+        min-height: 2.5rem;
+        margin-left:0.65rem;
+        border-bottom:1px solid #eee;
+        padding-top:1rem;
+        .imgIcon{
+          padding:0 0.3rem 0 0;
+          width:3rem;
+          img{
+            width:3rem;
+            height:3rem;
+            vertical-align:middle;
+            font-size: 0.5rem;
+          }
+        }
+        .word{
+          padding-right:0.5rem;
+          flex:1;
+          .top{
+            flex:1;
+            h4{font-size: 0.683rem;}
+            span{
+              width:4.5rem;
+              text-align: right;
+              color:#999;
+              font-size: 0.512rem;
+              line-height:16px;
+              float: right;
+            }
+            p{
+              line-height: 0.598rem;
+              color:#666;
+              word-break: break-all; 
+              word-wrap:break-word;
+              margin:0.3rem 0;
+              font-size: 0.512rem;
+            }
+          }
+          .top .bottom{
+            button{
+              width:4rem;
+              font-size: 0.512rem;
+              float: right;
+              margin:0 0 0.3rem;
+              padding:0.3rem 0;
+              border-radius: 4px;
+              border:1px solid #FC9525;
+              cursor: pointer;
+            }
+            .notCheck{color: #fff;background: #FC9525;}
+            .check{color: #FC9525;background: #fff;}
+          }
+        }
+      }
+    }
+  }
+  .improveInfo{
+    width: 100%;
+    height:100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: rgba(0,0,0,0.5);
+    .infoDetail{
+      width:70%;
+      background: #fff;
+      margin:4rem auto 0;
+      padding:0 1rem 0.5rem;
+      border-radius: 8px;
+      text-align: left;
+      font-size:0.65rem;
+      .infoClose{
+        width:0.98rem;
+        height:0.98rem;
+        position: absolute;
+        top:5%;
+        right:5%;
+        cursor: pointer;
+        img{
+          width: 100%;
+          height:100%;
+        }
+      }
+      .isInput{right:2%;}
+      p.infoTitle{color:#555;line-height:0.85rem;padding:1rem 0 0.5rem;}
+      input,textarea{
+        border: 1px solid #CDCDCD;
+        border-radius: 3px;
+        font-size:0.51rem;
+        padding:0 0.2rem 0 0.5rem;
+        width:93%;
+        letter-spacing: 0.43px;
+        color:#333;
+      }
+      input{height:1.3rem;line-height: 1.3rem;}
+      .userInfo{color:#555;font-size:0.512rem;padding:0.2rem 0;}
+      .hasBg{background:#EFEFEF;}
+      .noBg{color: #333;}
+      .noBg::-webkit-input-placeholder{color:#999;}
+      .noBg::-moz-placeholder{color:#999;}
+      li.infoAddress{
+        padding-top:0.2rem;
+        textarea{font-family:none;padding-top:0.2rem;padding-bottom: 0.2rem;}
+      }
+      .checkLi {
+        padding:0.3rem 0 0.5rem;
+        font-size: 0.47rem;
+        line-height: 12px;
+        text-align: left;
+        input{width:5%;float: left;margin:0 0.4rem 3px 0;line-height: 0;height:auto;}
+        label{color:#999999;letter-spacing: 0.52px;}
+        p{ 
+          color: #CC2232;
+          letter-spacing: 0.55px;
+          padding-top:0.2rem;
+        }
+      }
+      li:last-child{width:80%;margin:auto;}
+      li:last-child button{
+        width:100%;
+        background: #CC2232;
+        border-radius: 4px;
+        padding:0.45rem 0;
+        text-align: center;
+        cursor: pointer;
+        color:#fff;
+        font-size:0.68rem;
+      }
+      li:last-child button.cantClick{background: #eee;}
+    }
+    .input1{margin:2rem auto 0;}
+    .input2{margin:1rem auto 0;}
+    .input3{margin:-2rem auto 0;}
+  }
+}
+</style>
